@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Reminder Manager</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+</head>
+<body>
+<div class="dashboard-container">
+    <!-- Header -->
+    <header class="dashboard-header">
+        <div class="header-left">
+            <h1>Reminder Manager</h1>
+            <span id="currentDate" class="current-date"></span>
+        </div>
+        <div class="header-right">
+            <span id="welcomeMessage" class="welcome-message">Welcome back!</span>
+            <div class="user-menu">
+                <button id="profileBtn" class="profile-btn">Profile</button>
+                <button id="logoutBtn" class="logout-btn">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="dashboard-main">
+        <!-- Stats Section -->
+        <section class="stats-section">
+            <div class="stats-grid">
+                <div class="stat-card total-reminders">
+                    <div class="stat-icon">📝</div>
+                    <div class="stat-content">
+                        <h3 id="totalReminders">0</h3>
+                        <p>Total Reminders</p>
+                    </div>
+                </div>
+                <div class="stat-card active-reminders">
+                    <div class="stat-icon">⏰</div>
+                    <div class="stat-content">
+                        <h3 id="activeReminders">0</h3>
+                        <p>Active</p>
+                    </div>
+                </div>
+                <div class="stat-card completed-today">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-content">
+                        <h3 id="completedToday">0</h3>
+                        <p>Completed Today</p>
+                    </div>
+                </div>
+                <div class="stat-card overdue">
+                    <div class="stat-icon">⚠️</div>
+                    <div class="stat-content">
+                        <h3 id="overdue">0</h3>
+                        <p>Overdue</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Actions -->
+        <section class="quick-actions">
+            <h2>Quick Actions</h2>
+            <div class="actions-grid">
+                <button class="action-btn primary" id="addReminderBtn">
+                    <span class="btn-icon">➕</span>
+                    Add Reminder
+                </button>
+                <button class="action-btn secondary" id="viewAllBtn">
+                    <span class="btn-icon">📋</span>
+                    View All
+                </button>
+                <button class="action-btn tertiary" id="settingsBtn">
+                    <span class="btn-icon">⚙️</span>
+                    Settings
+                </button>
+            </div>
+        </section>
+
+        <!-- Recent Reminders -->
+        <section class="recent-section">
+            <div class="section-header">
+                <h2>Recent Reminders</h2>
+                <button id="refreshBtn" class="refresh-btn">🔄 Refresh</button>
+            </div>
+            <div id="recentReminders" class="reminders-list">
+                <!-- Reminders will be loaded here -->
+            </div>
+        </section>
+
+        <!-- Today's Schedule -->
+        <section class="schedule-section">
+            <h2>Today's Schedule</h2>
+            <div id="todaySchedule" class="schedule-list">
+                <!-- Schedule items will be loaded here -->
+            </div>
+        </section>
+    </main>
+</div>
+
+<!-- Add Reminder Modal (for future implementation) -->
+<div id="addReminderModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Add New Reminder</h2>
+        <form id="addReminderForm">
+            <div class="form-group">
+                <label for="reminderTitle">Title</label>
+                <input type="text" id="reminderTitle" required>
+            </div>
+            <div class="form-group">
+                <label for="reminderDate">Date & Time</label>
+                <input type="datetime-local" id="reminderDate" required>
+            </div>
+            <div class="form-group">
+                <label for="reminderDescription">Description</label>
+                <textarea id="reminderDescription" rows="3"></textarea>
+            </div>
+            <button type="submit" class="submit-btn">Add Reminder</button>
+        </form>
+    </div>
+</div>
+
+<script src="../config/constants.js"></script>
+<script src="../js/utils.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/dashboard.js"></script>
+<script>
+    // Initialize dashboard
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if user is authenticated
+        if (!Auth.isAuthenticated()) {
+            window.location.href = 'login.html';
+            return;
+        }
+
+        Dashboard.init();
+    });
+</script>
+</body>
+</html>

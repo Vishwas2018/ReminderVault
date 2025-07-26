@@ -74,25 +74,46 @@ const Auth = {
      * Logout current user
      */
     logout: function() {
+        console.log('Starting logout process...');
+
         return new Promise((resolve) => {
             try {
                 const username = this.currentUser?.username || 'Unknown';
+                console.log(`Logging out user: ${username}`);
 
                 // Clear session data
                 this.clearSession();
+                console.log('Session data cleared');
 
                 // Reset current user
                 this.currentUser = null;
+                console.log('Current user reset');
 
                 // Stop session monitoring
                 this.stopSessionMonitoring();
+                console.log('Session monitoring stopped');
+
+                // Clear any cached data (optional)
+                if (typeof Utils !== 'undefined' && Utils.Storage) {
+                    // Clear app-specific data but keep some user preferences
+                    const keysToRemove = [
+                        APP_CONFIG.STORAGE_KEYS.USER_SESSION,
+                        APP_CONFIG.STORAGE_KEYS.REMINDERS_DATA
+                    ];
+
+                    keysToRemove.forEach(key => {
+                        Utils.Storage.remove(key);
+                    });
+                    console.log('App data cleared');
+                }
 
                 console.log(`User ${username} logged out successfully`);
                 resolve();
 
             } catch (error) {
                 console.error('Logout error:', error);
-                resolve(); // Always resolve logout
+                // Always resolve logout to ensure UI can proceed
+                resolve();
             }
         });
     },

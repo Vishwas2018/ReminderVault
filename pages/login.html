@@ -63,9 +63,18 @@
 <script src="../js/utils.js"></script>
 <script src="../js/auth.js"></script>
 <script>
-    // Initialize login page
+    // Initialize login page when DOM is ready
     document.addEventListener('DOMContentLoaded', function() {
-        Auth.initLoginPage();
+        console.log('Login page DOM loaded');
+
+        // Wait a bit for all scripts to load
+        setTimeout(function() {
+            if (typeof Auth !== 'undefined') {
+                Auth.initLoginPage();
+            } else {
+                console.error('Auth module not loaded');
+            }
+        }, 100);
     });
 </script>
 </body>

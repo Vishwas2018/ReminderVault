@@ -100,26 +100,143 @@
     </main>
 </div>
 
-<!-- Add Reminder Modal (for future implementation) -->
+<!-- Add Reminder Modal -->
 <div id="addReminderModal" class="modal" style="display: none;">
     <div class="modal-content">
-        <span class="close">&times;</span>
-        <h2>Add New Reminder</h2>
-        <form id="addReminderForm">
-            <div class="form-group">
-                <label for="reminderTitle">Title</label>
-                <input type="text" id="reminderTitle" required>
-            </div>
-            <div class="form-group">
-                <label for="reminderDate">Date & Time</label>
-                <input type="datetime-local" id="reminderDate" required>
-            </div>
-            <div class="form-group">
-                <label for="reminderDescription">Description</label>
-                <textarea id="reminderDescription" rows="3"></textarea>
-            </div>
-            <button type="submit" class="submit-btn">Add Reminder</button>
-        </form>
+        <div class="modal-header">
+            <h2>✨ Create New Reminder</h2>
+            <span class="close">&times;</span>
+        </div>
+
+        <div class="modal-body">
+            <form id="addReminderForm">
+                <div class="form-group">
+                    <label for="reminderTitle">
+                        <span class="label-icon">📝</span>
+                        Title <span class="required">*</span>
+                    </label>
+                    <input
+                            type="text"
+                            id="reminderTitle"
+                            name="reminderTitle"
+                            placeholder="Enter reminder title..."
+                            maxlength="100"
+                            required
+                            autocomplete="off"
+                    >
+                    <small class="field-hint">What do you need to be reminded about?</small>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="reminderDate">
+                            <span class="label-icon">📅</span>
+                            Date & Time <span class="required">*</span>
+                        </label>
+                        <input
+                                type="datetime-local"
+                                id="reminderDate"
+                                name="reminderDate"
+                                required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reminderPriority">
+                            <span class="label-icon">⚡</span>
+                            Priority
+                        </label>
+                        <select id="reminderPriority" name="reminderPriority">
+                            <option value="1">🔵 Low</option>
+                            <option value="2" selected>🟡 Medium</option>
+                            <option value="3">🟠 High</option>
+                            <option value="4">🔴 Urgent</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="reminderCategory">
+                        <span class="label-icon">🏷️</span>
+                        Category
+                    </label>
+                    <select id="reminderCategory" name="reminderCategory">
+                        <option value="personal">👤 Personal</option>
+                        <option value="work">💼 Work</option>
+                        <option value="health">🏥 Health</option>
+                        <option value="finance">💰 Finance</option>
+                        <option value="education">📚 Education</option>
+                        <option value="social">👥 Social</option>
+                        <option value="other">📦 Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="reminderDescription">
+                        <span class="label-icon">📄</span>
+                        Description
+                    </label>
+                    <textarea
+                            id="reminderDescription"
+                            name="reminderDescription"
+                            rows="3"
+                            placeholder="Add any additional details..."
+                            maxlength="500"
+                    ></textarea>
+                    <small class="field-hint">Optional: Add more context or details about this reminder</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="reminderNotification" name="reminderNotification" checked>
+                        <span class="checkbox-custom"></span>
+                        <span class="label-icon">🔔</span>
+                        Enable notifications for this reminder
+                    </label>
+                </div>
+
+                <div class="quick-time-buttons">
+                    <h4>Quick Time Options:</h4>
+                    <div class="time-buttons">
+                        <button type="button" class="time-btn" data-minutes="15">15 min</button>
+                        <button type="button" class="time-btn" data-minutes="30">30 min</button>
+                        <button type="button" class="time-btn" data-hours="1">1 hour</button>
+                        <button type="button" class="time-btn" data-hours="2">2 hours</button>
+                        <button type="button" class="time-btn" data-days="1">Tomorrow</button>
+                        <button type="button" class="time-btn" data-days="7">Next week</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-cancel" id="cancelReminderBtn">Cancel</button>
+            <button type="submit" form="addReminderForm" class="btn-submit" id="submitReminderBtn">
+                <span class="btn-icon">✨</span>
+                <span class="btn-text">Create Reminder</span>
+                <span class="btn-loader" style="display: none;">Creating...</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Reminder Details Modal -->
+<div id="reminderDetailsModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="detailsModalTitle">Reminder Details</h2>
+            <span class="close">&times;</span>
+        </div>
+
+        <div class="modal-body" id="reminderDetailsContent">
+            <!-- Content will be populated dynamically -->
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" id="editReminderBtn">Edit</button>
+            <button type="button" class="btn-danger" id="deleteReminderBtn">Delete</button>
+            <button type="button" class="btn-primary" id="completeReminderBtn">Mark Complete</button>
+        </div>
     </div>
 </div>
 
@@ -128,6 +245,48 @@
 <script src="../js/auth.js"></script>
 <script src="../js/dashboard.js"></script>
 <script>
+    // Debug script - add before other scripts
+    console.log('=== DEBUG: Page loading started ===');
+
+    // Check when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('=== DEBUG: DOM Content Loaded ===');
+
+        // Check if modules are loaded
+        setTimeout(function() {
+            console.log('=== DEBUG: Module Check ===');
+            console.log('Utils available:', typeof Utils !== 'undefined');
+            console.log('Auth available:', typeof Auth !== 'undefined');
+            console.log('Dashboard available:', typeof Dashboard !== 'undefined');
+            console.log('APP_CONFIG available:', typeof APP_CONFIG !== 'undefined');
+            console.log('DEMO_USERS available:', typeof DEMO_USERS !== 'undefined');
+
+            // Check localStorage
+            console.log('localStorage available:', typeof Storage !== 'undefined');
+
+            // Check current page
+            console.log('Current page:', window.location.pathname);
+
+            // If on dashboard, check auth
+            if (window.location.pathname.includes('dashboard')) {
+                if (typeof Auth !== 'undefined') {
+                    console.log('User authenticated:', Auth.isAuthenticated());
+                    console.log('Current user:', Auth.getCurrentUser());
+                }
+            }
+        }, 200);
+    });
+
+    // Check for script errors
+    window.addEventListener('error', function(e) {
+        console.error('=== DEBUG: Script Error ===');
+        console.error('File:', e.filename);
+        console.error('Line:', e.lineno);
+        console.error('Message:', e.message);
+        console.error('Error object:', e.error);
+    });
+
+    console.log('=== DEBUG: Debug script loaded ===');
     // Initialize dashboard
     document.addEventListener('DOMContentLoaded', function() {
         // Check if user is authenticated
@@ -141,3 +300,4 @@
 </script>
 </body>
 </html>
+

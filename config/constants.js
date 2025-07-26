@@ -234,7 +234,9 @@ const SUCCESS_MESSAGES = {
     DATA_SAVED: 'Changes saved successfully.',
     REMINDER_CREATED: 'Reminder created successfully.',
     REMINDER_UPDATED: 'Reminder updated successfully.',
-    REMINDER_DELETED: 'Reminder deleted successfully.'
+    REMINDER_DELETED: 'Reminder deleted successfully.',
+    REMINDER_COMPLETED: 'Reminder marked as completed!',
+    REMINDER_REACTIVATED: 'Reminder reactivated successfully!'
 };
 
 /**

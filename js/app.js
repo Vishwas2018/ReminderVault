@@ -31,32 +31,69 @@ const App = {
             return;
         }
 
-        // Initialize core modules
-        this.initializeModules();
+        // Wait for dependencies to load
+        this.waitForDependencies()
+            .then(() => {
+                // Initialize core modules
+                this.initializeModules();
 
-        // Set up global error handling
-        this.setupErrorHandling();
+                // Set up global error handling
+                this.setupErrorHandling();
 
-        // Set up page routing
-        this.setupRouting();
+                // Set up page routing
+                this.setupRouting();
 
-        // Set up notifications
-        if (this.config.enableNotifications) {
-            this.setupNotifications();
-        }
+                // Set up notifications
+                if (this.config.enableNotifications) {
+                    this.setupNotifications();
+                }
 
-        // Set up service worker (if enabled)
-        if (this.config.enableServiceWorker) {
-            this.setupServiceWorker();
-        }
+                // Mark as initialized
+                this.state.initialized = true;
 
-        // Mark as initialized
-        this.state.initialized = true;
+                console.log('App initialized successfully');
 
-        console.log('App initialized successfully');
+                // Trigger app ready event
+                this.triggerEvent('app:ready');
+            })
+            .catch((error) => {
+                console.error('Failed to initialize app:', error);
+                this.showError('Failed to initialize application. Please refresh the page.');
+            });
+    },
 
-        // Trigger app ready event
-        this.triggerEvent('app:ready');
+    /**
+     * Wait for required dependencies to load
+     */
+    waitForDependencies: function() {
+        return new Promise((resolve, reject) => {
+            let attempts = 0;
+            const maxAttempts = 50; // 5 seconds max wait
+
+            const checkDependencies = () => {
+                attempts++;
+
+                const hasUtils = typeof Utils !== 'undefined';
+                const hasConstants = typeof APP_CONFIG !== 'undefined';
+                const hasDemoUsers = typeof DEMO_USERS !== 'undefined';
+
+                if (hasUtils && hasConstants && hasDemoUsers) {
+                    console.log('✅ All dependencies loaded');
+                    resolve();
+                    return;
+                }
+
+                if (attempts >= maxAttempts) {
+                    reject(new Error('Dependencies failed to load within timeout'));
+                    return;
+                }
+
+                console.log(`⏳ Waiting for dependencies... (${attempts}/${maxAttempts})`);
+                setTimeout(checkDependencies, 100);
+            };
+
+            checkDependencies();
+        });
     },
 
     /**
@@ -124,7 +161,8 @@ const App = {
 
             // Initialize Auth module
             if (typeof Auth !== 'undefined') {
-                console.log('✓ Auth module loaded');
+                Auth.init();
+                console.log('✓ Auth module initialized');
             } else {
                 throw new Error('Auth module not found');
             }
@@ -169,7 +207,9 @@ const App = {
         });
 
         window.addEventListener('online', () => {
-            Utils.UI.showNotification('Connection restored!', 'success');
+            if (typeof Utils !== 'undefined' && Utils.UI) {
+                Utils.UI.showNotification('Connection restored!', 'success');
+            }
         });
     },
 
@@ -199,7 +239,7 @@ const App = {
     getPageFromPath: function(path) {
         if (path.includes('login.html')) return 'login';
         if (path.includes('dashboard.html')) return 'dashboard';
-        if (path.includes('index.html') || path === '/') return 'home';
+        if (path.includes('index.html') || path === '/' || path.endsWith('/')) return 'home';
         return 'unknown';
     },
 
@@ -211,15 +251,24 @@ const App = {
 
         switch (page) {
             case 'login':
-                // Login page is handled by Auth module
+                // Login page initialization is handled by Auth module
+                if (typeof Auth !== 'undefined') {
+                    Auth.initLoginPage();
+                }
                 break;
 
             case 'dashboard':
-                // Initialize dashboard if module is available
+                // Initialize dashboard if module is available and user is authenticated
                 if (typeof Dashboard !== 'undefined') {
-                    Dashboard.init();
+                    if (Auth && Auth.isAuthenticated()) {
+                        Dashboard.init();
+                    } else {
+                        console.log('User not authenticated, redirecting to login');
+                        Utils.Navigation.navigateTo('login.html');
+                    }
                 } else {
                     console.error('Dashboard module not found');
+                    this.showError('Dashboard module not loaded. Please refresh the page.');
                 }
                 break;
 
@@ -229,6 +278,7 @@ const App = {
 
             default:
                 console.warn(`Unknown page: ${page}`);
+                this.initializeHomePage(); // Fallback to home page logic
                 break;
         }
     },
@@ -238,7 +288,7 @@ const App = {
      */
     initializeHomePage: function() {
         // Check if user is already authenticated
-        if (Auth.isAuthenticated()) {
+        if (Auth && Auth.isAuthenticated()) {
             // Redirect to dashboard
             Utils.Navigation.navigateTo('pages/dashboard.html');
         } else {
@@ -293,21 +343,6 @@ const App = {
     },
 
     /**
-     * Set up service worker for offline functionality
-     */
-    setupServiceWorker: function() {
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js')
-                .then(registration => {
-                    console.log('Service Worker registered:', registration);
-                })
-                .catch(error => {
-                    console.log('Service Worker registration failed:', error);
-                });
-        }
-    },
-
-    /**
      * Show error message to user
      */
     showError: function(message, duration = 8000) {
@@ -315,6 +350,7 @@ const App = {
             Utils.UI.showNotification(message, 'error', duration);
         } else {
             // Fallback error display
+            console.error('Error (Utils not available):', message);
             alert(message);
         }
     },
@@ -328,32 +364,30 @@ const App = {
         // Create or update loading overlay
         let loadingOverlay = document.getElementById('app-loading');
         if (!loadingOverlay) {
-            loadingOverlay = Utils.DOM.createElement('div', {
-                id: 'app-loading',
-                style: `
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background: rgba(255, 255, 255, 0.9);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    z-index: 9999;
-                    backdrop-filter: blur(5px);
-                `
-            });
+            loadingOverlay = document.createElement('div');
+            loadingOverlay.id = 'app-loading';
+            loadingOverlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(255, 255, 255, 0.9);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                backdrop-filter: blur(5px);
+            `;
 
-            const loadingContent = Utils.DOM.createElement('div', {
-                style: `
-                    text-align: center;
-                    padding: 2rem;
-                    background: white;
-                    border-radius: 10px;
-                    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-                `
-            });
+            const loadingContent = document.createElement('div');
+            loadingContent.style.cssText = `
+                text-align: center;
+                padding: 2rem;
+                background: white;
+                border-radius: 10px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            `;
 
             loadingContent.innerHTML = `
                 <div style="
@@ -451,8 +485,8 @@ const App = {
         console.group('🐛 App Debug Information');
         console.log('State:', this.state);
         console.log('Config:', this.config);
-        console.log('Current User:', Auth.getCurrentUser());
-        console.log('Storage Available:', Utils.Storage.isAvailable());
+        console.log('Current User:', Auth ? Auth.getCurrentUser() : 'Auth not available');
+        console.log('Storage Available:', typeof Utils !== 'undefined' ? Utils.Storage.isAvailable() : 'Utils not available');
         console.log('Browser Info:', {
             userAgent: navigator.userAgent,
             language: navigator.language,
@@ -468,13 +502,23 @@ const App = {
     reset: function() {
         if (confirm('This will clear all your data. Are you sure?')) {
             // Clear all storage
-            Utils.Storage.clear();
+            if (typeof Utils !== 'undefined') {
+                Utils.Storage.clear();
+            } else {
+                localStorage.clear();
+            }
 
             // Logout current user
-            Auth.logout();
+            if (Auth) {
+                Auth.logout();
+            }
 
             // Reload page
-            Utils.Navigation.reload();
+            if (typeof Utils !== 'undefined') {
+                Utils.Navigation.reload();
+            } else {
+                window.location.reload();
+            }
         }
     },
 
@@ -502,7 +546,7 @@ const App = {
 
         } catch (error) {
             console.error('Export error:', error);
-            Utils.UI.showNotification('Failed to export data', 'error');
+            this.showError('Failed to export data');
         }
     },
 
@@ -542,7 +586,7 @@ const App = {
 
             } catch (error) {
                 console.error('Import error:', error);
-                Utils.UI.showNotification('Failed to import data. Please check the file format.', 'error');
+                this.showError('Failed to import data. Please check the file format.');
             }
         };
 
@@ -555,7 +599,9 @@ const App = {
     checkForUpdates: function() {
         // This would typically check against a server API
         console.log('Checking for updates...');
-        Utils.UI.showNotification('You are running the latest version!', 'info');
+        if (typeof Utils !== 'undefined' && Utils.UI) {
+            Utils.UI.showNotification('You are running the latest version!', 'info');
+        }
     },
 
     /**
@@ -563,8 +609,8 @@ const App = {
      */
     getVersionInfo: function() {
         return {
-            version: APP_CONFIG.VERSION,
-            name: APP_CONFIG.APP_NAME,
+            version: typeof APP_CONFIG !== 'undefined' ? APP_CONFIG.VERSION : '1.0.0',
+            name: typeof APP_CONFIG !== 'undefined' ? APP_CONFIG.APP_NAME : 'Reminder Manager',
             initialized: this.state.initialized,
             currentPage: this.state.currentPage
         };
@@ -573,6 +619,7 @@ const App = {
 
 // Initialize app when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM Content Loaded - Initializing App...');
     App.init();
 });
 
@@ -611,8 +658,6 @@ Development Commands:
 - App.reset() - Reset all application data
 - App.exportData() - Export your data
 - App.checkForUpdates() - Check for updates
-- Auth.getCurrentUser() - Get current user info
-- Utils.Storage.get('${APP_CONFIG.STORAGE_KEYS.REMINDERS_DATA}') - View stored reminders
 
 Keyboard Shortcuts:
 - Ctrl/Cmd + Shift + D - Debug info

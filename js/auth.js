@@ -260,7 +260,9 @@ const Auth = {
      * Handle session expiry
      */
     handleSessionExpiry: function() {
-        Utils.UI.showNotification(ERROR_MESSAGES.SESSION_EXPIRED, 'error');
+        if (typeof Utils !== 'undefined' && Utils.UI) {
+            Utils.UI.showNotification(ERROR_MESSAGES.SESSION_EXPIRED, 'error');
+        }
 
         this.logout().then(() => {
             // Redirect to login if not already there
@@ -313,7 +315,6 @@ const Auth = {
         const usernameInput = Utils.DOM.getElementById('username');
         const passwordInput = Utils.DOM.getElementById('password');
         const rememberMeCheckbox = Utils.DOM.getElementById('rememberMe');
-        const loginBtn = Utils.DOM.getElementById('loginBtn');
 
         if (!loginForm) {
             console.error('Login form not found');
@@ -327,21 +328,27 @@ const Auth = {
         });
 
         // Handle Enter key in password field
-        Utils.DOM.on(passwordInput, 'keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                this.handleLoginSubmit();
-            }
-        });
+        if (passwordInput) {
+            Utils.DOM.on(passwordInput, 'keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.handleLoginSubmit();
+                }
+            });
+        }
 
         // Real-time validation
-        Utils.DOM.on(usernameInput, 'input', () => {
-            this.clearFieldError(usernameInput);
-        });
+        if (usernameInput) {
+            Utils.DOM.on(usernameInput, 'input', () => {
+                this.clearFieldError(usernameInput);
+            });
+        }
 
-        Utils.DOM.on(passwordInput, 'input', () => {
-            this.clearFieldError(passwordInput);
-        });
+        if (passwordInput) {
+            Utils.DOM.on(passwordInput, 'input', () => {
+                this.clearFieldError(passwordInput);
+            });
+        }
     },
 
     /**
@@ -516,7 +523,19 @@ const Auth = {
 
 // Initialize Auth module when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    Auth.init();
+    // Wait for dependencies to load
+    if (typeof Utils !== 'undefined' && typeof APP_CONFIG !== 'undefined') {
+        Auth.init();
+    } else {
+        // Retry after a short delay
+        setTimeout(() => {
+            if (typeof Utils !== 'undefined' && typeof APP_CONFIG !== 'undefined') {
+                Auth.init();
+            } else {
+                console.error('Required dependencies not loaded for Auth module');
+            }
+        }, 100);
+    }
 });
 
 // Make Auth available globally

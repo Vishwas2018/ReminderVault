@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reminders Vault</title>
+    <title>Reminders Vault - Modern Task Management</title>
+    <meta name="description" content="A modern, beautiful reminder and task management application">
     <link rel="stylesheet" href="css/styles.css">
     <script src="config/constants.js"></script>
     <script src="js/utils.js"></script>
@@ -12,10 +13,280 @@
 </head>
 <body>
 <div id="app">
-    <!-- Content will be loaded dynamically -->
-    <div class="loading">
-        <h2>Loading Reminders Vault...</h2>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-content">
+            <div class="app-logo">
+                <div class="logo-icon">📝</div>
+                <h1>Reminders Vault</h1>
+                <p>Modern Task Management</p>
+            </div>
+            <div class="loading-animation">
+                <div class="spinner"></div>
+                <p class="loading-text">Initializing your workspace...</p>
+            </div>
+        </div>
+
+        <!-- Floating background elements -->
+        <div class="floating-shape"></div>
+        <div class="floating-shape"></div>
+        <div class="floating-shape"></div>
     </div>
 </div>
+
+<style>
+    /* Loading Screen Styles */
+    .loading-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--primary-gradient);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        animation: fadeIn 0.5s ease-in-out;
+    }
+
+    .loading-content {
+        text-align: center;
+        color: var(--text-light);
+        position: relative;
+        z-index: 2;
+    }
+
+    .app-logo {
+        margin-bottom: var(--spacing-3xl);
+    }
+
+    .logo-icon {
+        font-size: 4rem;
+        margin-bottom: var(--spacing-lg);
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    .app-logo h1 {
+        font-size: var(--font-size-4xl);
+        font-weight: 300;
+        margin-bottom: var(--spacing-sm);
+        letter-spacing: -1px;
+        text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+    }
+
+    .app-logo p {
+        font-size: var(--font-size-lg);
+        opacity: 0.9;
+        font-weight: 400;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    .loading-animation {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--spacing-lg);
+    }
+
+    .loading-text {
+        font-size: var(--font-size-base);
+        opacity: 0.8;
+        font-weight: 500;
+        animation: fadeInOut 2s ease-in-out infinite;
+    }
+
+    .floating-shape {
+        position: absolute;
+        opacity: 0.1;
+        animation: float 6s ease-in-out infinite;
+        pointer-events: none;
+    }
+
+    .floating-shape:nth-child(1) {
+        top: 10%;
+        left: 10%;
+        width: 120px;
+        height: 120px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        animation-delay: -2s;
+    }
+
+    .floating-shape:nth-child(2) {
+        top: 20%;
+        right: 10%;
+        width: 80px;
+        height: 80px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+        animation-delay: -4s;
+    }
+
+    .floating-shape:nth-child(3) {
+        bottom: 20%;
+        left: 20%;
+        width: 150px;
+        height: 150px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 20% 80% 20% 80% / 80% 20% 80% 20%;
+    }
+
+    @keyframes fadeInOut {
+        0%, 100% { opacity: 0.8; }
+        50% { opacity: 1; }
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-30px) rotate(180deg); }
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    /* Hide loading screen when app is ready */
+    .loading-screen.hidden {
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.5s ease-out;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .app-logo h1 {
+            font-size: var(--font-size-3xl);
+        }
+
+        .logo-icon {
+            font-size: 3rem;
+        }
+
+        .floating-shape {
+            display: none;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .app-logo h1 {
+            font-size: var(--font-size-2xl);
+        }
+
+        .app-logo p {
+            font-size: var(--font-size-base);
+        }
+
+        .logo-icon {
+            font-size: 2.5rem;
+        }
+    }
+
+    /* Accessibility */
+    @media (prefers-reduced-motion: reduce) {
+        .logo-icon,
+        .loading-text,
+        .floating-shape {
+            animation: none;
+        }
+    }
+</style>
+
+<script>
+    // Enhanced initialization with better loading experience
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Index page: DOM loaded');
+
+        const loadingScreen = document.getElementById('loadingScreen');
+        const loadingText = document.querySelector('.loading-text');
+
+        // Loading messages
+        const messages = [
+            'Initializing your workspace...',
+            'Loading your preferences...',
+            'Setting up security...',
+            'Preparing dashboard...',
+            'Almost ready...'
+        ];
+
+        let messageIndex = 0;
+
+        // Cycle through loading messages
+        const messageInterval = setInterval(() => {
+            if (messageIndex < messages.length - 1) {
+                messageIndex++;
+                if (loadingText) {
+                    loadingText.textContent = messages[messageIndex];
+                }
+            }
+        }, 800);
+
+        // Hide loading screen after app is ready
+        function hideLoadingScreen() {
+            clearInterval(messageInterval);
+
+            if (loadingScreen) {
+                loadingScreen.classList.add('hidden');
+
+                // Remove loading screen from DOM after animation
+                setTimeout(() => {
+                    if (loadingScreen.parentNode) {
+                        loadingScreen.parentNode.removeChild(loadingScreen);
+                    }
+                }, 500);
+            }
+        }
+
+        // Wait for App to initialize
+        let initAttempts = 0;
+        const maxAttempts = 100; // 10 seconds max
+
+        function checkAppReady() {
+            initAttempts++;
+
+            if (typeof App !== 'undefined' && App.state && App.state.initialized) {
+                console.log('App initialized, hiding loading screen');
+                setTimeout(hideLoadingScreen, 1000); // Show success for a moment
+                return;
+            }
+
+            if (initAttempts < maxAttempts) {
+                setTimeout(checkAppReady, 100);
+            } else {
+                console.warn('App initialization timeout');
+                hideLoadingScreen();
+            }
+        }
+
+        // Start checking for app readiness
+        setTimeout(checkAppReady, 500);
+
+        // Fallback: hide loading screen after maximum time
+        setTimeout(() => {
+            if (loadingScreen && !loadingScreen.classList.contains('hidden')) {
+                console.log('Fallback: hiding loading screen after timeout');
+                hideLoadingScreen();
+            }
+        }, 10000);
+    });
+
+    // Listen for app ready event
+    document.addEventListener('app:ready', function() {
+        console.log('App ready event received');
+        const loadingScreen = document.getElementById('loadingScreen');
+        if (loadingScreen && !loadingScreen.classList.contains('hidden')) {
+            setTimeout(() => {
+                loadingScreen.classList.add('hidden');
+            }, 500);
+        }
+    });
+</script>
 </body>
 </html>

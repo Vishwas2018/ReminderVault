@@ -11,15 +11,17 @@
 <div class="dashboard-container">
     <!-- Header -->
     <header class="dashboard-header">
-        <div class="header-left">
-            <h1>Reminder Manager</h1>
-            <span id="currentDate" class="current-date"></span>
-        </div>
-        <div class="header-right">
-            <span id="welcomeMessage" class="welcome-message">Welcome back!</span>
-            <div class="user-menu">
-                <button id="profileBtn" class="profile-btn">Profile</button>
-                <button id="logoutBtn" class="logout-btn">Logout</button>
+        <div class="header-content">
+            <div class="header-left">
+                <h1>Reminder Manager</h1>
+                <span id="currentDate" class="current-date"></span>
+            </div>
+            <div class="header-right">
+                <span id="welcomeMessage" class="welcome-message">Welcome back!</span>
+                <div class="user-menu">
+                    <button id="profileBtn" class="profile-btn">Profile</button>
+                    <button id="logoutBtn" class="logout-btn">Logout</button>
+                </div>
             </div>
         </div>
     </header>
@@ -92,7 +94,9 @@
 
         <!-- Today's Schedule -->
         <section class="schedule-section">
-            <h2>Today's Schedule</h2>
+            <div class="section-header">
+                <h2>Today's Schedule</h2>
+            </div>
             <div id="todaySchedule" class="schedule-list">
                 <!-- Schedule items will be loaded here -->
             </div>
@@ -196,7 +200,7 @@
                 </div>
 
                 <div class="quick-time-buttons">
-                    <h4>Quick Time Options:</h4>
+                    <h4>⚡ Quick Time Options</h4>
                     <div class="time-buttons">
                         <button type="button" class="time-btn" data-minutes="15">15 min</button>
                         <button type="button" class="time-btn" data-minutes="30">30 min</button>
@@ -224,7 +228,7 @@
 <div id="reminderDetailsModal" class="modal" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
-            <h2 id="detailsModalTitle">Reminder Details</h2>
+            <h2 id="detailsModalTitle">📋 Reminder Details</h2>
             <span class="close">&times;</span>
         </div>
 
@@ -233,71 +237,57 @@
         </div>
 
         <div class="modal-footer">
-            <button type="button" class="btn-secondary" id="editReminderBtn">Edit</button>
-            <button type="button" class="btn-danger" id="deleteReminderBtn">Delete</button>
-            <button type="button" class="btn-primary" id="completeReminderBtn">Mark Complete</button>
+            <button type="button" class="btn btn-secondary" id="editReminderBtn">✏️ Edit</button>
+            <button type="button" class="btn btn-danger" id="deleteReminderBtn">🗑️ Delete</button>
+            <button type="button" class="btn btn-primary" id="completeReminderBtn">✅ Mark Complete</button>
         </div>
     </div>
 </div>
 
+<!-- Load scripts in proper order -->
 <script src="../config/constants.js"></script>
 <script src="../js/utils.js"></script>
 <script src="../js/auth.js"></script>
+<script src="../js/DataManager.js"></script>
+<script src="../js/NotificationsManager.js"></script>
+<script src="../js/UIManager.js"></script>
+<script src="../js/DashboardController.js"></script>
 <script src="../js/dashboard.js"></script>
 <script>
-    // Debug script - add before other scripts
-    console.log('=== DEBUG: Page loading started ===');
-
-    // Check when DOM is ready
+    // Initialize dashboard when everything is loaded
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('=== DEBUG: DOM Content Loaded ===');
+        console.log('Dashboard page: DOM loaded');
 
-        // Check if modules are loaded
-        setTimeout(function() {
-            console.log('=== DEBUG: Module Check ===');
-            console.log('Utils available:', typeof Utils !== 'undefined');
-            console.log('Auth available:', typeof Auth !== 'undefined');
-            console.log('Dashboard available:', typeof Dashboard !== 'undefined');
-            console.log('APP_CONFIG available:', typeof APP_CONFIG !== 'undefined');
-            console.log('DEMO_USERS available:', typeof DEMO_USERS !== 'undefined');
+        // Wait for all dependencies to be available
+        let initAttempts = 0;
+        const maxAttempts = 50;
 
-            // Check localStorage
-            console.log('localStorage available:', typeof Storage !== 'undefined');
+        function attemptInit() {
+            initAttempts++;
 
-            // Check current page
-            console.log('Current page:', window.location.pathname);
+            // Check if all required modules are loaded
+            if (typeof Utils !== 'undefined' &&
+                typeof Auth !== 'undefined' &&
+                typeof DataManager !== 'undefined' &&
+                typeof UIManager !== 'undefined' &&
+                typeof DashboardController !== 'undefined' &&
+                typeof Dashboard !== 'undefined' &&
+                typeof APP_CONFIG !== 'undefined') {
 
-            // If on dashboard, check auth
-            if (window.location.pathname.includes('dashboard')) {
-                if (typeof Auth !== 'undefined') {
-                    console.log('User authenticated:', Auth.isAuthenticated());
-                    console.log('Current user:', Auth.getCurrentUser());
-                }
+                console.log('All modules loaded, initializing dashboard...');
+                Dashboard.init();
+
+            } else if (initAttempts < maxAttempts) {
+                console.log(`Waiting for modules... (${initAttempts}/${maxAttempts})`);
+                setTimeout(attemptInit, 100);
+            } else {
+                console.error('Failed to load required modules within timeout');
+                alert('Failed to load application. Please refresh the page.');
             }
-        }, 200);
-    });
-
-    // Check for script errors
-    window.addEventListener('error', function(e) {
-        console.error('=== DEBUG: Script Error ===');
-        console.error('File:', e.filename);
-        console.error('Line:', e.lineno);
-        console.error('Message:', e.message);
-        console.error('Error object:', e.error);
-    });
-
-    console.log('=== DEBUG: Debug script loaded ===');
-    // Initialize dashboard
-    document.addEventListener('DOMContentLoaded', function() {
-        // Check if user is authenticated
-        if (!Auth.isAuthenticated()) {
-            window.location.href = 'login.html';
-            return;
         }
 
-        Dashboard.init();
+        attemptInit();
     });
 </script>
 </body>
 </html>
-

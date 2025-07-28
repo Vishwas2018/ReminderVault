@@ -22,7 +22,7 @@
             <div class="header-right">
                 <span id="welcomeMessage" class="welcome-message">Welcome back!</span>
                 <nav class="user-menu">
-                    <button id="logoutBtn" class="header-btn logout-btn">🚪 Logout</button>
+                    <button id="logoutBtn" class="logout-btn">🚪 Logout</button>
                 </nav>
             </div>
         </div>
@@ -30,423 +30,1633 @@
 
     <!-- Main Content -->
     <main class="dashboard-main" role="main">
-        <!-- Loading State -->
-        <div id="dashboardLoader" class="dashboard-loader">
-            <div class="loader-content">
-                <div class="loader-spinner"></div>
-                <p>Initializing your workspace...</p>
-            </div>
-        </div>
-
-        <!-- Statistics Section -->
+        <!-- Statistics Section with Clickable Cards -->
         <section class="stats-section">
             <div class="stats-grid">
-                <div class="stat-card total-reminders">
+                <button class="stat-card total-reminders clickable-stat" data-filter="all"
+                        aria-label="View all reminders">
                     <div class="stat-icon">📝</div>
                     <div class="stat-content">
                         <h3 id="totalReminders" class="stat-number">0</h3>
                         <p class="stat-label">Total Reminders</p>
                     </div>
-                </div>
-                <div class="stat-card active-reminders">
+                    <div class="click-indicator">👆 Click to view</div>
+                </button>
+
+                <button class="stat-card active-reminders clickable-stat" data-filter="active"
+                        aria-label="View active reminders">
                     <div class="stat-icon">⏰</div>
                     <div class="stat-content">
                         <h3 id="activeReminders" class="stat-number">0</h3>
                         <p class="stat-label">Active</p>
                     </div>
-                </div>
-                <div class="stat-card completed-today">
+                    <div class="click-indicator">👆 Click to view</div>
+                </button>
+
+                <button class="stat-card completed-today clickable-stat" data-filter="completed"
+                        aria-label="View completed reminders">
                     <div class="stat-icon">✅</div>
                     <div class="stat-content">
                         <h3 id="completedToday" class="stat-number">0</h3>
-                        <p class="stat-label">Completed Today</p>
+                        <p class="stat-label">Completed</p>
                     </div>
-                </div>
-                <div class="stat-card overdue">
+                    <div class="click-indicator">👆 Click to view</div>
+                </button>
+
+                <button class="stat-card overdue clickable-stat" data-filter="overdue"
+                        aria-label="View overdue reminders">
                     <div class="stat-icon">⚠️</div>
                     <div class="stat-content">
                         <h3 id="overdue" class="stat-number">0</h3>
                         <p class="stat-label">Overdue</p>
                     </div>
-                </div>
+                    <div class="click-indicator">👆 Click to view</div>
+                </button>
             </div>
         </section>
 
         <!-- Quick Actions -->
         <section class="quick-actions">
-            <h2 class="section-title">Quick Actions</h2>
+            <h2>Quick Actions</h2>
             <div class="actions-grid">
                 <button class="action-btn primary" id="addReminderBtn">
-                    ➕ Add Reminder
+                    <span class="btn-icon">➕</span>
+                    Add Reminder
                 </button>
                 <button class="action-btn secondary" id="refreshBtn">
-                    🔄 Refresh
+                    <span class="btn-icon">🔄</span>
+                    Refresh
+                </button>
+                <button class="action-btn tertiary" id="exportBtn">
+                    <span class="btn-icon">📤</span>
+                    Export
+                </button>
+                <button class="action-btn secondary" id="clearFiltersBtn" style="display: none;">
+                    <span class="btn-icon">🏠</span>
+                    Show All
                 </button>
             </div>
         </section>
 
-        <!-- Recent Reminders -->
-        <section class="recent-section">
+        <!-- Enhanced Reminders Section with Filtering -->
+        <section class="reminders-section">
             <div class="section-header">
-                <h2 class="section-title">Recent Reminders</h2>
+                <h2 id="remindersTitle">All Reminders</h2>
+                <div class="section-controls">
+                    <select id="sortBy" class="sort-select">
+                        <option value="datetime">Sort by Date</option>
+                        <option value="priority">Sort by Priority</option>
+                        <option value="title">Sort by Title</option>
+                        <option value="created">Sort by Created</option>
+                    </select>
+                    <button class="refresh-btn" id="refreshRemindersBtn">🔄</button>
+                </div>
             </div>
-            <div id="recentReminders" class="reminders-list">
-                <!-- Dynamic content -->
+
+            <!-- Filter Info Bar -->
+            <div id="filterInfo" class="filter-info" style="display: none;">
+                <span id="filterText">Showing all reminders</span>
+                <button id="clearFilterBtn" class="clear-filter-btn">✕ Clear</button>
+            </div>
+
+            <!-- Reminders List -->
+            <div id="remindersList" class="reminders-list enhanced">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+
+            <!-- Pagination -->
+            <div id="paginationContainer" class="pagination" style="display: none;">
+                <button id="prevPage" class="page-btn">← Previous</button>
+                <span id="pageInfo" class="page-info">Page 1 of 1</span>
+                <button id="nextPage" class="page-btn">Next →</button>
+            </div>
+        </section>
+
+        <!-- Today's Schedule (Unchanged) -->
+        <section class="schedule-section">
+            <div class="section-header">
+                <h2>Today's Schedule</h2>
+            </div>
+            <div id="todaySchedule" class="schedule-list">
+                <!-- Dynamic content will be inserted here -->
             </div>
         </section>
     </main>
 </div>
 
-<!-- Debug Info -->
-<div id="debugInfo" style="position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px; z-index: 9999; display: none;">
-    <div>Loading Status: <span id="debugStatus">Starting...</span></div>
-    <div>Auth Status: <span id="debugAuth">Checking...</span></div>
-    <div>DOM Ready: <span id="debugDOM">-</span></div>
+<!-- Enhanced Add Reminder Modal (unchanged) -->
+<div id="addReminderModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2><span class="label-icon">➕</span> Add New Reminder</h2>
+            <button class="close" aria-label="Close modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="addReminderForm">
+                <div class="form-group">
+                    <label for="reminderTitle">
+                        <span class="label-icon">📝</span>
+                        Title <span class="required">*</span>
+                    </label>
+                    <input type="text" id="reminderTitle" name="title" required maxlength="100"
+                           placeholder="Enter reminder title">
+                </div>
+
+                <div class="form-group">
+                    <label for="reminderDescription">
+                        <span class="label-icon">📄</span>
+                        Description
+                    </label>
+                    <textarea id="reminderDescription" name="description" rows="3" maxlength="500"
+                              placeholder="Optional details about this reminder"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="reminderDate">
+                            <span class="label-icon">📅</span>
+                            Date & Time <span class="required">*</span>
+                        </label>
+                        <input type="datetime-local" id="reminderDate" name="datetime" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reminderPriority">
+                            <span class="label-icon">⭐</span>
+                            Priority
+                        </label>
+                        <select id="reminderPriority" name="priority">
+                            <option value="1">Low 🔵</option>
+                            <option value="2" selected>Medium 🟡</option>
+                            <option value="3">High 🟠</option>
+                            <option value="4">Urgent 🔴</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="reminderCategory">
+                        <span class="label-icon">📂</span>
+                        Category
+                    </label>
+                    <select id="reminderCategory" name="category">
+                        <option value="personal" selected>Personal</option>
+                        <option value="work">Work</option>
+                        <option value="health">Health</option>
+                        <option value="finance">Finance</option>
+                        <option value="education">Education</option>
+                        <option value="social">Social</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="reminderNotification" name="notification" checked>
+                        <span class="label-icon">🔔</span>
+                        Enable notifications for this reminder
+                    </label>
+                </div>
+
+                <!-- Quick Time Buttons -->
+                <div class="quick-time-buttons">
+                    <h4><span class="label-icon">⚡</span> Quick Times</h4>
+                    <div class="time-buttons">
+                        <button type="button" class="time-btn" data-minutes="15">15m</button>
+                        <button type="button" class="time-btn" data-minutes="30">30m</button>
+                        <button type="button" class="time-btn" data-hours="1">1h</button>
+                        <button type="button" class="time-btn" data-hours="2">2h</button>
+                        <button type="button" class="time-btn" data-hours="24">Tomorrow</button>
+                        <button type="button" class="time-btn" data-hours="168">Next Week</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-cancel" onclick="closeModal('addReminderModal')">
+                Cancel
+            </button>
+            <button type="submit" form="addReminderForm" class="btn-submit">
+                <span class="btn-icon">💾</span>
+                Create Reminder
+            </button>
+        </div>
+    </div>
 </div>
 
-<!-- Emergency Console -->
-<script>
-    // Emergency debug console
-    window.debugInfo = {
-        show() {
-            document.getElementById('debugInfo').style.display = 'block';
+<!-- Enhanced Styles for New Features -->
+<style>
+    /* Clickable Statistics Cards */
+    .clickable-stat {
+        position: relative;
+        background: none;
+        border: none;
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+    }
+
+    .clickable-stat:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    }
+
+    .clickable-stat:focus {
+        outline: 3px solid var(--primary-color);
+        outline-offset: 2px;
+    }
+
+    .clickable-stat:active {
+        transform: translateY(-4px) scale(0.98);
+    }
+
+    .click-indicator {
+        position: absolute;
+        bottom: 8px;
+        right: 12px;
+        font-size: 0.75rem;
+        opacity: 0;
+        color: var(--text-secondary);
+        transition: opacity 0.3s ease;
+        font-weight: 500;
+    }
+
+    .clickable-stat:hover .click-indicator {
+        opacity: 1;
+    }
+
+    /* Enhanced Reminders Section */
+    .reminders-section {
+        margin-bottom: var(--spacing-xl);
+    }
+
+    .section-controls {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+    }
+
+    .sort-select {
+        padding: var(--spacing-sm) var(--spacing-md);
+        border: 2px solid var(--border-color);
+        border-radius: var(--radius-md);
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        font-size: var(--font-size-sm);
+        cursor: pointer;
+        transition: all var(--transition-fast);
+    }
+
+    .sort-select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    /* Filter Info Bar */
+    .filter-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--spacing-md);
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        border-radius: var(--radius-md);
+        margin-bottom: var(--spacing-md);
+        animation: slideInDown 0.3s ease;
+    }
+
+    .clear-filter-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        padding: var(--spacing-xs) var(--spacing-sm);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        transition: all var(--transition-fast);
+    }
+
+    .clear-filter-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.05);
+    }
+
+    /* Enhanced Reminders List */
+    .reminders-list.enhanced {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+
+    .reminder-item.enhanced {
+        display: grid;
+        grid-template-columns: auto 1fr auto auto;
+        gap: var(--spacing-md);
+        padding: var(--spacing-lg);
+        background: var(--bg-primary);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-lg);
+        margin-bottom: var(--spacing-sm);
+        transition: all var(--transition-normal);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .reminder-item.enhanced::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: var(--primary-color);
+        transition: width var(--transition-fast);
+    }
+
+    .reminder-item.enhanced:hover {
+        transform: translateX(4px);
+        box-shadow: var(--shadow-lg);
+        border-color: var(--primary-color);
+    }
+
+    .reminder-item.enhanced:hover::before {
+        width: 8px;
+    }
+
+    .reminder-priority-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-top: 2px;
+    }
+
+    .reminder-details {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-xs);
+    }
+
+    .reminder-title-enhanced {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: var(--font-size-base);
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+    }
+
+    .reminder-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--spacing-md);
+        font-size: var(--font-size-sm);
+        color: var(--text-secondary);
+    }
+
+    .reminder-description {
+        font-size: var(--font-size-sm);
+        color: var(--text-secondary);
+        margin-top: var(--spacing-xs);
+        font-style: italic;
+    }
+
+    .reminder-badges {
+        display: flex;
+        gap: var(--spacing-xs);
+        align-items: center;
+    }
+
+    .badge {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        border-radius: var(--radius-sm);
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .badge-priority-low { background: rgba(33, 150, 243, 0.1); color: #1976D2; }
+    .badge-priority-medium { background: rgba(255, 152, 0, 0.1); color: #F57C00; }
+    .badge-priority-high { background: rgba(255, 87, 34, 0.1); color: #E64A19; }
+    .badge-priority-urgent { background: rgba(244, 67, 54, 0.1); color: #D32F2F; }
+
+    .badge-category { background: rgba(76, 175, 80, 0.1); color: #388E3C; }
+
+    .badge-status-active { background: rgba(33, 150, 243, 0.1); color: #1976D2; }
+    .badge-status-completed { background: rgba(76, 175, 80, 0.1); color: #388E3C; }
+    .badge-status-overdue { background: rgba(244, 67, 54, 0.1); color: #D32F2F; }
+
+    .reminder-actions-enhanced {
+        display: flex;
+        gap: var(--spacing-xs);
+        align-items: center;
+    }
+
+    .action-btn-small {
+        width: 36px;
+        height: 36px;
+        border: none;
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all var(--transition-fast);
+        font-size: var(--font-size-lg);
+    }
+
+    .action-btn-complete {
+        background: var(--success-gradient);
+        color: white;
+    }
+
+    .action-btn-delete {
+        background: var(--danger-gradient);
+        color: white;
+    }
+
+    .action-btn-small:hover {
+        transform: scale(1.1);
+        box-shadow: var(--shadow-md);
+    }
+
+    /* Pagination */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: var(--spacing-md);
+        margin-top: var(--spacing-lg);
+        padding: var(--spacing-md);
+    }
+
+    .page-btn {
+        padding: var(--spacing-sm) var(--spacing-md);
+        background: var(--bg-primary);
+        border: 2px solid var(--border-color);
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        transition: all var(--transition-fast);
+        font-weight: 500;
+    }
+
+    .page-btn:hover:not(:disabled) {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+        transform: translateY(-1px);
+    }
+
+    .page-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .page-info {
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    /* Empty State Enhancement */
+    .empty-state-enhanced {
+        text-align: center;
+        padding: var(--spacing-3xl);
+        color: var(--text-muted);
+        background: var(--bg-secondary);
+        border-radius: var(--radius-lg);
+        border: 2px dashed var(--border-color);
+    }
+
+    .empty-state-enhanced .empty-icon {
+        font-size: 3rem;
+        margin-bottom: var(--spacing-lg);
+        opacity: 0.5;
+    }
+
+    .empty-state-enhanced h3 {
+        color: var(--text-secondary);
+        font-size: var(--font-size-xl);
+        margin-bottom: var(--spacing-md);
+    }
+
+    .empty-state-enhanced p {
+        font-size: var(--font-size-base);
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .empty-state-action {
+        padding: var(--spacing-md) var(--spacing-xl);
+        background: var(--primary-gradient);
+        color: white;
+        border: none;
+        border-radius: var(--radius-lg);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all var(--transition-normal);
+    }
+
+    .empty-state-action:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    /* Animations */
+    @keyframes slideInDown {
+        from {
+            transform: translateY(-20px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .reminder-item.enhanced {
+            grid-template-columns: auto 1fr;
+            gap: var(--spacing-sm);
+        }
+
+        .reminder-actions-enhanced {
+            grid-column: 1 / -1;
+            justify-content: flex-end;
+            margin-top: var(--spacing-sm);
+        }
+
+        .section-controls {
+            flex-direction: column;
+            align-items: stretch;
+            gap: var(--spacing-sm);
+        }
+
+        .filter-info {
+            flex-direction: column;
+            gap: var(--spacing-sm);
+            text-align: center;
+        }
+    }
+</style>
+
+<!-- Enhanced Dashboard Script with Full Functionality -->
+<script type="module">
+    // ===== ENHANCED DASHBOARD CONTROLLER =====
+
+    // Constants
+    const REMINDER_STATUS = {
+        ACTIVE: 'active',
+        COMPLETED: 'completed',
+        OVERDUE: 'overdue'
+    };
+
+    const REMINDER_PRIORITIES = { LOW: 1, MEDIUM: 2, HIGH: 3, URGENT: 4 };
+
+    const ITEMS_PER_PAGE = 10;
+
+    const SAMPLE_DATA = {
+        reminders: [
+            {
+                id: 1,
+                title: 'Team meeting with product team',
+                description: 'Discuss quarterly roadmap and feature priorities for Q2',
+                datetime: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+                category: 'work',
+                priority: REMINDER_PRIORITIES.HIGH,
+                status: REMINDER_STATUS.ACTIVE,
+                notification: true,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            },
+            {
+                id: 2,
+                title: 'Doctor appointment',
+                description: 'Annual checkup with Dr. Smith - bring insurance card',
+                datetime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                category: 'health',
+                priority: REMINDER_PRIORITIES.MEDIUM,
+                status: REMINDER_STATUS.ACTIVE,
+                notification: true,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            },
+            {
+                id: 3,
+                title: 'Buy groceries',
+                description: 'Weekly grocery shopping - check pantry first',
+                datetime: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+                category: 'personal',
+                priority: REMINDER_PRIORITIES.LOW,
+                status: REMINDER_STATUS.OVERDUE,
+                notification: true,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            },
+            {
+                id: 4,
+                title: 'Submit expense report',
+                description: 'Q1 expenses deadline is today',
+                datetime: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+                category: 'work',
+                priority: REMINDER_PRIORITIES.URGENT,
+                status: REMINDER_STATUS.OVERDUE,
+                notification: true,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            },
+            {
+                id: 5,
+                title: 'Call Mom',
+                description: '',
+                datetime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+                category: 'personal',
+                priority: REMINDER_PRIORITIES.MEDIUM,
+                status: REMINDER_STATUS.COMPLETED,
+                notification: true,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+            },
+            {
+                id: 6,
+                title: 'Review quarterly budget',
+                description: 'Analyze spending patterns and adjust for Q2',
+                datetime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+                category: 'finance',
+                priority: REMINDER_PRIORITIES.HIGH,
+                status: REMINDER_STATUS.ACTIVE,
+                notification: true,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            }
+        ],
+        schedule: [
+            { id: 1, time: '09:00', title: 'Daily standup', description: 'Team sync meeting' },
+            { id: 2, time: '11:30', title: 'Client presentation', description: 'Present new features' },
+            { id: 3, time: '14:00', title: 'Code review', description: 'Review pull requests' },
+            { id: 4, time: '16:30', title: 'Sprint planning', description: 'Plan next sprint' }
+        ]
+    };
+
+    // Storage utility
+    const Storage = {
+        get: (key, defaultValue = null) => {
+            try {
+                const item = localStorage.getItem(key);
+                return item ? JSON.parse(item) : defaultValue;
+            } catch {
+                return defaultValue;
+            }
         },
-        hide() {
-            document.getElementById('debugInfo').style.display = 'none';
-        },
-        update(key, value) {
-            const element = document.getElementById(`debug${key}`);
-            if (element) element.textContent = value;
+        set: (key, value) => {
+            try {
+                localStorage.setItem(key, JSON.stringify(value));
+                return true;
+            } catch {
+                return false;
+            }
         }
     };
 
-    // Show debug by default
-    debugInfo.show();
-    debugInfo.update('Status', 'Script loaded');
-    debugInfo.update('DOM', document.readyState);
+    // Enhanced Dashboard Controller
+    class EnhancedDashboardController {
+        constructor() {
+            this.reminders = [];
+            this.schedule = [];
+            this.currentUser = null;
+            this.nextId = 7;
 
-    console.log('🚀 Emergency dashboard script loaded');
-</script>
-
-<!-- Load scripts in strict order with error handling -->
-<script>
-    let scriptsLoaded = 0;
-    const requiredScripts = [
-        '../js/utils.js',
-        '../js/auth.js',
-        '../js/DataManager.js',
-        '../js/UIManager.js',
-        '../js/NotificationsManager.js'
-    ];
-
-    function loadScript(src, callback) {
-        const script = document.createElement('script');
-        script.src = src;
-        script.onload = () => {
-            console.log(`✅ Loaded: ${src}`);
-            scriptsLoaded++;
-            debugInfo.update('Status', `Scripts: ${scriptsLoaded}/${requiredScripts.length}`);
-            callback();
-        };
-        script.onerror = () => {
-            console.warn(`⚠️ Failed to load: ${src}`);
-            scriptsLoaded++;
-            callback(); // Continue anyway
-        };
-        document.head.appendChild(script);
-    }
-
-    function loadScriptsSequentially(scripts, index = 0) {
-        if (index >= scripts.length) {
-            console.log('📦 All scripts processed, loading dashboard...');
-            loadDashboard();
-            return;
+            // Filter and pagination state
+            this.currentFilter = 'all';
+            this.currentPage = 1;
+            this.sortBy = 'datetime';
+            this.filteredReminders = [];
         }
 
-        loadScript(scripts[index], () => {
-            loadScriptsSequentially(scripts, index + 1);
-        });
-    }
+        async init() {
+            console.log('🚀 Initializing Enhanced Dashboard...');
 
-    function loadDashboard() {
-        const script = document.createElement('script');
-        script.textContent = `
-        ${getDashboardCode()}
-    `;
-        document.head.appendChild(script);
-    }
+            try {
+                if (!this.checkAuth()) return;
 
-    function getDashboardCode() {
-        return \`
-// Inline Dashboard Controller
-const Dashboard = {
-    init() {
-        console.log('🚀 Dashboard starting...');
-        debugInfo.update('Status', 'Dashboard starting');
+                await this.loadData();
+                this.setupEventHandlers();
+                this.updateDateTime();
+                this.renderDashboard();
 
-        try {
-            // Check auth
-            const authOk = this.checkAuth();
-            debugInfo.update('Auth', authOk ? 'OK' : 'Failed');
+                // Auto-refresh every minute
+                setInterval(() => {
+                    this.updateDateTime();
+                    this.updateOverdueReminders();
+                }, 60000);
 
-            if (!authOk) return;
-
-            // Hide loader
-            this.hideLoader();
-
-            // Load demo data
-            this.loadDemoData();
-
-            // Setup events
-            this.setupEvents();
-
-            console.log('✅ Dashboard ready');
-            debugInfo.update('Status', 'Ready');
-
-        } catch (error) {
-            console.error('❌ Dashboard error:', error);
-            debugInfo.update('Status', 'Error: ' + error.message);
-            this.showError(error.message);
+                console.log('✅ Enhanced Dashboard initialized successfully');
+            } catch (error) {
+                console.error('❌ Dashboard initialization failed:', error);
+                this.showNotification('Failed to initialize dashboard', 'error');
+            }
         }
-    },
 
-    checkAuth() {
-        // Simple auth check
-        const hasAuth = typeof Auth !== 'undefined';
+        checkAuth() {
+            const session = Storage.get('user_session');
 
-        if (hasAuth && Auth.isAuthenticated) {
-            const isAuth = Auth.isAuthenticated();
-            if (!isAuth) {
-                console.log('Not authenticated, redirecting...');
+            if (!session?.username) {
+                console.log('No valid session, redirecting to login...');
                 setTimeout(() => window.location.href = 'login.html', 1000);
                 return false;
             }
 
-            const user = Auth.getCurrentUser?.();
-            if (user) {
-                const welcome = document.getElementById('welcomeMessage');
-                if (welcome) {
-                    welcome.textContent = \`Welcome back, \${user.profile?.firstName || user.username}!\`;
-                }
-            }
+            this.currentUser = session;
+            this.updateWelcomeMessage();
             return true;
         }
 
-        // No auth system, continue for demo
-        console.warn('No auth system found, continuing...');
-        return true;
-    },
+        async loadData() {
+            const storedReminders = Storage.get('reminders_data');
 
-    hideLoader() {
-        const loader = document.getElementById('dashboardLoader');
-        if (loader) {
-            loader.style.display = 'none';
-            console.log('Loader hidden');
-        }
-    },
-
-    loadDemoData() {
-        // Demo stats
-        this.updateStats({
-            total: 5,
-            active: 3,
-            completed: 1,
-            overdue: 1
-        });
-
-        // Demo reminders
-        const mockReminders = [
-            {
-                id: 1,
-                title: 'Team Meeting',
-                datetime: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-                priority: 3,
-                status: 'active'
-            },
-            {
-                id: 2,
-                title: 'Doctor Appointment',
-                datetime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-                priority: 2,
-                status: 'active'
-            },
-            {
-                id: 3,
-                title: 'Buy Groceries',
-                datetime: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-                priority: 1,
-                status: 'overdue'
+            if (storedReminders?.length > 0) {
+                this.reminders = storedReminders;
+            } else {
+                this.reminders = [...SAMPLE_DATA.reminders];
+                this.saveReminders();
             }
-        ];
 
-        this.updateReminders(mockReminders);
-        this.updateDateTime();
-    },
+            this.schedule = [...SAMPLE_DATA.schedule];
+            this.applyFilters();
 
-    updateStats(stats) {
-        const elements = {
-            totalReminders: document.getElementById('totalReminders'),
-            activeReminders: document.getElementById('activeReminders'),
-            completedToday: document.getElementById('completedToday'),
-            overdue: document.getElementById('overdue')
-        };
+            console.log(`📊 Loaded ${this.reminders.length} reminders`);
+        }
 
-        Object.entries(stats).forEach(([key, value]) => {
-            const element = elements[key];
-            if (element) {
-                element.textContent = value;
+        saveReminders() {
+            Storage.set('reminders_data', this.reminders);
+        }
+
+        setupEventHandlers() {
+            // Statistics card click handlers
+            document.querySelectorAll('.clickable-stat').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    const filter = e.currentTarget.dataset.filter;
+                    this.setFilter(filter);
+                });
+            });
+
+            // Sort handler
+            document.getElementById('sortBy')?.addEventListener('change', (e) => {
+                this.sortBy = e.target.value;
+                this.applyFilters();
+                this.renderReminders();
+            });
+
+            // Clear filter handlers
+            document.getElementById('clearFilterBtn')?.addEventListener('click', () => {
+                this.clearFilters();
+            });
+
+            document.getElementById('clearFiltersBtn')?.addEventListener('click', () => {
+                this.clearFilters();
+            });
+
+            // Existing handlers
+            document.getElementById('logoutBtn')?.addEventListener('click', () => {
+                this.handleLogout();
+            });
+
+            document.getElementById('addReminderBtn')?.addEventListener('click', () => {
+                this.showAddReminderModal();
+            });
+
+            document.getElementById('refreshBtn')?.addEventListener('click', () => {
+                this.refreshDashboard();
+            });
+
+            document.getElementById('refreshRemindersBtn')?.addEventListener('click', () => {
+                this.refreshDashboard();
+            });
+
+            document.getElementById('exportBtn')?.addEventListener('click', () => {
+                this.exportData();
+            });
+
+            // Pagination handlers
+            document.getElementById('prevPage')?.addEventListener('click', () => {
+                if (this.currentPage > 1) {
+                    this.currentPage--;
+                    this.renderReminders();
+                }
+            });
+
+            document.getElementById('nextPage')?.addEventListener('click', () => {
+                const totalPages = Math.ceil(this.filteredReminders.length / ITEMS_PER_PAGE);
+                if (this.currentPage < totalPages) {
+                    this.currentPage++;
+                    this.renderReminders();
+                }
+            });
+
+            this.setupModalHandlers();
+            this.setupFormHandlers();
+        }
+
+        setFilter(filter) {
+            this.currentFilter = filter;
+            this.currentPage = 1;
+            this.applyFilters();
+            this.updateFilterInfo();
+            this.renderReminders();
+            this.updateStatistics(); // Refresh to show active state
+        }
+
+        clearFilters() {
+            this.currentFilter = 'all';
+            this.currentPage = 1;
+            this.applyFilters();
+            this.updateFilterInfo();
+            this.renderReminders();
+            this.updateStatistics();
+        }
+
+        applyFilters() {
+            let filtered = [...this.reminders];
+
+            // Apply status filter
+            switch (this.currentFilter) {
+                case 'active':
+                    filtered = filtered.filter(r => r.status === REMINDER_STATUS.ACTIVE);
+                    break;
+                case 'completed':
+                    filtered = filtered.filter(r => r.status === REMINDER_STATUS.COMPLETED);
+                    break;
+                case 'overdue':
+                    filtered = filtered.filter(r => r.status === REMINDER_STATUS.OVERDUE);
+                    break;
+                case 'all':
+                default:
+                    // No filtering for 'all'
+                    break;
             }
-        });
-    },
 
-    updateReminders(reminders) {
-        const container = document.getElementById('recentReminders');
-        if (!container) return;
+            // Apply sorting
+            filtered.sort((a, b) => {
+                switch (this.sortBy) {
+                    case 'priority':
+                        return b.priority - a.priority; // High priority first
+                    case 'title':
+                        return a.title.localeCompare(b.title);
+                    case 'created':
+                        return new Date(b.createdAt) - new Date(a.createdAt);
+                    case 'datetime':
+                    default:
+                        return new Date(a.datetime) - new Date(b.datetime);
+                }
+            });
 
-        if (reminders.length === 0) {
-            container.innerHTML = \`
-                <div class="empty-state">
-                    <div class="empty-state-icon">📝</div>
-                    <h3>No reminders found</h3>
-                    <p>Create your first reminder!</p>
-                </div>
-            \`;
-            return;
+            this.filteredReminders = filtered;
         }
 
-        const html = reminders.map(reminder => \`
-            <div class="reminder-item \${reminder.status}" onclick="Dashboard.completeReminder(\${reminder.id})">
-                <div class="reminder-status \${reminder.status}"></div>
-                <div class="reminder-content">
-                    <div class="reminder-title">
-                        \${this.getPriorityIcon(reminder.priority)} \${reminder.title}
-                    </div>
-                    <div class="reminder-time">
-                        \${this.formatTime(reminder.datetime)}
-                    </div>
-                </div>
-                <div class="reminder-actions">
-                    <button class="reminder-action">✓</button>
-                </div>
-            </div>
-        \`).join('');
+        updateFilterInfo() {
+            const filterInfo = document.getElementById('filterInfo');
+            const filterText = document.getElementById('filterText');
+            const clearFiltersBtn = document.getElementById('clearFiltersBtn');
 
-        container.innerHTML = html;
-    },
+            if (this.currentFilter === 'all') {
+                filterInfo.style.display = 'none';
+                clearFiltersBtn.style.display = 'none';
+            } else {
+                filterInfo.style.display = 'flex';
+                clearFiltersBtn.style.display = 'block';
 
-    updateDateTime() {
-        const dateElement = document.getElementById('currentDate');
-        if (dateElement) {
-            const now = new Date();
-            const options = {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            };
-            dateElement.textContent = now.toLocaleDateString('en-US', options);
+                const filterNames = {
+                    active: 'Active Reminders',
+                    completed: 'Completed Reminders',
+                    overdue: 'Overdue Reminders'
+                };
+
+                filterText.textContent = `Showing ${this.filteredReminders.length} ${filterNames[this.currentFilter]}`;
+            }
+
+            // Update title
+            const titleElement = document.getElementById('remindersTitle');
+            if (titleElement) {
+                const titles = {
+                    all: 'All Reminders',
+                    active: 'Active Reminders',
+                    completed: 'Completed Reminders',
+                    overdue: 'Overdue Reminders'
+                };
+                titleElement.textContent = titles[this.currentFilter];
+            }
         }
-    },
 
-    setupEvents() {
-        // Logout
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) {
-            logoutBtn.onclick = () => {
-                if (confirm('Logout?')) {
-                    if (typeof Auth !== 'undefined' && Auth.logout) {
-                        Auth.logout();
+        setupModalHandlers() {
+            // Close modal on overlay click
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        this.closeModal(modal.id);
                     }
-                    window.location.href = 'login.html';
+                });
+            });
+
+            // Close modal on close button click
+            document.querySelectorAll('.close').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const modal = e.target.closest('.modal');
+                    if (modal) this.closeModal(modal.id);
+                });
+            });
+
+            // Escape key to close modal
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    const openModal = document.querySelector('.modal[style*="flex"]');
+                    if (openModal) this.closeModal(openModal.id);
+                }
+            });
+        }
+
+        setupFormHandlers() {
+            const form = document.getElementById('addReminderForm');
+            if (!form) return;
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleAddReminder();
+            });
+
+            // Quick time buttons
+            document.querySelectorAll('.time-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    this.setQuickTime(btn);
+                });
+            });
+
+            // Real-time validation
+            const titleInput = document.getElementById('reminderTitle');
+            titleInput?.addEventListener('input', () => {
+                this.validateTitle(titleInput.value);
+            });
+        }
+
+        updateDateTime() {
+            const dateElement = document.getElementById('currentDate');
+            if (dateElement) {
+                const now = new Date();
+                const options = {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                };
+                dateElement.textContent = now.toLocaleDateString('en-US', options);
+            }
+        }
+
+        updateWelcomeMessage() {
+            const welcomeElement = document.getElementById('welcomeMessage');
+            if (welcomeElement && this.currentUser) {
+                const name = this.currentUser.profile?.firstName || this.currentUser.username || 'User';
+                welcomeElement.textContent = `Welcome back, ${name}!`;
+            }
+        }
+
+        renderDashboard() {
+            this.updateStatistics();
+            this.renderReminders();
+            this.renderTodaySchedule();
+            this.updateFilterInfo();
+        }
+
+        updateStatistics() {
+            const stats = this.calculateStatistics();
+
+            this.animateCounter('totalReminders', stats.total);
+            this.animateCounter('activeReminders', stats.active);
+            this.animateCounter('completedToday', stats.completedToday);
+            this.animateCounter('overdue', stats.overdue);
+
+            // Update active state for stat cards
+            this.updateStatCardStates();
+        }
+
+        updateStatCardStates() {
+            document.querySelectorAll('.clickable-stat').forEach(card => {
+                const filter = card.dataset.filter;
+                if (filter === this.currentFilter) {
+                    card.classList.add('active');
+                    card.style.transform = 'scale(1.05)';
+                    card.style.boxShadow = '0 15px 30px rgba(102, 126, 234, 0.3)';
+                } else {
+                    card.classList.remove('active');
+                    card.style.transform = '';
+                    card.style.boxShadow = '';
+                }
+            });
+        }
+
+        calculateStatistics() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            return {
+                total: this.reminders.length,
+                active: this.reminders.filter(r => r.status === REMINDER_STATUS.ACTIVE).length,
+                completedToday: this.reminders.filter(r =>
+                    r.status === REMINDER_STATUS.COMPLETED &&
+                    new Date(r.updatedAt) >= today &&
+                    new Date(r.updatedAt) < tomorrow
+                ).length,
+                overdue: this.reminders.filter(r => r.status === REMINDER_STATUS.OVERDUE).length
+            };
+        }
+
+        animateCounter(elementId, targetValue) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+
+            const currentValue = parseInt(element.textContent) || 0;
+            const difference = targetValue - currentValue;
+            const duration = 500;
+            const startTime = performance.now();
+
+            const animate = (currentTime) => {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const currentNumber = Math.round(currentValue + (difference * progress));
+
+                element.textContent = currentNumber;
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
                 }
             };
+
+            requestAnimationFrame(animate);
         }
 
-        // Add reminder (placeholder)
-        const addBtn = document.getElementById('addReminderBtn');
-        if (addBtn) {
-            addBtn.onclick = () => {
-                alert('Add reminder modal would open here. Feature coming soon!');
+        renderReminders() {
+            const container = document.getElementById('remindersList');
+            if (!container) return;
+
+            if (this.filteredReminders.length === 0) {
+                this.renderEmptyState(container);
+                this.hidePagination();
+                return;
+            }
+
+            // Calculate pagination
+            const totalPages = Math.ceil(this.filteredReminders.length / ITEMS_PER_PAGE);
+            const startIndex = (this.currentPage - 1) * ITEMS_PER_PAGE;
+            const endIndex = startIndex + ITEMS_PER_PAGE;
+            const pageReminders = this.filteredReminders.slice(startIndex, endIndex);
+
+            // Render reminders
+            const html = pageReminders.map(reminder => this.renderReminderItem(reminder)).join('');
+            container.innerHTML = html;
+
+            // Setup click handlers for action buttons
+            this.setupReminderActionHandlers();
+
+            // Update pagination
+            this.updatePagination(totalPages);
+        }
+
+        renderReminderItem(reminder) {
+            return `
+            <div class="reminder-item enhanced" data-id="${reminder.id}">
+                <div class="reminder-priority-indicator"
+                     style="background-color: ${this.getPriorityColor(reminder.priority)}"></div>
+
+                <div class="reminder-details">
+                    <div class="reminder-title-enhanced">
+                        ${this.getPriorityIcon(reminder.priority)}
+                        ${this.escapeHtml(reminder.title)}
+                    </div>
+
+                    <div class="reminder-meta">
+                        <span class="reminder-time">
+                            <strong>Due:</strong> ${this.formatReminderTime(reminder.datetime)}
+                        </span>
+                        <span class="reminder-created">
+                            <strong>Created:</strong> ${this.formatDate(reminder.createdAt)}
+                        </span>
+                    </div>
+
+                    ${reminder.description ? `
+                        <div class="reminder-description">
+                            ${this.escapeHtml(reminder.description)}
+                        </div>
+                    ` : ''}
+                </div>
+
+                <div class="reminder-badges">
+                    <span class="badge badge-priority-${this.getPriorityName(reminder.priority)}">
+                        ${this.getPriorityName(reminder.priority).toUpperCase()}
+                    </span>
+                    <span class="badge badge-category">
+                        ${reminder.category.toUpperCase()}
+                    </span>
+                    <span class="badge badge-status-${reminder.status}">
+                        ${reminder.status.toUpperCase()}
+                    </span>
+                </div>
+
+                <div class="reminder-actions-enhanced">
+                    ${reminder.status !== REMINDER_STATUS.COMPLETED ? `
+                        <button class="action-btn-small action-btn-complete"
+                                data-id="${reminder.id}"
+                                title="Mark as complete">
+                            ✅
+                        </button>
+                    ` : ''}
+                    <button class="action-btn-small action-btn-delete"
+                            data-id="${reminder.id}"
+                            title="Delete reminder">
+                        🗑️
+                    </button>
+                </div>
+            </div>
+        `;
+        }
+
+        renderEmptyState(container) {
+            const emptyStates = {
+                all: {
+                    icon: '📝',
+                    title: 'No reminders found',
+                    message: 'Create your first reminder to get started!',
+                    showAction: true
+                },
+                active: {
+                    icon: '🎉',
+                    title: 'No active reminders',
+                    message: 'All caught up! You have no active reminders.',
+                    showAction: true
+                },
+                completed: {
+                    icon: '✅',
+                    title: 'No completed reminders',
+                    message: 'Complete some reminders to see them here.',
+                    showAction: false
+                },
+                overdue: {
+                    icon: '🎯',
+                    title: 'No overdue reminders',
+                    message: 'Great job! You\'re all caught up with your reminders.',
+                    showAction: false
+                }
             };
+
+            const state = emptyStates[this.currentFilter] || emptyStates.all;
+
+            container.innerHTML = `
+            <div class="empty-state-enhanced">
+                <div class="empty-icon">${state.icon}</div>
+                <h3>${state.title}</h3>
+                <p>${state.message}</p>
+                ${state.showAction ? `
+                    <button class="empty-state-action" onclick="dashboard.showAddReminderModal()">
+                        ➕ Add Your First Reminder
+                    </button>
+                ` : ''}
+            </div>
+        `;
         }
 
-        // Refresh
-        const refreshBtn = document.getElementById('refreshBtn');
-        if (refreshBtn) {
-            refreshBtn.onclick = () => {
-                this.loadDemoData();
-                this.showNotification('Dashboard refreshed!', 'success');
+        setupReminderActionHandlers() {
+            // Complete buttons
+            document.querySelectorAll('.action-btn-complete').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = parseInt(btn.dataset.id);
+                    this.completeReminder(id);
+                });
+            });
+
+            // Delete buttons
+            document.querySelectorAll('.action-btn-delete').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = parseInt(btn.dataset.id);
+                    this.deleteReminder(id);
+                });
+            });
+        }
+
+        updatePagination(totalPages) {
+            const paginationContainer = document.getElementById('paginationContainer');
+            const prevBtn = document.getElementById('prevPage');
+            const nextBtn = document.getElementById('nextPage');
+            const pageInfo = document.getElementById('pageInfo');
+
+            if (totalPages <= 1) {
+                this.hidePagination();
+                return;
+            }
+
+            paginationContainer.style.display = 'flex';
+
+            prevBtn.disabled = this.currentPage === 1;
+            nextBtn.disabled = this.currentPage === totalPages;
+
+            pageInfo.textContent = `Page ${this.currentPage} of ${totalPages}`;
+        }
+
+        hidePagination() {
+            const paginationContainer = document.getElementById('paginationContainer');
+            if (paginationContainer) {
+                paginationContainer.style.display = 'none';
+            }
+        }
+
+        renderTodaySchedule() {
+            const container = document.getElementById('todaySchedule');
+            if (!container) return;
+
+            if (this.schedule.length === 0) {
+                container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📅</div>
+                    <h3>No schedule items</h3>
+                    <p>Your schedule is clear for today!</p>
+                </div>
+            `;
+                return;
+            }
+
+            const html = this.schedule.map(item => `
+            <div class="schedule-item">
+                <div class="schedule-time">${item.time}</div>
+                <div class="schedule-content">
+                    <div class="schedule-title">${this.escapeHtml(item.title)}</div>
+                    <div class="schedule-description">${this.escapeHtml(item.description)}</div>
+                </div>
+            </div>
+        `).join('');
+
+            container.innerHTML = html;
+        }
+
+        showAddReminderModal() {
+            const modal = document.getElementById('addReminderModal');
+            if (!modal) return;
+
+            // Reset form
+            const form = document.getElementById('addReminderForm');
+            if (form) form.reset();
+
+            // Set default datetime (1 hour from now)
+            const defaultTime = new Date();
+            defaultTime.setHours(defaultTime.getHours() + 1);
+            const datetimeInput = document.getElementById('reminderDate');
+            if (datetimeInput) {
+                datetimeInput.value = defaultTime.toISOString().slice(0, 16);
+            }
+
+            modal.style.display = 'flex';
+
+            // Focus title input
+            setTimeout(() => {
+                document.getElementById('reminderTitle')?.focus();
+            }, 100);
+        }
+
+        closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        setQuickTime(button) {
+            const minutes = parseInt(button.dataset.minutes) || 0;
+            const hours = parseInt(button.dataset.hours) || 0;
+
+            const now = new Date();
+            now.setMinutes(now.getMinutes() + minutes);
+            now.setHours(now.getHours() + hours);
+
+            const datetimeInput = document.getElementById('reminderDate');
+            if (datetimeInput) {
+                datetimeInput.value = now.toISOString().slice(0, 16);
+            }
+
+            // Visual feedback
+            document.querySelectorAll('.time-btn').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+        }
+
+        validateTitle(title) {
+            const titleInput = document.getElementById('reminderTitle');
+            if (!titleInput) return;
+
+            if (title.trim().length === 0) {
+                titleInput.classList.add('error');
+                return false;
+            } else {
+                titleInput.classList.remove('error');
+                return true;
+            }
+        }
+
+        async handleAddReminder() {
+            const form = document.getElementById('addReminderForm');
+            if (!form) return;
+
+            const formData = new FormData(form);
+            const reminderData = {
+                id: this.nextId++,
+                title: formData.get('title')?.trim(),
+                description: formData.get('description')?.trim(),
+                datetime: formData.get('datetime'),
+                category: formData.get('category'),
+                priority: parseInt(formData.get('priority')),
+                notification: formData.get('notification') === 'on',
+                status: REMINDER_STATUS.ACTIVE,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
             };
+
+            // Validate
+            if (!reminderData.title) {
+                this.showNotification('Title is required', 'error');
+                return;
+            }
+
+            if (!reminderData.datetime) {
+                this.showNotification('Date and time is required', 'error');
+                return;
+            }
+
+            // Check if date is in the past
+            if (new Date(reminderData.datetime) <= new Date()) {
+                reminderData.status = REMINDER_STATUS.OVERDUE;
+            }
+
+            // Add to reminders
+            this.reminders.push(reminderData);
+            this.saveReminders();
+
+            // Close modal and refresh
+            this.closeModal('addReminderModal');
+            this.applyFilters();
+            this.renderDashboard();
+            this.showNotification('Reminder created successfully!', 'success');
+
+            console.log('✅ Reminder created:', reminderData.title);
         }
-    },
 
-    completeReminder(id) {
-        console.log('Completing reminder:', id);
-        this.showNotification('Reminder completed!', 'success');
-        // Reload demo data
-        setTimeout(() => this.loadDemoData(), 500);
-    },
+        completeReminder(id) {
+            const reminder = this.reminders.find(r => r.id === id);
+            if (!reminder) return;
 
-    getPriorityIcon(priority) {
-        const icons = { 1: '🔵', 2: '🟡', 3: '🟠', 4: '🔴' };
-        return icons[priority] || '⚪';
-    },
+            reminder.status = REMINDER_STATUS.COMPLETED;
+            reminder.updatedAt = new Date().toISOString();
 
-    formatTime(datetime) {
-        const date = new Date(datetime);
-        const now = new Date();
-        const diffMs = date - now;
+            this.saveReminders();
+            this.applyFilters();
+            this.renderDashboard();
+            this.showNotification(`"${reminder.title}" marked as completed!`, 'success');
+        }
 
-        if (diffMs < 0) return 'Overdue';
-        if (diffMs < 60 * 60 * 1000) return \`In \${Math.round(diffMs / 60000)}m\`;
-        if (diffMs < 24 * 60 * 60 * 1000) return \`In \${Math.round(diffMs / 3600000)}h\`;
-        return date.toLocaleDateString();
-    },
+        deleteReminder(id) {
+            const reminder = this.reminders.find(r => r.id === id);
+            if (!reminder) return;
 
-    showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.className = \`notification \${type}\`;
-        notification.style.cssText = \`
-            position: fixed; top: 20px; right: 20px; padding: 12px 16px;
-            border-radius: 6px; color: white; font-weight: 500;
-            z-index: 10000; max-width: 300px;
+            if (!confirm(`Delete "${reminder.title}"?`)) return;
+
+            this.reminders = this.reminders.filter(r => r.id !== id);
+            this.saveReminders();
+            this.applyFilters();
+            this.renderDashboard();
+            this.showNotification(`"${reminder.title}" deleted`, 'info');
+        }
+
+        updateOverdueReminders() {
+            const now = new Date();
+            let updated = false;
+
+            this.reminders.forEach(reminder => {
+                if (reminder.status === REMINDER_STATUS.ACTIVE &&
+                    new Date(reminder.datetime) <= now) {
+                    reminder.status = REMINDER_STATUS.OVERDUE;
+                    reminder.updatedAt = new Date().toISOString();
+                    updated = true;
+                }
+            });
+
+            if (updated) {
+                this.saveReminders();
+                this.applyFilters();
+                this.updateStatistics();
+            }
+        }
+
+        refreshDashboard() {
+            this.updateOverdueReminders();
+            this.renderDashboard();
+            this.showNotification('Dashboard refreshed!', 'success');
+        }
+
+        exportData() {
+            const exportData = {
+                reminders: this.reminders,
+                exportDate: new Date().toISOString(),
+                user: this.currentUser?.username,
+                totalCount: this.reminders.length,
+                statistics: this.calculateStatistics()
+            };
+
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `reminders-backup-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+
+            this.showNotification('Data exported successfully!', 'success');
+        }
+
+        handleLogout() {
+            if (!confirm('Are you sure you want to logout?')) return;
+
+            localStorage.removeItem('user_session');
+            this.showNotification('Logged out successfully', 'success');
+
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 1000);
+        }
+
+        // Utility methods
+        getPriorityIcon(priority) {
+            const icons = {
+                [REMINDER_PRIORITIES.LOW]: '🔵',
+                [REMINDER_PRIORITIES.MEDIUM]: '🟡',
+                [REMINDER_PRIORITIES.HIGH]: '🟠',
+                [REMINDER_PRIORITIES.URGENT]: '🔴'
+            };
+            return icons[priority] || '⚪';
+        }
+
+        getPriorityColor(priority) {
+            const colors = {
+                [REMINDER_PRIORITIES.LOW]: '#2196F3',
+                [REMINDER_PRIORITIES.MEDIUM]: '#FF9800',
+                [REMINDER_PRIORITIES.HIGH]: '#FF5722',
+                [REMINDER_PRIORITIES.URGENT]: '#F44336'
+            };
+            return colors[priority] || '#9E9E9E';
+        }
+
+        getPriorityName(priority) {
+            const names = {
+                [REMINDER_PRIORITIES.LOW]: 'low',
+                [REMINDER_PRIORITIES.MEDIUM]: 'medium',
+                [REMINDER_PRIORITIES.HIGH]: 'high',
+                [REMINDER_PRIORITIES.URGENT]: 'urgent'
+            };
+            return names[priority] || 'unknown';
+        }
+
+        formatReminderTime(datetime) {
+            const date = new Date(datetime);
+            const now = new Date();
+            const diffMs = date - now;
+
+            if (diffMs < 0) {
+                const overdueDays = Math.floor(Math.abs(diffMs) / (24 * 60 * 60 * 1000));
+                if (overdueDays > 0) {
+                    return `Overdue by ${overdueDays} day${overdueDays > 1 ? 's' : ''}`;
+                }
+                const overdueHours = Math.floor(Math.abs(diffMs) / (60 * 60 * 1000));
+                return overdueHours > 0 ? `Overdue by ${overdueHours}h` : 'Overdue';
+            }
+
+            if (diffMs < 60 * 60 * 1000) {
+                const minutes = Math.round(diffMs / (60 * 1000));
+                return `In ${minutes}m`;
+            }
+
+            if (diffMs < 24 * 60 * 60 * 1000) {
+                const hours = Math.round(diffMs / (60 * 60 * 1000));
+                return `In ${hours}h`;
+            }
+
+            if (diffMs < 7 * 24 * 60 * 60 * 1000) {
+                const days = Math.round(diffMs / (24 * 60 * 60 * 1000));
+                return `In ${days} day${days > 1 ? 's' : ''}`;
+            }
+
+            return new Intl.DateTimeFormat('en-US', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }).format(date);
+        }
+
+        formatDate(dateString) {
+            return new Intl.DateTimeFormat('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            }).format(new Date(dateString));
+        }
+
+        escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 16px;
+            border-radius: 6px;
+            color: white;
+            font-weight: 500;
+            z-index: 10000;
+            max-width: 300px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            background: \${type === 'success' ? '#10B981' : type === 'error' ? '#EF4444' : '#3B82F6'};
-        \`;
-        notification.textContent = message;
-        document.body.appendChild(notification);
-        setTimeout(() => notification.remove(), 3000);
-    },
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        `;
 
-    showError(message) {
-        this.hideLoader();
-        this.showNotification('Error: ' + message, 'error');
+            const colors = {
+                success: '#10B981',
+                error: '#EF4444',
+                warning: '#F59E0B',
+                info: '#3B82F6'
+            };
+
+            notification.style.backgroundColor = colors[type] || colors.info;
+            notification.textContent = message;
+
+            document.body.appendChild(notification);
+
+            // Animate in
+            requestAnimationFrame(() => {
+                notification.style.transform = 'translateX(0)';
+            });
+
+            // Auto remove
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.style.transform = 'translateX(100%)';
+                    setTimeout(() => notification.remove(), 300);
+                }
+            }, type === 'error' ? 5000 : 3000);
+        }
     }
-};
 
-// Global access
-window.Dashboard = Dashboard;
+    // Global functions for onclick handlers
+    window.closeModal = (modalId) => dashboard.closeModal(modalId);
 
-// Auto-start
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => Dashboard.init());
-} else {
-    Dashboard.init();
-}
-\`;
-}
+    // Initialize enhanced dashboard
+    const dashboard = new EnhancedDashboardController();
+    window.dashboard = dashboard; // Make it globally accessible
 
-// Start loading
-console.log('📦 Starting script loading sequence...');
-debugInfo.update('Status', 'Loading scripts...');
-loadScriptsSequentially(requiredScripts);
+    // Start when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => dashboard.init());
+    } else {
+        dashboard.init();
+    }
+
+    console.log('📱 Enhanced Dashboard script loaded');
 </script>
 
-<!-- Hide debug after 10 seconds -->
+<!-- Error boundary -->
 <script>
-    setTimeout(() => {
-        debugInfo.hide();
-    }, 10000);
+    window.addEventListener('error', (event) => {
+        console.error('Dashboard error:', event.error);
+
+        const errorDiv = document.createElement('div');
+        errorDiv.style.cssText = `
+        position: fixed; top: 20px; right: 20px; left: 20px;
+        background: #fee; border: 1px solid #fcc; color: #c66;
+        padding: 15px; border-radius: 5px; z-index: 10001;
+        font-family: system-ui, sans-serif;
+    `;
+        errorDiv.innerHTML = `
+        <strong>⚠️ Application Error</strong><br>
+        Something went wrong. Please refresh the page.<br>
+        <button onclick="window.location.reload()" style="margin-top: 10px; padding: 5px 10px;">
+            🔄 Refresh Page
+        </button>
+    `;
+        document.body.appendChild(errorDiv);
+    });
 </script>
 </body>
 </html>

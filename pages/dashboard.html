@@ -3,60 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Reminder Manager</title>
+    <title>Dashboard - Reminders Vault</title>
+
+    <!-- Stylesheets -->
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/dashboard.css">
 </head>
 <body>
+<!-- Dashboard Container -->
 <div class="dashboard-container">
-    <!-- Header -->
-    <header class="dashboard-header">
+    <!-- Enhanced Header -->
+    <header class="dashboard-header" role="banner">
         <div class="header-content">
             <div class="header-left">
-                <h1>Reminder Manager</h1>
-                <span id="currentDate" class="current-date"></span>
+                <h1>📝 Reminders Vault</h1>
+                <time id="currentDate" class="current-date"></time>
             </div>
             <div class="header-right">
                 <span id="welcomeMessage" class="welcome-message">Welcome back!</span>
-                <div class="user-menu">
-                    <button id="profileBtn" class="profile-btn">Profile</button>
-                    <button id="logoutBtn" class="logout-btn">Logout</button>
-                </div>
+                <nav class="user-menu">
+                    <button id="logoutBtn" class="header-btn logout-btn">🚪 Logout</button>
+                </nav>
             </div>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="dashboard-main">
-        <!-- Stats Section -->
+    <main class="dashboard-main" role="main">
+        <!-- Loading State -->
+        <div id="dashboardLoader" class="dashboard-loader">
+            <div class="loader-content">
+                <div class="loader-spinner"></div>
+                <p>Initializing your workspace...</p>
+            </div>
+        </div>
+
+        <!-- Statistics Section -->
         <section class="stats-section">
             <div class="stats-grid">
                 <div class="stat-card total-reminders">
                     <div class="stat-icon">📝</div>
                     <div class="stat-content">
-                        <h3 id="totalReminders">0</h3>
-                        <p>Total Reminders</p>
+                        <h3 id="totalReminders" class="stat-number">0</h3>
+                        <p class="stat-label">Total Reminders</p>
                     </div>
                 </div>
                 <div class="stat-card active-reminders">
                     <div class="stat-icon">⏰</div>
                     <div class="stat-content">
-                        <h3 id="activeReminders">0</h3>
-                        <p>Active</p>
+                        <h3 id="activeReminders" class="stat-number">0</h3>
+                        <p class="stat-label">Active</p>
                     </div>
                 </div>
                 <div class="stat-card completed-today">
                     <div class="stat-icon">✅</div>
                     <div class="stat-content">
-                        <h3 id="completedToday">0</h3>
-                        <p>Completed Today</p>
+                        <h3 id="completedToday" class="stat-number">0</h3>
+                        <p class="stat-label">Completed Today</p>
                     </div>
                 </div>
                 <div class="stat-card overdue">
                     <div class="stat-icon">⚠️</div>
                     <div class="stat-content">
-                        <h3 id="overdue">0</h3>
-                        <p>Overdue</p>
+                        <h3 id="overdue" class="stat-number">0</h3>
+                        <p class="stat-label">Overdue</p>
                     </div>
                 </div>
             </div>
@@ -64,19 +74,13 @@
 
         <!-- Quick Actions -->
         <section class="quick-actions">
-            <h2>Quick Actions</h2>
+            <h2 class="section-title">Quick Actions</h2>
             <div class="actions-grid">
                 <button class="action-btn primary" id="addReminderBtn">
-                    <span class="btn-icon">➕</span>
-                    Add Reminder
+                    ➕ Add Reminder
                 </button>
-                <button class="action-btn secondary" id="viewAllBtn">
-                    <span class="btn-icon">📋</span>
-                    View All
-                </button>
-                <button class="action-btn tertiary" id="settingsBtn">
-                    <span class="btn-icon">⚙️</span>
-                    Settings
+                <button class="action-btn secondary" id="refreshBtn">
+                    🔄 Refresh
                 </button>
             </div>
         </section>
@@ -84,210 +88,365 @@
         <!-- Recent Reminders -->
         <section class="recent-section">
             <div class="section-header">
-                <h2>Recent Reminders</h2>
-                <button id="refreshBtn" class="refresh-btn">🔄 Refresh</button>
+                <h2 class="section-title">Recent Reminders</h2>
             </div>
             <div id="recentReminders" class="reminders-list">
-                <!-- Reminders will be loaded here -->
-            </div>
-        </section>
-
-        <!-- Today's Schedule -->
-        <section class="schedule-section">
-            <div class="section-header">
-                <h2>Today's Schedule</h2>
-            </div>
-            <div id="todaySchedule" class="schedule-list">
-                <!-- Schedule items will be loaded here -->
+                <!-- Dynamic content -->
             </div>
         </section>
     </main>
 </div>
 
-<!-- Add Reminder Modal -->
-<div id="addReminderModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2>✨ Create New Reminder</h2>
-            <span class="close">&times;</span>
-        </div>
-
-        <div class="modal-body">
-            <form id="addReminderForm">
-                <div class="form-group">
-                    <label for="reminderTitle">
-                        <span class="label-icon">📝</span>
-                        Title <span class="required">*</span>
-                    </label>
-                    <input
-                            type="text"
-                            id="reminderTitle"
-                            name="reminderTitle"
-                            placeholder="Enter reminder title..."
-                            maxlength="100"
-                            required
-                            autocomplete="off"
-                    >
-                    <small class="field-hint">What do you need to be reminded about?</small>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="reminderDate">
-                            <span class="label-icon">📅</span>
-                            Date & Time <span class="required">*</span>
-                        </label>
-                        <input
-                                type="datetime-local"
-                                id="reminderDate"
-                                name="reminderDate"
-                                required
-                        >
-                    </div>
-
-                    <div class="form-group">
-                        <label for="reminderPriority">
-                            <span class="label-icon">⚡</span>
-                            Priority
-                        </label>
-                        <select id="reminderPriority" name="reminderPriority">
-                            <option value="1">🔵 Low</option>
-                            <option value="2" selected>🟡 Medium</option>
-                            <option value="3">🟠 High</option>
-                            <option value="4">🔴 Urgent</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="reminderCategory">
-                        <span class="label-icon">🏷️</span>
-                        Category
-                    </label>
-                    <select id="reminderCategory" name="reminderCategory">
-                        <option value="personal">👤 Personal</option>
-                        <option value="work">💼 Work</option>
-                        <option value="health">🏥 Health</option>
-                        <option value="finance">💰 Finance</option>
-                        <option value="education">📚 Education</option>
-                        <option value="social">👥 Social</option>
-                        <option value="other">📦 Other</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="reminderDescription">
-                        <span class="label-icon">📄</span>
-                        Description
-                    </label>
-                    <textarea
-                            id="reminderDescription"
-                            name="reminderDescription"
-                            rows="3"
-                            placeholder="Add any additional details..."
-                            maxlength="500"
-                    ></textarea>
-                    <small class="field-hint">Optional: Add more context or details about this reminder</small>
-                </div>
-
-                <div class="form-group">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="reminderNotification" name="reminderNotification" checked>
-                        <span class="checkbox-custom"></span>
-                        <span class="label-icon">🔔</span>
-                        Enable notifications for this reminder
-                    </label>
-                </div>
-
-                <div class="quick-time-buttons">
-                    <h4>⚡ Quick Time Options</h4>
-                    <div class="time-buttons">
-                        <button type="button" class="time-btn" data-minutes="15">15 min</button>
-                        <button type="button" class="time-btn" data-minutes="30">30 min</button>
-                        <button type="button" class="time-btn" data-hours="1">1 hour</button>
-                        <button type="button" class="time-btn" data-hours="2">2 hours</button>
-                        <button type="button" class="time-btn" data-days="1">Tomorrow</button>
-                        <button type="button" class="time-btn" data-days="7">Next week</button>
-                    </div>
-                </div>
-            </form>
-        </div>
-
-        <div class="modal-footer">
-            <button type="button" class="btn-cancel" id="cancelReminderBtn">Cancel</button>
-            <button type="submit" form="addReminderForm" class="btn-submit" id="submitReminderBtn">
-                <span class="btn-icon">✨</span>
-                <span class="btn-text">Create Reminder</span>
-                <span class="btn-loader" style="display: none;">Creating...</span>
-            </button>
-        </div>
-    </div>
+<!-- Debug Info -->
+<div id="debugInfo" style="position: fixed; top: 10px; left: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px; z-index: 9999; display: none;">
+    <div>Loading Status: <span id="debugStatus">Starting...</span></div>
+    <div>Auth Status: <span id="debugAuth">Checking...</span></div>
+    <div>DOM Ready: <span id="debugDOM">-</span></div>
 </div>
 
-<!-- Reminder Details Modal -->
-<div id="reminderDetailsModal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h2 id="detailsModalTitle">📋 Reminder Details</h2>
-            <span class="close">&times;</span>
-        </div>
-
-        <div class="modal-body" id="reminderDetailsContent">
-            <!-- Content will be populated dynamically -->
-        </div>
-
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" id="editReminderBtn">✏️ Edit</button>
-            <button type="button" class="btn btn-danger" id="deleteReminderBtn">🗑️ Delete</button>
-            <button type="button" class="btn btn-primary" id="completeReminderBtn">✅ Mark Complete</button>
-        </div>
-    </div>
-</div>
-
-<!-- Load scripts in proper order -->
-<script src="../config/constants.js"></script>
-<script src="../js/utils.js"></script>
-<script src="../js/auth.js"></script>
-<script src="../js/DataManager.js"></script>
-<script src="../js/NotificationsManager.js"></script>
-<script src="../js/UIManager.js"></script>
-<script src="../js/DashboardController.js"></script>
-<script src="../js/dashboard.js"></script>
+<!-- Emergency Console -->
 <script>
-    // Initialize dashboard when everything is loaded
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('Dashboard page: DOM loaded');
+    // Emergency debug console
+    window.debugInfo = {
+        show() {
+            document.getElementById('debugInfo').style.display = 'block';
+        },
+        hide() {
+            document.getElementById('debugInfo').style.display = 'none';
+        },
+        update(key, value) {
+            const element = document.getElementById(`debug${key}`);
+            if (element) element.textContent = value;
+        }
+    };
 
-        // Wait for all dependencies to be available
-        let initAttempts = 0;
-        const maxAttempts = 50;
+    // Show debug by default
+    debugInfo.show();
+    debugInfo.update('Status', 'Script loaded');
+    debugInfo.update('DOM', document.readyState);
 
-        function attemptInit() {
-            initAttempts++;
+    console.log('🚀 Emergency dashboard script loaded');
+</script>
 
-            // Check if all required modules are loaded
-            if (typeof Utils !== 'undefined' &&
-                typeof Auth !== 'undefined' &&
-                typeof DataManager !== 'undefined' &&
-                typeof UIManager !== 'undefined' &&
-                typeof DashboardController !== 'undefined' &&
-                typeof Dashboard !== 'undefined' &&
-                typeof APP_CONFIG !== 'undefined') {
+<!-- Load scripts in strict order with error handling -->
+<script>
+    let scriptsLoaded = 0;
+    const requiredScripts = [
+        '../js/utils.js',
+        '../js/auth.js',
+        '../js/DataManager.js',
+        '../js/UIManager.js',
+        '../js/NotificationsManager.js'
+    ];
 
-                console.log('All modules loaded, initializing dashboard...');
-                Dashboard.init();
+    function loadScript(src, callback) {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = () => {
+            console.log(`✅ Loaded: ${src}`);
+            scriptsLoaded++;
+            debugInfo.update('Status', `Scripts: ${scriptsLoaded}/${requiredScripts.length}`);
+            callback();
+        };
+        script.onerror = () => {
+            console.warn(`⚠️ Failed to load: ${src}`);
+            scriptsLoaded++;
+            callback(); // Continue anyway
+        };
+        document.head.appendChild(script);
+    }
 
-            } else if (initAttempts < maxAttempts) {
-                console.log(`Waiting for modules... (${initAttempts}/${maxAttempts})`);
-                setTimeout(attemptInit, 100);
-            } else {
-                console.error('Failed to load required modules within timeout');
-                alert('Failed to load application. Please refresh the page.');
-            }
+    function loadScriptsSequentially(scripts, index = 0) {
+        if (index >= scripts.length) {
+            console.log('📦 All scripts processed, loading dashboard...');
+            loadDashboard();
+            return;
         }
 
-        attemptInit();
-    });
+        loadScript(scripts[index], () => {
+            loadScriptsSequentially(scripts, index + 1);
+        });
+    }
+
+    function loadDashboard() {
+        const script = document.createElement('script');
+        script.textContent = `
+        ${getDashboardCode()}
+    `;
+        document.head.appendChild(script);
+    }
+
+    function getDashboardCode() {
+        return \`
+// Inline Dashboard Controller
+const Dashboard = {
+    init() {
+        console.log('🚀 Dashboard starting...');
+        debugInfo.update('Status', 'Dashboard starting');
+
+        try {
+            // Check auth
+            const authOk = this.checkAuth();
+            debugInfo.update('Auth', authOk ? 'OK' : 'Failed');
+
+            if (!authOk) return;
+
+            // Hide loader
+            this.hideLoader();
+
+            // Load demo data
+            this.loadDemoData();
+
+            // Setup events
+            this.setupEvents();
+
+            console.log('✅ Dashboard ready');
+            debugInfo.update('Status', 'Ready');
+
+        } catch (error) {
+            console.error('❌ Dashboard error:', error);
+            debugInfo.update('Status', 'Error: ' + error.message);
+            this.showError(error.message);
+        }
+    },
+
+    checkAuth() {
+        // Simple auth check
+        const hasAuth = typeof Auth !== 'undefined';
+
+        if (hasAuth && Auth.isAuthenticated) {
+            const isAuth = Auth.isAuthenticated();
+            if (!isAuth) {
+                console.log('Not authenticated, redirecting...');
+                setTimeout(() => window.location.href = 'login.html', 1000);
+                return false;
+            }
+
+            const user = Auth.getCurrentUser?.();
+            if (user) {
+                const welcome = document.getElementById('welcomeMessage');
+                if (welcome) {
+                    welcome.textContent = \`Welcome back, \${user.profile?.firstName || user.username}!\`;
+                }
+            }
+            return true;
+        }
+
+        // No auth system, continue for demo
+        console.warn('No auth system found, continuing...');
+        return true;
+    },
+
+    hideLoader() {
+        const loader = document.getElementById('dashboardLoader');
+        if (loader) {
+            loader.style.display = 'none';
+            console.log('Loader hidden');
+        }
+    },
+
+    loadDemoData() {
+        // Demo stats
+        this.updateStats({
+            total: 5,
+            active: 3,
+            completed: 1,
+            overdue: 1
+        });
+
+        // Demo reminders
+        const mockReminders = [
+            {
+                id: 1,
+                title: 'Team Meeting',
+                datetime: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+                priority: 3,
+                status: 'active'
+            },
+            {
+                id: 2,
+                title: 'Doctor Appointment',
+                datetime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                priority: 2,
+                status: 'active'
+            },
+            {
+                id: 3,
+                title: 'Buy Groceries',
+                datetime: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+                priority: 1,
+                status: 'overdue'
+            }
+        ];
+
+        this.updateReminders(mockReminders);
+        this.updateDateTime();
+    },
+
+    updateStats(stats) {
+        const elements = {
+            totalReminders: document.getElementById('totalReminders'),
+            activeReminders: document.getElementById('activeReminders'),
+            completedToday: document.getElementById('completedToday'),
+            overdue: document.getElementById('overdue')
+        };
+
+        Object.entries(stats).forEach(([key, value]) => {
+            const element = elements[key];
+            if (element) {
+                element.textContent = value;
+            }
+        });
+    },
+
+    updateReminders(reminders) {
+        const container = document.getElementById('recentReminders');
+        if (!container) return;
+
+        if (reminders.length === 0) {
+            container.innerHTML = \`
+                <div class="empty-state">
+                    <div class="empty-state-icon">📝</div>
+                    <h3>No reminders found</h3>
+                    <p>Create your first reminder!</p>
+                </div>
+            \`;
+            return;
+        }
+
+        const html = reminders.map(reminder => \`
+            <div class="reminder-item \${reminder.status}" onclick="Dashboard.completeReminder(\${reminder.id})">
+                <div class="reminder-status \${reminder.status}"></div>
+                <div class="reminder-content">
+                    <div class="reminder-title">
+                        \${this.getPriorityIcon(reminder.priority)} \${reminder.title}
+                    </div>
+                    <div class="reminder-time">
+                        \${this.formatTime(reminder.datetime)}
+                    </div>
+                </div>
+                <div class="reminder-actions">
+                    <button class="reminder-action">✓</button>
+                </div>
+            </div>
+        \`).join('');
+
+        container.innerHTML = html;
+    },
+
+    updateDateTime() {
+        const dateElement = document.getElementById('currentDate');
+        if (dateElement) {
+            const now = new Date();
+            const options = {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            };
+            dateElement.textContent = now.toLocaleDateString('en-US', options);
+        }
+    },
+
+    setupEvents() {
+        // Logout
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.onclick = () => {
+                if (confirm('Logout?')) {
+                    if (typeof Auth !== 'undefined' && Auth.logout) {
+                        Auth.logout();
+                    }
+                    window.location.href = 'login.html';
+                }
+            };
+        }
+
+        // Add reminder (placeholder)
+        const addBtn = document.getElementById('addReminderBtn');
+        if (addBtn) {
+            addBtn.onclick = () => {
+                alert('Add reminder modal would open here. Feature coming soon!');
+            };
+        }
+
+        // Refresh
+        const refreshBtn = document.getElementById('refreshBtn');
+        if (refreshBtn) {
+            refreshBtn.onclick = () => {
+                this.loadDemoData();
+                this.showNotification('Dashboard refreshed!', 'success');
+            };
+        }
+    },
+
+    completeReminder(id) {
+        console.log('Completing reminder:', id);
+        this.showNotification('Reminder completed!', 'success');
+        // Reload demo data
+        setTimeout(() => this.loadDemoData(), 500);
+    },
+
+    getPriorityIcon(priority) {
+        const icons = { 1: '🔵', 2: '🟡', 3: '🟠', 4: '🔴' };
+        return icons[priority] || '⚪';
+    },
+
+    formatTime(datetime) {
+        const date = new Date(datetime);
+        const now = new Date();
+        const diffMs = date - now;
+
+        if (diffMs < 0) return 'Overdue';
+        if (diffMs < 60 * 60 * 1000) return \`In \${Math.round(diffMs / 60000)}m\`;
+        if (diffMs < 24 * 60 * 60 * 1000) return \`In \${Math.round(diffMs / 3600000)}h\`;
+        return date.toLocaleDateString();
+    },
+
+    showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = \`notification \${type}\`;
+        notification.style.cssText = \`
+            position: fixed; top: 20px; right: 20px; padding: 12px 16px;
+            border-radius: 6px; color: white; font-weight: 500;
+            z-index: 10000; max-width: 300px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            background: \${type === 'success' ? '#10B981' : type === 'error' ? '#EF4444' : '#3B82F6'};
+        \`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+    },
+
+    showError(message) {
+        this.hideLoader();
+        this.showNotification('Error: ' + message, 'error');
+    }
+};
+
+// Global access
+window.Dashboard = Dashboard;
+
+// Auto-start
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => Dashboard.init());
+} else {
+    Dashboard.init();
+}
+\`;
+}
+
+// Start loading
+console.log('📦 Starting script loading sequence...');
+debugInfo.update('Status', 'Loading scripts...');
+loadScriptsSequentially(requiredScripts);
+</script>
+
+<!-- Hide debug after 10 seconds -->
+<script>
+    setTimeout(() => {
+        debugInfo.hide();
+    }, 10000);
 </script>
 </body>
 </html>

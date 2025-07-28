@@ -3,103 +3,854 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Reminder Manager</title>
+    <title>Login - Reminders Vault</title>
+    <meta name="description" content="Sign in to access your personal reminder management system">
+
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+
+    <!-- Stylesheets -->
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/login.css">
+
+    <!-- Module preloads -->
+    <link rel="modulepreload" href="../js/services/AuthService.js">
+    <link rel="modulepreload" href="../js/config/constants.js">
+    <link rel="modulepreload" href="../js/utils.js">
+
+    <!-- Security headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self';">
+
+    <!-- PWA meta -->
+    <meta name="theme-color" content="#667eea">
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
 </head>
 <body>
+<!-- Login Container with Modern Design -->
 <div class="login-container">
-    <div class="login-header">
-        <h1>Reminder Manager</h1>
+    <!-- Header Section -->
+    <header class="login-header">
+        <h1>Reminders Vault</h1>
         <p>Sign in to manage your reminders</p>
-    </div>
+    </header>
 
-    <div id="messageContainer" class="message-container"></div>
+    <!-- Message Container for Feedback -->
+    <div id="messageContainer" class="message-container" role="alert" aria-live="polite"></div>
 
-    <form id="loginForm" class="login-form">
+    <!-- Login Form -->
+    <form id="loginForm" class="login-form" novalidate>
         <div class="form-group">
-            <label for="username">Username</label>
-            <input type="text" id="username" name="username" required autocomplete="username" placeholder="Enter your username">
+            <label for="username">
+                <span class="label-icon" aria-hidden="true">👤</span>
+                Username
+            </label>
+            <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    required
+                    autocomplete="username"
+                    placeholder="Enter your username"
+                    aria-describedby="username-hint"
+                    class="form-input"
+            >
+            <small id="username-hint" class="form-hint">
+                Use one of the demo accounts below or your registered username
+            </small>
         </div>
 
         <div class="form-group">
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="Enter your password">
+            <label for="password">
+                <span class="label-icon" aria-hidden="true">🔒</span>
+                Password
+            </label>
+            <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    required
+                    autocomplete="current-password"
+                    placeholder="Enter your password"
+                    aria-describedby="password-hint"
+                    class="form-input"
+            >
+            <small id="password-hint" class="form-hint">
+                Minimum 6 characters with letters and numbers
+            </small>
         </div>
 
         <div class="form-options">
             <label class="checkbox-container">
-                <input type="checkbox" id="rememberMe">
-                <span class="checkmark"></span>
-                Remember me
+                <input type="checkbox" id="rememberMe" name="rememberMe">
+                <span class="checkmark" aria-hidden="true"></span>
+                <span class="checkbox-label">Remember me for 30 days</span>
             </label>
         </div>
 
-        <button type="submit" class="login-btn" id="loginBtn">
+        <button type="submit" class="login-btn" id="loginBtn" aria-describedby="login-status">
             <span class="btn-text">Sign In</span>
-            <span class="btn-loader" style="display: none;">Signing in...</span>
+            <span class="btn-loader" style="display: none;" aria-hidden="true">
+                    <span class="spinner"></span>
+                    Signing in...
+                </span>
         </button>
     </form>
 
-    <div class="demo-credentials">
-        <h4>Demo Credentials</h4>
-        <div class="credential-item" data-username="admin" data-password="password123">
-            <strong>Admin:</strong> admin / password123
-        </div>
-        <div class="credential-item" data-username="user" data-password="userpass123">
-            <strong>User:</strong> user / userpass123
-        </div>
-        <div class="credential-item" data-username="manager" data-password="manager456">
-            <strong>Manager:</strong> manager / manager456
-        </div>
-    </div>
+    <!-- Demo Credentials Section -->
+    <section class="demo-credentials" aria-labelledby="demo-heading">
+        <h2 id="demo-heading">Demo Accounts</h2>
+        <p class="demo-description">Click any account below to auto-fill the login form</p>
 
-    <div class="login-footer">
-        <p>&copy; 2025 Reminder Manager. All rights reserved.</p>
-    </div>
+        <div class="credentials-grid">
+            <button
+                    type="button"
+                    class="credential-item"
+                    data-username="admin"
+                    data-password="password123"
+                    aria-label="Use admin demo account"
+            >
+                <div class="credential-avatar">👑</div>
+                <div class="credential-info">
+                    <strong>Administrator</strong>
+                    <span>Full system access</span>
+                    <code>admin / password123</code>
+                </div>
+            </button>
+
+            <button
+                    type="button"
+                    class="credential-item"
+                    data-username="user"
+                    data-password="userpass123"
+                    aria-label="Use standard user demo account"
+            >
+                <div class="credential-avatar">👤</div>
+                <div class="credential-info">
+                    <strong>Standard User</strong>
+                    <span>Basic features</span>
+                    <code>user / userpass123</code>
+                </div>
+            </button>
+
+            <button
+                    type="button"
+                    class="credential-item"
+                    data-username="manager"
+                    data-password="manager456"
+                    aria-label="Use manager demo account"
+            >
+                <div class="credential-avatar">👥</div>
+                <div class="credential-info">
+                    <strong>Manager</strong>
+                    <span>Team management</span>
+                    <code>manager / manager456</code>
+                </div>
+            </button>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-preview" aria-labelledby="features-heading">
+        <h2 id="features-heading">What's Inside</h2>
+        <div class="features-grid">
+            <div class="feature-item">
+                <span class="feature-icon" aria-hidden="true">⏰</span>
+                <span>Smart Notifications</span>
+            </div>
+            <div class="feature-item">
+                <span class="feature-icon" aria-hidden="true">📱</span>
+                <span>Cross-Platform</span>
+            </div>
+            <div class="feature-item">
+                <span class="feature-icon" aria-hidden="true">🔒</span>
+                <span>Secure & Private</span>
+            </div>
+            <div class="feature-item">
+                <span class="feature-icon" aria-hidden="true">⚡</span>
+                <span>Lightning Fast</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="login-footer">
+        <p>&copy; 2025 Reminders Vault. Modern task management for everyone.</p>
+        <div class="footer-links">
+            <a href="#" aria-label="Privacy Policy">Privacy</a>
+            <a href="#" aria-label="Terms of Service">Terms</a>
+            <a href="#" aria-label="Contact Support">Support</a>
+        </div>
+    </footer>
 </div>
 
-<!-- Floating background shapes -->
-<div class="floating-shape"></div>
-<div class="floating-shape"></div>
-<div class="floating-shape"></div>
+<!-- Background Animation Elements -->
+<div class="background-animation" aria-hidden="true">
+    <div class="floating-shape shape-1"></div>
+    <div class="floating-shape shape-2"></div>
+    <div class="floating-shape shape-3"></div>
+    <div class="floating-shape shape-4"></div>
+    <div class="floating-shape shape-5"></div>
+</div>
 
-<!-- Load scripts in proper order -->
-<script src="../config/constants.js"></script>
-<script src="../js/utils.js"></script>
-<script src="../js/auth.js"></script>
-<script>
-    // Initialize login page when everything is loaded
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('Login page: DOM loaded');
+<!-- Enhanced Login Page Styles -->
+<style>
+    .demo-credentials {
+        margin-bottom: 2rem;
+    }
 
-        // Wait for all dependencies to be available
-        let initAttempts = 0;
-        const maxAttempts = 50;
+    .demo-description {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-bottom: 1.5rem;
+        text-align: center;
+        opacity: 0.8;
+    }
 
-        function attemptInit() {
-            initAttempts++;
+    .credentials-grid {
+        display: grid;
+        gap: 1rem;
+    }
 
-            // Check if all required modules are loaded
-            if (typeof Utils !== 'undefined' &&
-                typeof Auth !== 'undefined' &&
-                typeof APP_CONFIG !== 'undefined' &&
-                typeof DEMO_USERS !== 'undefined') {
+    .credential-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(10px);
+        text-align: left;
+        width: 100%;
+    }
 
-                console.log('All modules loaded, initializing login page...');
-                Auth.initLoginPage();
+    .credential-item:hover {
+        transform: translateY(-2px);
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.3);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    }
 
-            } else if (initAttempts < maxAttempts) {
-                console.log(`Waiting for modules... (${initAttempts}/${maxAttempts})`);
-                setTimeout(attemptInit, 100);
-            } else {
-                console.error('Failed to load required modules within timeout');
-                alert('Failed to load application. Please refresh the page.');
+    .credential-item:focus {
+        outline: 2px solid rgba(255, 255, 255, 0.5);
+        outline-offset: 2px;
+    }
+
+    .credential-avatar {
+        font-size: 2rem;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .credential-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .credential-info strong {
+        display: block;
+        color: white;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        font-size: 1rem;
+    }
+
+    .credential-info span {
+        display: block;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .credential-info code {
+        display: block;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        color: rgba(255, 255, 255, 0.9);
+        font-family: 'Monaco', 'Menlo', monospace;
+    }
+
+    .features-preview {
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
+    }
+
+    .features-preview h2 {
+        color: white;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+
+    .features-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .feature-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .feature-icon {
+        font-size: 1.25rem;
+    }
+
+    .footer-links {
+        display: flex;
+        gap: 1.5rem;
+        justify-content: center;
+        margin-top: 0.5rem;
+    }
+
+    .footer-links a {
+        color: rgba(255, 255, 255, 0.6);
+        text-decoration: none;
+        font-size: 0.875rem;
+        transition: color 0.3s ease;
+    }
+
+    .footer-links a:hover {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .background-animation {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: -1;
+        overflow: hidden;
+    }
+
+    .floating-shape {
+        position: absolute;
+        opacity: 0.1;
+        animation: float 8s ease-in-out infinite;
+    }
+
+    .shape-1 {
+        top: 10%;
+        left: 10%;
+        width: 100px;
+        height: 100px;
+        background: white;
+        border-radius: 50%;
+        animation-delay: -2s;
+    }
+
+    .shape-2 {
+        top: 20%;
+        right: 15%;
+        width: 80px;
+        height: 80px;
+        background: white;
+        border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+        animation-delay: -4s;
+    }
+
+    .shape-3 {
+        bottom: 30%;
+        left: 20%;
+        width: 120px;
+        height: 120px;
+        background: white;
+        border-radius: 20% 80% 20% 80% / 80% 20% 80% 20%;
+        animation-delay: -6s;
+    }
+
+    .shape-4 {
+        bottom: 20%;
+        right: 20%;
+        width: 70px;
+        height: 70px;
+        background: white;
+        clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+        animation-delay: -1s;
+    }
+
+    .shape-5 {
+        top: 50%;
+        left: 5%;
+        width: 60px;
+        height: 60px;
+        background: white;
+        border-radius: 10px;
+        animation-delay: -3s;
+    }
+
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0) rotate(0deg) scale(1);
+        }
+        50% {
+            transform: translateY(-30px) rotate(180deg) scale(1.1);
+        }
+    }
+
+    /* Enhanced responsive design */
+    @media (max-width: 768px) {
+        .login-container {
+            padding: 1.5rem;
+            margin: 1rem;
+        }
+
+        .features-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .credential-item {
+            flex-direction: column;
+            text-align: center;
+            gap: 0.75rem;
+        }
+
+        .credential-info code {
+            font-size: 0.8rem;
+        }
+
+        .footer-links {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+    }
+
+    /* Accessibility improvements */
+    @media (prefers-reduced-motion: reduce) {
+        .floating-shape {
+            animation: none;
+        }
+
+        .credential-item:hover {
+            transform: none;
+        }
+    }
+
+    @media (prefers-contrast: high) {
+        .credential-item {
+            border-color: white;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .features-preview {
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+    }
+</style>
+
+<!-- Modern ES6 Module Authentication -->
+<script type="module">
+    import { authService } from '../js/services/AuthService.js';
+    import { appController } from '../js/AppController.js';
+
+    class LoginPageController {
+        #isInitialized = false;
+
+        constructor() {
+            this.setupErrorBoundary();
+        }
+
+        async init() {
+            try {
+                console.log('🔐 Initializing login page...');
+
+                // Initialize application controller
+                await appController.init();
+
+                // Check if already authenticated
+                if (authService.isAuthenticated()) {
+                    console.log('✅ User already authenticated, redirecting...');
+                    this.redirectToDashboard();
+                    return;
+                }
+
+                // Initialize login page
+                await this.setupLoginForm();
+                await this.setupDemoCredentials();
+                await this.setupAuthEventListeners();
+
+                this.#isInitialized = true;
+                console.log('✅ Login page initialized successfully');
+
+            } catch (error) {
+                console.error('❌ Login page initialization failed:', error);
+                this.showError('Failed to initialize login page. Please refresh and try again.');
             }
         }
 
-        attemptInit();
+        async setupLoginForm() {
+            const form = document.getElementById('loginForm');
+            if (!form) throw new Error('Login form not found');
+
+            // Enhanced form submission with better UX
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                await this.handleLogin();
+            });
+
+            // Real-time validation
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+
+            if (usernameInput) {
+                usernameInput.addEventListener('input', () => {
+                    this.clearFieldError(usernameInput);
+                    this.validateUsername(usernameInput.value);
+                });
+            }
+
+            if (passwordInput) {
+                passwordInput.addEventListener('input', () => {
+                    this.clearFieldError(passwordInput);
+                    this.validatePassword(passwordInput.value);
+                });
+
+                // Handle Enter key
+                passwordInput.addEventListener('keypress', (event) => {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        this.handleLogin();
+                    }
+                });
+            }
+
+            console.log('✅ Login form setup complete');
+        }
+
+        async setupDemoCredentials() {
+            const credentialItems = document.querySelectorAll('.credential-item');
+
+            credentialItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const username = item.dataset.username;
+                    const password = item.dataset.password;
+
+                    this.fillCredentials(username, password);
+                    this.showMessage('Demo credentials filled. Click "Sign In" to continue.', 'info');
+                });
+
+                // Keyboard support
+                item.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        item.click();
+                    }
+                });
+            });
+
+            console.log('✅ Demo credentials setup complete');
+        }
+
+        async setupAuthEventListeners() {
+            // Listen for authentication events
+            authService.on('auth:login:success', ({ user }) => {
+                console.log('🎉 Login successful for user:', user.username);
+                this.showMessage('Login successful! Redirecting...', 'success');
+
+                setTimeout(() => {
+                    this.redirectToDashboard();
+                }, 1500);
+            });
+
+            authService.on('auth:login:error', ({ error }) => {
+                console.error('❌ Login failed:', error);
+                this.showMessage(error, 'error');
+                this.resetLoginButton();
+            });
+
+            console.log('✅ Auth event listeners setup complete');
+        }
+
+        async handleLogin() {
+            const form = document.getElementById('loginForm');
+            const formData = new FormData(form);
+
+            const credentials = {
+                username: formData.get('username')?.trim(),
+                password: formData.get('password'),
+                rememberMe: formData.get('rememberMe') === 'on'
+            };
+
+            // Clear previous messages
+            this.clearMessages();
+
+            // Validate form
+            if (!this.validateForm(credentials)) {
+                return;
+            }
+
+            // Show loading state
+            this.setLoginButtonLoading(true);
+
+            try {
+                // Attempt authentication
+                await authService.login(
+                    credentials.username,
+                    credentials.password,
+                    credentials.rememberMe
+                );
+
+            } catch (error) {
+                // Error handling is done through event listeners
+                console.error('Login attempt failed:', error);
+            }
+        }
+
+        validateForm({ username, password }) {
+            let isValid = true;
+
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+
+            // Username validation
+            if (!username) {
+                this.showFieldError(usernameInput, 'Username is required');
+                isValid = false;
+            } else if (username.length < 3) {
+                this.showFieldError(usernameInput, 'Username must be at least 3 characters');
+                isValid = false;
+            }
+
+            // Password validation
+            if (!password) {
+                this.showFieldError(passwordInput, 'Password is required');
+                isValid = false;
+            } else if (password.length < 6) {
+                this.showFieldError(passwordInput, 'Password must be at least 6 characters');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        validateUsername(username) {
+            const usernameInput = document.getElementById('username');
+
+            if (username && username.length >= 3) {
+                this.showFieldSuccess(usernameInput);
+                return true;
+            }
+            return false;
+        }
+
+        validatePassword(password) {
+            const passwordInput = document.getElementById('password');
+
+            if (password && password.length >= 6) {
+                this.showFieldSuccess(passwordInput);
+                return true;
+            }
+            return false;
+        }
+
+        fillCredentials(username, password) {
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+
+            if (usernameInput && passwordInput) {
+                usernameInput.value = username;
+                passwordInput.value = password;
+
+                // Clear any existing errors
+                this.clearFieldError(usernameInput);
+                this.clearFieldError(passwordInput);
+
+                // Show success indicators
+                this.showFieldSuccess(usernameInput);
+                this.showFieldSuccess(passwordInput);
+
+                // Focus the login button
+                const loginBtn = document.getElementById('loginBtn');
+                if (loginBtn) loginBtn.focus();
+            }
+        }
+
+        setLoginButtonLoading(loading) {
+            const loginBtn = document.getElementById('loginBtn');
+            const btnText = loginBtn?.querySelector('.btn-text');
+            const btnLoader = loginBtn?.querySelector('.btn-loader');
+
+            if (loginBtn) {
+                loginBtn.disabled = loading;
+
+                if (btnText && btnLoader) {
+                    if (loading) {
+                        btnText.style.display = 'none';
+                        btnLoader.style.display = 'flex';
+                    } else {
+                        btnText.style.display = 'inline';
+                        btnLoader.style.display = 'none';
+                    }
+                }
+            }
+        }
+
+        resetLoginButton() {
+            this.setLoginButtonLoading(false);
+
+            // Clear password field for security
+            const passwordInput = document.getElementById('password');
+            if (passwordInput) {
+                passwordInput.value = '';
+                passwordInput.focus();
+            }
+        }
+
+        showMessage(message, type = 'info') {
+            const messageContainer = document.getElementById('messageContainer');
+            if (!messageContainer) return;
+
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${type}`;
+            messageElement.innerHTML = `
+                    <span class="message-icon" aria-hidden="true">
+                        ${this.getMessageIcon(type)}
+                    </span>
+                    <span class="message-text">${this.escapeHtml(message)}</span>
+                `;
+
+            messageContainer.innerHTML = '';
+            messageContainer.appendChild(messageElement);
+            messageContainer.style.display = 'block';
+
+            // Auto-hide non-error messages
+            if (type !== 'error') {
+                setTimeout(() => {
+                    if (messageContainer.contains(messageElement)) {
+                        this.clearMessages();
+                    }
+                }, 5000);
+            }
+        }
+
+        clearMessages() {
+            const messageContainer = document.getElementById('messageContainer');
+            if (messageContainer) {
+                messageContainer.innerHTML = '';
+                messageContainer.style.display = 'none';
+            }
+        }
+
+        showFieldError(field, message) {
+            if (!field) return;
+
+            this.clearFieldError(field);
+            field.classList.add('error');
+            field.setAttribute('aria-invalid', 'true');
+
+            const errorElement = document.createElement('div');
+            errorElement.className = 'field-error';
+            errorElement.setAttribute('role', 'alert');
+            errorElement.textContent = message;
+
+            field.parentNode.appendChild(errorElement);
+        }
+
+        showFieldSuccess(field) {
+            if (!field) return;
+
+            this.clearFieldError(field);
+            field.classList.add('valid');
+            field.setAttribute('aria-invalid', 'false');
+        }
+
+        clearFieldError(field) {
+            if (!field) return;
+
+            field.classList.remove('error', 'valid');
+            field.removeAttribute('aria-invalid');
+
+            const errorElement = field.parentNode.querySelector('.field-error');
+            if (errorElement) {
+                errorElement.remove();
+            }
+        }
+
+        showError(message) {
+            this.showMessage(message, 'error');
+            console.error('Login page error:', message);
+        }
+
+        redirectToDashboard() {
+            window.location.href = 'dashboard.html';
+        }
+
+        getMessageIcon(type) {
+            const icons = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+            return icons[type] || icons.info;
+        }
+
+        escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        setupErrorBoundary() {
+            window.addEventListener('error', (event) => {
+                console.error('Login page error:', event.error);
+                this.showError('An unexpected error occurred. Please refresh the page.');
+            });
+
+            window.addEventListener('unhandledrejection', (event) => {
+                console.error('Unhandled promise rejection:', event.reason);
+                this.showError('A system error occurred. Please try again.');
+            });
+        }
+    }
+
+    // Initialize login page when DOM is ready
+    document.addEventListener('DOMContentLoaded', async () => {
+        console.log('🔐 Starting login page initialization...');
+
+        const loginController = new LoginPageController();
+        await loginController.init();
     });
+
+    // Handle browser back button
+    window.addEventListener('popstate', () => {
+        // Prevent going back to dashboard if logged out
+        if (!authService.isAuthenticated()) {
+            history.pushState(null, '', window.location.href);
+        }
+    });
+</script>
+
+<!-- Fallback for browsers without module support -->
+<script nomodule>
+    document.querySelector('.login-container').innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: white;">
+                <h1>Browser Update Required</h1>
+                <p>This application requires a modern browser that supports ES6 modules.</p>
+                <p>Please update your browser to continue.</p>
+            </div>
+        `;
 </script>
 </body>
 </html>

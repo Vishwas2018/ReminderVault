@@ -91,6 +91,10 @@
                     <span class="btn-icon">📤</span>
                     Export
                 </button>
+                <button class="action-btn secondary" id="testNotificationBtn">
+                    <span class="btn-icon">🔔</span>
+                    Test Alert
+                </button>
                 <button class="action-btn secondary" id="clearFiltersBtn" style="display: none;">
                     <span class="btn-icon">🏠</span>
                     Show All
@@ -132,7 +136,7 @@
             </div>
         </section>
 
-        <!-- Today's Schedule (Unchanged) -->
+        <!-- Today's Schedule -->
         <section class="schedule-section">
             <div class="section-header">
                 <h2>Today's Schedule</h2>
@@ -144,7 +148,7 @@
     </main>
 </div>
 
-<!-- Enhanced Add Reminder Modal (unchanged) -->
+<!-- Add Reminder Modal -->
 <div id="addReminderModal" class="modal" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
@@ -268,10 +272,6 @@
         outline-offset: 2px;
     }
 
-    .clickable-stat:active {
-        transform: translateY(-4px) scale(0.98);
-    }
-
     .click-indicator {
         position: absolute;
         bottom: 8px;
@@ -288,10 +288,6 @@
     }
 
     /* Enhanced Reminders Section */
-    .reminders-section {
-        margin-bottom: var(--spacing-xl);
-    }
-
     .section-controls {
         display: flex;
         align-items: center;
@@ -519,7 +515,7 @@
         color: var(--text-primary);
     }
 
-    /* Empty State Enhancement */
+    /* Empty State */
     .empty-state-enhanced {
         text-align: center;
         padding: var(--spacing-3xl);
@@ -541,11 +537,6 @@
         margin-bottom: var(--spacing-md);
     }
 
-    .empty-state-enhanced p {
-        font-size: var(--font-size-base);
-        margin-bottom: var(--spacing-lg);
-    }
-
     .empty-state-action {
         padding: var(--spacing-md) var(--spacing-xl);
         background: var(--primary-gradient);
@@ -564,14 +555,8 @@
 
     /* Animations */
     @keyframes slideInDown {
-        from {
-            transform: translateY(-20px);
-            opacity: 0;
-        }
-        to {
-            transform: translateY(0);
-            opacity: 1;
-        }
+        from { transform: translateY(-20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
     }
 
     /* Responsive Design */
@@ -592,1048 +577,48 @@
             align-items: stretch;
             gap: var(--spacing-sm);
         }
-
-        .filter-info {
-            flex-direction: column;
-            gap: var(--spacing-sm);
-            text-align: center;
-        }
     }
 </style>
 
-<!-- Enhanced Dashboard Script with Full Functionality -->
+<!-- Clean ES6 Module Dashboard Script -->
 <script type="module">
-    // ===== ENHANCED DASHBOARD CONTROLLER =====
+    import { DashboardController } from '../js/DashboardController.js';
 
-    // Constants
-    const REMINDER_STATUS = {
-        ACTIVE: 'active',
-        COMPLETED: 'completed',
-        OVERDUE: 'overdue'
-    };
+    // Initialize dashboard
+    const dashboard = new DashboardController();
 
-    const REMINDER_PRIORITIES = { LOW: 1, MEDIUM: 2, HIGH: 3, URGENT: 4 };
-
-    const ITEMS_PER_PAGE = 10;
-
-    const SAMPLE_DATA = {
-        reminders: [
-            {
-                id: 1,
-                title: 'Team meeting with product team',
-                description: 'Discuss quarterly roadmap and feature priorities for Q2',
-                datetime: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-                category: 'work',
-                priority: REMINDER_PRIORITIES.HIGH,
-                status: REMINDER_STATUS.ACTIVE,
-                notification: true,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            },
-            {
-                id: 2,
-                title: 'Doctor appointment',
-                description: 'Annual checkup with Dr. Smith - bring insurance card',
-                datetime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-                category: 'health',
-                priority: REMINDER_PRIORITIES.MEDIUM,
-                status: REMINDER_STATUS.ACTIVE,
-                notification: true,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            },
-            {
-                id: 3,
-                title: 'Buy groceries',
-                description: 'Weekly grocery shopping - check pantry first',
-                datetime: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-                category: 'personal',
-                priority: REMINDER_PRIORITIES.LOW,
-                status: REMINDER_STATUS.OVERDUE,
-                notification: true,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            },
-            {
-                id: 4,
-                title: 'Submit expense report',
-                description: 'Q1 expenses deadline is today',
-                datetime: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-                category: 'work',
-                priority: REMINDER_PRIORITIES.URGENT,
-                status: REMINDER_STATUS.OVERDUE,
-                notification: true,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            },
-            {
-                id: 5,
-                title: 'Call Mom',
-                description: '',
-                datetime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-                category: 'personal',
-                priority: REMINDER_PRIORITIES.MEDIUM,
-                status: REMINDER_STATUS.COMPLETED,
-                notification: true,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-            },
-            {
-                id: 6,
-                title: 'Review quarterly budget',
-                description: 'Analyze spending patterns and adjust for Q2',
-                datetime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-                category: 'finance',
-                priority: REMINDER_PRIORITIES.HIGH,
-                status: REMINDER_STATUS.ACTIVE,
-                notification: true,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            }
-        ],
-        schedule: [
-            { id: 1, time: '09:00', title: 'Daily standup', description: 'Team sync meeting' },
-            { id: 2, time: '11:30', title: 'Client presentation', description: 'Present new features' },
-            { id: 3, time: '14:00', title: 'Code review', description: 'Review pull requests' },
-            { id: 4, time: '16:30', title: 'Sprint planning', description: 'Plan next sprint' }
-        ]
-    };
-
-    // Storage utility
-    const Storage = {
-        get: (key, defaultValue = null) => {
-            try {
-                const item = localStorage.getItem(key);
-                return item ? JSON.parse(item) : defaultValue;
-            } catch {
-                return defaultValue;
-            }
-        },
-        set: (key, value) => {
-            try {
-                localStorage.setItem(key, JSON.stringify(value));
-                return true;
-            } catch {
-                return false;
-            }
-        }
-    };
-
-    // Enhanced Dashboard Controller
-    class EnhancedDashboardController {
-        constructor() {
-            this.reminders = [];
-            this.schedule = [];
-            this.currentUser = null;
-            this.nextId = 7;
-
-            // Filter and pagination state
-            this.currentFilter = 'all';
-            this.currentPage = 1;
-            this.sortBy = 'datetime';
-            this.filteredReminders = [];
-        }
-
-        async init() {
-            console.log('🚀 Initializing Enhanced Dashboard...');
-
-            try {
-                if (!this.checkAuth()) return;
-
-                await this.loadData();
-                this.setupEventHandlers();
-                this.updateDateTime();
-                this.renderDashboard();
-
-                // Auto-refresh every minute
-                setInterval(() => {
-                    this.updateDateTime();
-                    this.updateOverdueReminders();
-                }, 60000);
-
-                console.log('✅ Enhanced Dashboard initialized successfully');
-            } catch (error) {
-                console.error('❌ Dashboard initialization failed:', error);
-                this.showNotification('Failed to initialize dashboard', 'error');
-            }
-        }
-
-        checkAuth() {
-            const session = Storage.get('user_session');
-
-            if (!session?.username) {
-                console.log('No valid session, redirecting to login...');
-                setTimeout(() => window.location.href = 'login.html', 1000);
-                return false;
-            }
-
-            this.currentUser = session;
-            this.updateWelcomeMessage();
-            return true;
-        }
-
-        async loadData() {
-            const storedReminders = Storage.get('reminders_data');
-
-            if (storedReminders?.length > 0) {
-                this.reminders = storedReminders;
-            } else {
-                this.reminders = [...SAMPLE_DATA.reminders];
-                this.saveReminders();
-            }
-
-            this.schedule = [...SAMPLE_DATA.schedule];
-            this.applyFilters();
-
-            console.log(`📊 Loaded ${this.reminders.length} reminders`);
-        }
-
-        saveReminders() {
-            Storage.set('reminders_data', this.reminders);
-        }
-
-        setupEventHandlers() {
-            // Statistics card click handlers
-            document.querySelectorAll('.clickable-stat').forEach(card => {
-                card.addEventListener('click', (e) => {
-                    const filter = e.currentTarget.dataset.filter;
-                    this.setFilter(filter);
-                });
-            });
-
-            // Sort handler
-            document.getElementById('sortBy')?.addEventListener('change', (e) => {
-                this.sortBy = e.target.value;
-                this.applyFilters();
-                this.renderReminders();
-            });
-
-            // Clear filter handlers
-            document.getElementById('clearFilterBtn')?.addEventListener('click', () => {
-                this.clearFilters();
-            });
-
-            document.getElementById('clearFiltersBtn')?.addEventListener('click', () => {
-                this.clearFilters();
-            });
-
-            // Existing handlers
-            document.getElementById('logoutBtn')?.addEventListener('click', () => {
-                this.handleLogout();
-            });
-
-            document.getElementById('addReminderBtn')?.addEventListener('click', () => {
-                this.showAddReminderModal();
-            });
-
-            document.getElementById('refreshBtn')?.addEventListener('click', () => {
-                this.refreshDashboard();
-            });
-
-            document.getElementById('refreshRemindersBtn')?.addEventListener('click', () => {
-                this.refreshDashboard();
-            });
-
-            document.getElementById('exportBtn')?.addEventListener('click', () => {
-                this.exportData();
-            });
-
-            // Pagination handlers
-            document.getElementById('prevPage')?.addEventListener('click', () => {
-                if (this.currentPage > 1) {
-                    this.currentPage--;
-                    this.renderReminders();
-                }
-            });
-
-            document.getElementById('nextPage')?.addEventListener('click', () => {
-                const totalPages = Math.ceil(this.filteredReminders.length / ITEMS_PER_PAGE);
-                if (this.currentPage < totalPages) {
-                    this.currentPage++;
-                    this.renderReminders();
-                }
-            });
-
-            this.setupModalHandlers();
-            this.setupFormHandlers();
-        }
-
-        setFilter(filter) {
-            this.currentFilter = filter;
-            this.currentPage = 1;
-            this.applyFilters();
-            this.updateFilterInfo();
-            this.renderReminders();
-            this.updateStatistics(); // Refresh to show active state
-        }
-
-        clearFilters() {
-            this.currentFilter = 'all';
-            this.currentPage = 1;
-            this.applyFilters();
-            this.updateFilterInfo();
-            this.renderReminders();
-            this.updateStatistics();
-        }
-
-        applyFilters() {
-            let filtered = [...this.reminders];
-
-            // Apply status filter
-            switch (this.currentFilter) {
-                case 'active':
-                    filtered = filtered.filter(r => r.status === REMINDER_STATUS.ACTIVE);
-                    break;
-                case 'completed':
-                    filtered = filtered.filter(r => r.status === REMINDER_STATUS.COMPLETED);
-                    break;
-                case 'overdue':
-                    filtered = filtered.filter(r => r.status === REMINDER_STATUS.OVERDUE);
-                    break;
-                case 'all':
-                default:
-                    // No filtering for 'all'
-                    break;
-            }
-
-            // Apply sorting
-            filtered.sort((a, b) => {
-                switch (this.sortBy) {
-                    case 'priority':
-                        return b.priority - a.priority; // High priority first
-                    case 'title':
-                        return a.title.localeCompare(b.title);
-                    case 'created':
-                        return new Date(b.createdAt) - new Date(a.createdAt);
-                    case 'datetime':
-                    default:
-                        return new Date(a.datetime) - new Date(b.datetime);
-                }
-            });
-
-            this.filteredReminders = filtered;
-        }
-
-        updateFilterInfo() {
-            const filterInfo = document.getElementById('filterInfo');
-            const filterText = document.getElementById('filterText');
-            const clearFiltersBtn = document.getElementById('clearFiltersBtn');
-
-            if (this.currentFilter === 'all') {
-                filterInfo.style.display = 'none';
-                clearFiltersBtn.style.display = 'none';
-            } else {
-                filterInfo.style.display = 'flex';
-                clearFiltersBtn.style.display = 'block';
-
-                const filterNames = {
-                    active: 'Active Reminders',
-                    completed: 'Completed Reminders',
-                    overdue: 'Overdue Reminders'
-                };
-
-                filterText.textContent = `Showing ${this.filteredReminders.length} ${filterNames[this.currentFilter]}`;
-            }
-
-            // Update title
-            const titleElement = document.getElementById('remindersTitle');
-            if (titleElement) {
-                const titles = {
-                    all: 'All Reminders',
-                    active: 'Active Reminders',
-                    completed: 'Completed Reminders',
-                    overdue: 'Overdue Reminders'
-                };
-                titleElement.textContent = titles[this.currentFilter];
-            }
-        }
-
-        setupModalHandlers() {
-            // Close modal on overlay click
-            document.querySelectorAll('.modal').forEach(modal => {
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        this.closeModal(modal.id);
-                    }
-                });
-            });
-
-            // Close modal on close button click
-            document.querySelectorAll('.close').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const modal = e.target.closest('.modal');
-                    if (modal) this.closeModal(modal.id);
-                });
-            });
-
-            // Escape key to close modal
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    const openModal = document.querySelector('.modal[style*="flex"]');
-                    if (openModal) this.closeModal(openModal.id);
-                }
-            });
-        }
-
-        setupFormHandlers() {
-            const form = document.getElementById('addReminderForm');
-            if (!form) return;
-
-            form.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.handleAddReminder();
-            });
-
-            // Quick time buttons
-            document.querySelectorAll('.time-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    this.setQuickTime(btn);
-                });
-            });
-
-            // Real-time validation
-            const titleInput = document.getElementById('reminderTitle');
-            titleInput?.addEventListener('input', () => {
-                this.validateTitle(titleInput.value);
-            });
-        }
-
-        updateDateTime() {
-            const dateElement = document.getElementById('currentDate');
-            if (dateElement) {
-                const now = new Date();
-                const options = {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                };
-                dateElement.textContent = now.toLocaleDateString('en-US', options);
-            }
-        }
-
-        updateWelcomeMessage() {
-            const welcomeElement = document.getElementById('welcomeMessage');
-            if (welcomeElement && this.currentUser) {
-                const name = this.currentUser.profile?.firstName || this.currentUser.username || 'User';
-                welcomeElement.textContent = `Welcome back, ${name}!`;
-            }
-        }
-
-        renderDashboard() {
-            this.updateStatistics();
-            this.renderReminders();
-            this.renderTodaySchedule();
-            this.updateFilterInfo();
-        }
-
-        updateStatistics() {
-            const stats = this.calculateStatistics();
-
-            this.animateCounter('totalReminders', stats.total);
-            this.animateCounter('activeReminders', stats.active);
-            this.animateCounter('completedToday', stats.completedToday);
-            this.animateCounter('overdue', stats.overdue);
-
-            // Update active state for stat cards
-            this.updateStatCardStates();
-        }
-
-        updateStatCardStates() {
-            document.querySelectorAll('.clickable-stat').forEach(card => {
-                const filter = card.dataset.filter;
-                if (filter === this.currentFilter) {
-                    card.classList.add('active');
-                    card.style.transform = 'scale(1.05)';
-                    card.style.boxShadow = '0 15px 30px rgba(102, 126, 234, 0.3)';
-                } else {
-                    card.classList.remove('active');
-                    card.style.transform = '';
-                    card.style.boxShadow = '';
-                }
-            });
-        }
-
-        calculateStatistics() {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-
-            return {
-                total: this.reminders.length,
-                active: this.reminders.filter(r => r.status === REMINDER_STATUS.ACTIVE).length,
-                completedToday: this.reminders.filter(r =>
-                    r.status === REMINDER_STATUS.COMPLETED &&
-                    new Date(r.updatedAt) >= today &&
-                    new Date(r.updatedAt) < tomorrow
-                ).length,
-                overdue: this.reminders.filter(r => r.status === REMINDER_STATUS.OVERDUE).length
-            };
-        }
-
-        animateCounter(elementId, targetValue) {
-            const element = document.getElementById(elementId);
-            if (!element) return;
-
-            const currentValue = parseInt(element.textContent) || 0;
-            const difference = targetValue - currentValue;
-            const duration = 500;
-            const startTime = performance.now();
-
-            const animate = (currentTime) => {
-                const elapsed = currentTime - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                const currentNumber = Math.round(currentValue + (difference * progress));
-
-                element.textContent = currentNumber;
-
-                if (progress < 1) {
-                    requestAnimationFrame(animate);
-                }
-            };
-
-            requestAnimationFrame(animate);
-        }
-
-        renderReminders() {
-            const container = document.getElementById('remindersList');
-            if (!container) return;
-
-            if (this.filteredReminders.length === 0) {
-                this.renderEmptyState(container);
-                this.hidePagination();
-                return;
-            }
-
-            // Calculate pagination
-            const totalPages = Math.ceil(this.filteredReminders.length / ITEMS_PER_PAGE);
-            const startIndex = (this.currentPage - 1) * ITEMS_PER_PAGE;
-            const endIndex = startIndex + ITEMS_PER_PAGE;
-            const pageReminders = this.filteredReminders.slice(startIndex, endIndex);
-
-            // Render reminders
-            const html = pageReminders.map(reminder => this.renderReminderItem(reminder)).join('');
-            container.innerHTML = html;
-
-            // Setup click handlers for action buttons
-            this.setupReminderActionHandlers();
-
-            // Update pagination
-            this.updatePagination(totalPages);
-        }
-
-        renderReminderItem(reminder) {
-            return `
-            <div class="reminder-item enhanced" data-id="${reminder.id}">
-                <div class="reminder-priority-indicator"
-                     style="background-color: ${this.getPriorityColor(reminder.priority)}"></div>
-
-                <div class="reminder-details">
-                    <div class="reminder-title-enhanced">
-                        ${this.getPriorityIcon(reminder.priority)}
-                        ${this.escapeHtml(reminder.title)}
-                    </div>
-
-                    <div class="reminder-meta">
-                        <span class="reminder-time">
-                            <strong>Due:</strong> ${this.formatReminderTime(reminder.datetime)}
-                        </span>
-                        <span class="reminder-created">
-                            <strong>Created:</strong> ${this.formatDate(reminder.createdAt)}
-                        </span>
-                    </div>
-
-                    ${reminder.description ? `
-                        <div class="reminder-description">
-                            ${this.escapeHtml(reminder.description)}
-                        </div>
-                    ` : ''}
-                </div>
-
-                <div class="reminder-badges">
-                    <span class="badge badge-priority-${this.getPriorityName(reminder.priority)}">
-                        ${this.getPriorityName(reminder.priority).toUpperCase()}
-                    </span>
-                    <span class="badge badge-category">
-                        ${reminder.category.toUpperCase()}
-                    </span>
-                    <span class="badge badge-status-${reminder.status}">
-                        ${reminder.status.toUpperCase()}
-                    </span>
-                </div>
-
-                <div class="reminder-actions-enhanced">
-                    ${reminder.status !== REMINDER_STATUS.COMPLETED ? `
-                        <button class="action-btn-small action-btn-complete"
-                                data-id="${reminder.id}"
-                                title="Mark as complete">
-                            ✅
-                        </button>
-                    ` : ''}
-                    <button class="action-btn-small action-btn-delete"
-                            data-id="${reminder.id}"
-                            title="Delete reminder">
-                        🗑️
-                    </button>
-                </div>
-            </div>
-        `;
-        }
-
-        renderEmptyState(container) {
-            const emptyStates = {
-                all: {
-                    icon: '📝',
-                    title: 'No reminders found',
-                    message: 'Create your first reminder to get started!',
-                    showAction: true
-                },
-                active: {
-                    icon: '🎉',
-                    title: 'No active reminders',
-                    message: 'All caught up! You have no active reminders.',
-                    showAction: true
-                },
-                completed: {
-                    icon: '✅',
-                    title: 'No completed reminders',
-                    message: 'Complete some reminders to see them here.',
-                    showAction: false
-                },
-                overdue: {
-                    icon: '🎯',
-                    title: 'No overdue reminders',
-                    message: 'Great job! You\'re all caught up with your reminders.',
-                    showAction: false
-                }
-            };
-
-            const state = emptyStates[this.currentFilter] || emptyStates.all;
-
-            container.innerHTML = `
-            <div class="empty-state-enhanced">
-                <div class="empty-icon">${state.icon}</div>
-                <h3>${state.title}</h3>
-                <p>${state.message}</p>
-                ${state.showAction ? `
-                    <button class="empty-state-action" onclick="dashboard.showAddReminderModal()">
-                        ➕ Add Your First Reminder
-                    </button>
-                ` : ''}
-            </div>
-        `;
-        }
-
-        setupReminderActionHandlers() {
-            // Complete buttons
-            document.querySelectorAll('.action-btn-complete').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const id = parseInt(btn.dataset.id);
-                    this.completeReminder(id);
-                });
-            });
-
-            // Delete buttons
-            document.querySelectorAll('.action-btn-delete').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const id = parseInt(btn.dataset.id);
-                    this.deleteReminder(id);
-                });
-            });
-        }
-
-        updatePagination(totalPages) {
-            const paginationContainer = document.getElementById('paginationContainer');
-            const prevBtn = document.getElementById('prevPage');
-            const nextBtn = document.getElementById('nextPage');
-            const pageInfo = document.getElementById('pageInfo');
-
-            if (totalPages <= 1) {
-                this.hidePagination();
-                return;
-            }
-
-            paginationContainer.style.display = 'flex';
-
-            prevBtn.disabled = this.currentPage === 1;
-            nextBtn.disabled = this.currentPage === totalPages;
-
-            pageInfo.textContent = `Page ${this.currentPage} of ${totalPages}`;
-        }
-
-        hidePagination() {
-            const paginationContainer = document.getElementById('paginationContainer');
-            if (paginationContainer) {
-                paginationContainer.style.display = 'none';
-            }
-        }
-
-        renderTodaySchedule() {
-            const container = document.getElementById('todaySchedule');
-            if (!container) return;
-
-            if (this.schedule.length === 0) {
-                container.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-state-icon">📅</div>
-                    <h3>No schedule items</h3>
-                    <p>Your schedule is clear for today!</p>
-                </div>
-            `;
-                return;
-            }
-
-            const html = this.schedule.map(item => `
-            <div class="schedule-item">
-                <div class="schedule-time">${item.time}</div>
-                <div class="schedule-content">
-                    <div class="schedule-title">${this.escapeHtml(item.title)}</div>
-                    <div class="schedule-description">${this.escapeHtml(item.description)}</div>
-                </div>
-            </div>
-        `).join('');
-
-            container.innerHTML = html;
-        }
-
-        showAddReminderModal() {
-            const modal = document.getElementById('addReminderModal');
-            if (!modal) return;
-
-            // Reset form
-            const form = document.getElementById('addReminderForm');
-            if (form) form.reset();
-
-            // Set default datetime (1 hour from now)
-            const defaultTime = new Date();
-            defaultTime.setHours(defaultTime.getHours() + 1);
-            const datetimeInput = document.getElementById('reminderDate');
-            if (datetimeInput) {
-                datetimeInput.value = defaultTime.toISOString().slice(0, 16);
-            }
-
-            modal.style.display = 'flex';
-
-            // Focus title input
-            setTimeout(() => {
-                document.getElementById('reminderTitle')?.focus();
-            }, 100);
-        }
-
-        closeModal(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.style.display = 'none';
-            }
-        }
-
-        setQuickTime(button) {
-            const minutes = parseInt(button.dataset.minutes) || 0;
-            const hours = parseInt(button.dataset.hours) || 0;
-
-            const now = new Date();
-            now.setMinutes(now.getMinutes() + minutes);
-            now.setHours(now.getHours() + hours);
-
-            const datetimeInput = document.getElementById('reminderDate');
-            if (datetimeInput) {
-                datetimeInput.value = now.toISOString().slice(0, 16);
-            }
-
-            // Visual feedback
-            document.querySelectorAll('.time-btn').forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-        }
-
-        validateTitle(title) {
-            const titleInput = document.getElementById('reminderTitle');
-            if (!titleInput) return;
-
-            if (title.trim().length === 0) {
-                titleInput.classList.add('error');
-                return false;
-            } else {
-                titleInput.classList.remove('error');
-                return true;
-            }
-        }
-
-        async handleAddReminder() {
-            const form = document.getElementById('addReminderForm');
-            if (!form) return;
-
-            const formData = new FormData(form);
-            const reminderData = {
-                id: this.nextId++,
-                title: formData.get('title')?.trim(),
-                description: formData.get('description')?.trim(),
-                datetime: formData.get('datetime'),
-                category: formData.get('category'),
-                priority: parseInt(formData.get('priority')),
-                notification: formData.get('notification') === 'on',
-                status: REMINDER_STATUS.ACTIVE,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            };
-
-            // Validate
-            if (!reminderData.title) {
-                this.showNotification('Title is required', 'error');
-                return;
-            }
-
-            if (!reminderData.datetime) {
-                this.showNotification('Date and time is required', 'error');
-                return;
-            }
-
-            // Check if date is in the past
-            if (new Date(reminderData.datetime) <= new Date()) {
-                reminderData.status = REMINDER_STATUS.OVERDUE;
-            }
-
-            // Add to reminders
-            this.reminders.push(reminderData);
-            this.saveReminders();
-
-            // Close modal and refresh
-            this.closeModal('addReminderModal');
-            this.applyFilters();
-            this.renderDashboard();
-            this.showNotification('Reminder created successfully!', 'success');
-
-            console.log('✅ Reminder created:', reminderData.title);
-        }
-
-        completeReminder(id) {
-            const reminder = this.reminders.find(r => r.id === id);
-            if (!reminder) return;
-
-            reminder.status = REMINDER_STATUS.COMPLETED;
-            reminder.updatedAt = new Date().toISOString();
-
-            this.saveReminders();
-            this.applyFilters();
-            this.renderDashboard();
-            this.showNotification(`"${reminder.title}" marked as completed!`, 'success');
-        }
-
-        deleteReminder(id) {
-            const reminder = this.reminders.find(r => r.id === id);
-            if (!reminder) return;
-
-            if (!confirm(`Delete "${reminder.title}"?`)) return;
-
-            this.reminders = this.reminders.filter(r => r.id !== id);
-            this.saveReminders();
-            this.applyFilters();
-            this.renderDashboard();
-            this.showNotification(`"${reminder.title}" deleted`, 'info');
-        }
-
-        updateOverdueReminders() {
-            const now = new Date();
-            let updated = false;
-
-            this.reminders.forEach(reminder => {
-                if (reminder.status === REMINDER_STATUS.ACTIVE &&
-                    new Date(reminder.datetime) <= now) {
-                    reminder.status = REMINDER_STATUS.OVERDUE;
-                    reminder.updatedAt = new Date().toISOString();
-                    updated = true;
-                }
-            });
-
-            if (updated) {
-                this.saveReminders();
-                this.applyFilters();
-                this.updateStatistics();
-            }
-        }
-
-        refreshDashboard() {
-            this.updateOverdueReminders();
-            this.renderDashboard();
-            this.showNotification('Dashboard refreshed!', 'success');
-        }
-
-        exportData() {
-            const exportData = {
-                reminders: this.reminders,
-                exportDate: new Date().toISOString(),
-                user: this.currentUser?.username,
-                totalCount: this.reminders.length,
-                statistics: this.calculateStatistics()
-            };
-
-            const dataStr = JSON.stringify(exportData, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(dataBlob);
-            link.download = `reminders-backup-${new Date().toISOString().split('T')[0]}.json`;
-            link.click();
-
-            this.showNotification('Data exported successfully!', 'success');
-        }
-
-        handleLogout() {
-            if (!confirm('Are you sure you want to logout?')) return;
-
-            localStorage.removeItem('user_session');
-            this.showNotification('Logged out successfully', 'success');
-
-            setTimeout(() => {
-                window.location.href = 'login.html';
-            }, 1000);
-        }
-
-        // Utility methods
-        getPriorityIcon(priority) {
-            const icons = {
-                [REMINDER_PRIORITIES.LOW]: '🔵',
-                [REMINDER_PRIORITIES.MEDIUM]: '🟡',
-                [REMINDER_PRIORITIES.HIGH]: '🟠',
-                [REMINDER_PRIORITIES.URGENT]: '🔴'
-            };
-            return icons[priority] || '⚪';
-        }
-
-        getPriorityColor(priority) {
-            const colors = {
-                [REMINDER_PRIORITIES.LOW]: '#2196F3',
-                [REMINDER_PRIORITIES.MEDIUM]: '#FF9800',
-                [REMINDER_PRIORITIES.HIGH]: '#FF5722',
-                [REMINDER_PRIORITIES.URGENT]: '#F44336'
-            };
-            return colors[priority] || '#9E9E9E';
-        }
-
-        getPriorityName(priority) {
-            const names = {
-                [REMINDER_PRIORITIES.LOW]: 'low',
-                [REMINDER_PRIORITIES.MEDIUM]: 'medium',
-                [REMINDER_PRIORITIES.HIGH]: 'high',
-                [REMINDER_PRIORITIES.URGENT]: 'urgent'
-            };
-            return names[priority] || 'unknown';
-        }
-
-        formatReminderTime(datetime) {
-            const date = new Date(datetime);
-            const now = new Date();
-            const diffMs = date - now;
-
-            if (diffMs < 0) {
-                const overdueDays = Math.floor(Math.abs(diffMs) / (24 * 60 * 60 * 1000));
-                if (overdueDays > 0) {
-                    return `Overdue by ${overdueDays} day${overdueDays > 1 ? 's' : ''}`;
-                }
-                const overdueHours = Math.floor(Math.abs(diffMs) / (60 * 60 * 1000));
-                return overdueHours > 0 ? `Overdue by ${overdueHours}h` : 'Overdue';
-            }
-
-            if (diffMs < 60 * 60 * 1000) {
-                const minutes = Math.round(diffMs / (60 * 1000));
-                return `In ${minutes}m`;
-            }
-
-            if (diffMs < 24 * 60 * 60 * 1000) {
-                const hours = Math.round(diffMs / (60 * 60 * 1000));
-                return `In ${hours}h`;
-            }
-
-            if (diffMs < 7 * 24 * 60 * 60 * 1000) {
-                const days = Math.round(diffMs / (24 * 60 * 60 * 1000));
-                return `In ${days} day${days > 1 ? 's' : ''}`;
-            }
-
-            return new Intl.DateTimeFormat('en-US', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            }).format(date);
-        }
-
-        formatDate(dateString) {
-            return new Intl.DateTimeFormat('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric'
-            }).format(new Date(dateString));
-        }
-
-        escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.className = `notification notification-${type}`;
-            notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 12px 16px;
-            border-radius: 6px;
-            color: white;
-            font-weight: 500;
-            z-index: 10000;
-            max-width: 300px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            transform: translateX(100%);
-            transition: transform 0.3s ease;
-        `;
-
-            const colors = {
-                success: '#10B981',
-                error: '#EF4444',
-                warning: '#F59E0B',
-                info: '#3B82F6'
-            };
-
-            notification.style.backgroundColor = colors[type] || colors.info;
-            notification.textContent = message;
-
-            document.body.appendChild(notification);
-
-            // Animate in
-            requestAnimationFrame(() => {
-                notification.style.transform = 'translateX(0)';
-            });
-
-            // Auto remove
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.style.transform = 'translateX(100%)';
-                    setTimeout(() => notification.remove(), 300);
-                }
-            }, type === 'error' ? 5000 : 3000);
-        }
-    }
-
-    // Global functions for onclick handlers
+    // Make globally accessible for onclick handlers
+    window.dashboard = dashboard;
     window.closeModal = (modalId) => dashboard.closeModal(modalId);
 
-    // Initialize enhanced dashboard
-    const dashboard = new EnhancedDashboardController();
-    window.dashboard = dashboard; // Make it globally accessible
-
-    // Start when DOM is ready
+    // Initialize when DOM is ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => dashboard.init());
+        document.addEventListener('DOMContentLoaded', () => {
+            dashboard.initialize();
+        });
     } else {
-        dashboard.init();
+        dashboard.initialize();
     }
 
-    console.log('📱 Enhanced Dashboard script loaded');
+    console.log('📱 Clean dashboard script loaded');
+</script>
+
+<!-- Fallback for browsers without module support -->
+<script nomodule>
+    document.body.innerHTML = `
+    <div style="
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-family: system-ui, sans-serif; text-align: center;
+    ">
+        <div>
+            <h1>Browser Update Required</h1>
+            <p>This application requires ES6 module support.</p>
+            <p>Please update your browser to continue.</p>
+        </div>
+    </div>
+`;
 </script>
 
 <!-- Error boundary -->
@@ -1646,11 +631,11 @@
         position: fixed; top: 20px; right: 20px; left: 20px;
         background: #fee; border: 1px solid #fcc; color: #c66;
         padding: 15px; border-radius: 5px; z-index: 10001;
-        font-family: system-ui, sans-serif;
+        font-family: system-ui, sans-serif; text-align: center;
     `;
         errorDiv.innerHTML = `
         <strong>⚠️ Application Error</strong><br>
-        Something went wrong. Please refresh the page.<br>
+        ${event.error?.message || 'Something went wrong'}<br>
         <button onclick="window.location.reload()" style="margin-top: 10px; padding: 5px 10px;">
             🔄 Refresh Page
         </button>

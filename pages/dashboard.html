@@ -3,25 +3,155 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Reminders Vault</title>
+    <title>Dashboard - Reminders Vault (IndexedDB)</title>
 
     <!-- Stylesheets -->
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/dashboard.css">
+
+    <style>
+        .indexeddb-indicator {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: 1rem;
+        }
+
+        .storage-info {
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .storage-icon {
+            font-size: 1.5rem;
+        }
+
+        .data-management-section {
+            background: linear-gradient(135deg, var(--bg-secondary), rgba(102, 126, 234, 0.05));
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--spacing-xl);
+            border: 1px solid var(--border-light);
+        }
+
+        .data-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-md);
+        }
+
+        .data-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-xs);
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: var(--font-size-sm);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            background: rgba(102, 126, 234, 0.05);
+            transform: translateY(-1px);
+        }
+
+        .data-btn.danger {
+            border-color: var(--danger-color);
+            color: var(--danger-color);
+        }
+
+        .data-btn.danger:hover {
+            background: rgba(231, 76, 60, 0.05);
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .loading-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .spinner-large {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-content">
+        <div class="spinner-large"></div>
+        <h3>Loading from IndexedDB...</h3>
+        <p>Please wait while we fetch your data</p>
+    </div>
+</div>
+
 <!-- Dashboard Container -->
 <div class="dashboard-container">
-    <!-- Enhanced Header -->
+    <!-- Enhanced Header with Storage Indicator -->
     <header class="dashboard-header" role="banner">
         <div class="header-content">
             <div class="header-left">
                 <h1>📝 Reminders Vault</h1>
+                <span class="indexeddb-indicator">💾 IndexedDB Storage</span>
                 <time id="currentDate" class="current-date"></time>
             </div>
             <div class="header-right">
                 <span id="welcomeMessage" class="welcome-message">Welcome back!</span>
                 <nav class="user-menu">
+                    <button id="alertPrefsBtn" class="profile-btn" title="Alert Preferences">
+                        🔔 Alerts
+                    </button>
+                    <button id="dbInfoBtn" class="profile-btn" title="Database Info">
+                        📊 DB Info
+                    </button>
                     <button id="logoutBtn" class="logout-btn">🚪 Logout</button>
                 </nav>
             </div>
@@ -30,11 +160,19 @@
 
     <!-- Main Content -->
     <main class="dashboard-main" role="main">
-        <!-- Statistics Section with Clickable Cards -->
+        <!-- Storage Information -->
+        <section class="storage-info">
+            <div class="storage-icon">💾</div>
+            <div>
+                <strong>Persistent Storage Active</strong>
+                <p>Your reminders are stored in IndexedDB and will persist across browser sessions, restarts, and updates.</p>
+            </div>
+        </section>
+
+        <!-- Statistics Section -->
         <section class="stats-section">
             <div class="stats-grid">
-                <button class="stat-card total-reminders clickable-stat" data-filter="all"
-                        aria-label="View all reminders">
+                <button class="stat-card total-reminders clickable-stat" data-filter="all">
                     <div class="stat-icon">📝</div>
                     <div class="stat-content">
                         <h3 id="totalReminders" class="stat-number">0</h3>
@@ -43,8 +181,7 @@
                     <div class="click-indicator">👆 Click to view</div>
                 </button>
 
-                <button class="stat-card active-reminders clickable-stat" data-filter="active"
-                        aria-label="View active reminders">
+                <button class="stat-card active-reminders clickable-stat" data-filter="active">
                     <div class="stat-icon">⏰</div>
                     <div class="stat-content">
                         <h3 id="activeReminders" class="stat-number">0</h3>
@@ -53,8 +190,7 @@
                     <div class="click-indicator">👆 Click to view</div>
                 </button>
 
-                <button class="stat-card completed-today clickable-stat" data-filter="completed"
-                        aria-label="View completed reminders">
+                <button class="stat-card completed-today clickable-stat" data-filter="completed">
                     <div class="stat-icon">✅</div>
                     <div class="stat-content">
                         <h3 id="completedToday" class="stat-number">0</h3>
@@ -63,14 +199,38 @@
                     <div class="click-indicator">👆 Click to view</div>
                 </button>
 
-                <button class="stat-card overdue clickable-stat" data-filter="overdue"
-                        aria-label="View overdue reminders">
+                <button class="stat-card overdue clickable-stat" data-filter="overdue">
                     <div class="stat-icon">⚠️</div>
                     <div class="stat-content">
                         <h3 id="overdue" class="stat-number">0</h3>
                         <p class="stat-label">Overdue</p>
                     </div>
                     <div class="click-indicator">👆 Click to view</div>
+                </button>
+            </div>
+        </section>
+
+        <!-- Data Management Section -->
+        <section class="data-management-section">
+            <h2>📦 Data Management</h2>
+            <p>Manage your IndexedDB data with import, export, and maintenance options.</p>
+
+            <div class="data-actions">
+                <button class="data-btn" id="exportBtn">
+                    <span>📤</span>
+                    Export Data
+                </button>
+                <button class="data-btn" id="importBtn">
+                    <span>📥</span>
+                    Import Data
+                </button>
+                <button class="data-btn" id="dbInfoBtn">
+                    <span>📊</span>
+                    Database Info
+                </button>
+                <button class="data-btn danger" id="clearDataBtn">
+                    <span>🗑️</span>
+                    Clear All Data
                 </button>
             </div>
         </section>
@@ -87,13 +247,13 @@
                     <span class="btn-icon">🔄</span>
                     Refresh
                 </button>
-                <button class="action-btn tertiary" id="exportBtn">
-                    <span class="btn-icon">📤</span>
-                    Export
-                </button>
                 <button class="action-btn secondary" id="testNotificationBtn">
                     <span class="btn-icon">🔔</span>
-                    Test Alert
+                    Test Alerts
+                </button>
+                <button class="action-btn tertiary" id="alertPreferencesBtn">
+                    <span class="btn-icon">⚙️</span>
+                    Alert Settings
                 </button>
                 <button class="action-btn secondary" id="clearFiltersBtn" style="display: none;">
                     <span class="btn-icon">🏠</span>
@@ -102,7 +262,7 @@
             </div>
         </section>
 
-        <!-- Enhanced Reminders Section with Filtering -->
+        <!-- Enhanced Reminders Section -->
         <section class="reminders-section">
             <div class="section-header">
                 <h2 id="remindersTitle">All Reminders</h2>
@@ -112,6 +272,7 @@
                         <option value="priority">Sort by Priority</option>
                         <option value="title">Sort by Title</option>
                         <option value="created">Sort by Created</option>
+                        <option value="alerts">Sort by Alert Count</option>
                     </select>
                     <button class="refresh-btn" id="refreshRemindersBtn">🔄</button>
                 </div>
@@ -148,11 +309,11 @@
     </main>
 </div>
 
-<!-- Add Reminder Modal -->
+<!-- Enhanced Add Reminder Modal with IndexedDB -->
 <div id="addReminderModal" class="modal" style="display: none;">
-    <div class="modal-content">
+    <div class="modal-content enhanced">
         <div class="modal-header">
-            <h2><span class="label-icon">➕</span> Add New Reminder</h2>
+            <h2><span class="label-icon">➕</span> Add New Reminder (IndexedDB)</h2>
             <button class="close" aria-label="Close modal">&times;</button>
         </div>
         <div class="modal-body">
@@ -222,6 +383,129 @@
                     </label>
                 </div>
 
+                <!-- Alert Timing Selection -->
+                <div class="alert-timing-section">
+                    <h4><span class="label-icon">⏰</span> Alert Timing (Stored in IndexedDB)</h4>
+                    <p class="section-description">Choose when you want to be alerted before this reminder is due:</p>
+
+                    <div class="timing-categories">
+                        <div class="timing-category">
+                            <div class="category-title">
+                                Minutes Before
+                                <span class="category-subtitle">(immediate alerts)</span>
+                            </div>
+                            <div class="timing-options">
+                                <label class="timing-option">
+                                    <input type="checkbox" name="alertTiming" value="5" checked>
+                                    <div class="timing-card">
+                                        <div class="timing-icon">⏰</div>
+                                        <div class="timing-info">
+                                            <div class="timing-label">5 minutes before</div>
+                                            <div class="timing-value">Last-minute alert</div>
+                                        </div>
+                                    </div>
+                                </label>
+
+                                <label class="timing-option">
+                                    <input type="checkbox" name="alertTiming" value="15" checked>
+                                    <div class="timing-card">
+                                        <div class="timing-icon">⏰</div>
+                                        <div class="timing-info">
+                                            <div class="timing-label">15 minutes before</div>
+                                            <div class="timing-value">Quick preparation</div>
+                                        </div>
+                                    </div>
+                                </label>
+
+                                <label class="timing-option">
+                                    <input type="checkbox" name="alertTiming" value="30">
+                                    <div class="timing-card">
+                                        <div class="timing-icon">⏰</div>
+                                        <div class="timing-info">
+                                            <div class="timing-label">30 minutes before</div>
+                                            <div class="timing-value">Preparation time</div>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="timing-category">
+                            <div class="category-title">
+                                Hours Before
+                                <span class="category-subtitle">(advance planning)</span>
+                            </div>
+                            <div class="timing-options">
+                                <label class="timing-option">
+                                    <input type="checkbox" name="alertTiming" value="60">
+                                    <div class="timing-card">
+                                        <div class="timing-icon">🕐</div>
+                                        <div class="timing-info">
+                                            <div class="timing-label">1 hour before</div>
+                                            <div class="timing-value">Plan ahead</div>
+                                        </div>
+                                    </div>
+                                </label>
+
+                                <label class="timing-option">
+                                    <input type="checkbox" name="alertTiming" value="120">
+                                    <div class="timing-card">
+                                        <div class="timing-icon">🕐</div>
+                                        <div class="timing-info">
+                                            <div class="timing-label">2 hours before</div>
+                                            <div class="timing-value">Extended planning</div>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="timing-category">
+                            <div class="category-title">
+                                Days Before
+                                <span class="category-subtitle">(long-term planning)</span>
+                            </div>
+                            <div class="timing-options">
+                                <label class="timing-option">
+                                    <input type="checkbox" name="alertTiming" value="1440">
+                                    <div class="timing-card">
+                                        <div class="timing-icon">📅</div>
+                                        <div class="timing-info">
+                                            <div class="timing-label">1 day before</div>
+                                            <div class="timing-value">Daily planning</div>
+                                        </div>
+                                    </div>
+                                </label>
+
+                                <label class="timing-option">
+                                    <input type="checkbox" name="alertTiming" value="2880">
+                                    <div class="timing-card">
+                                        <div class="timing-icon">📅</div>
+                                        <div class="timing-info">
+                                            <div class="timing-label">2 days before</div>
+                                            <div class="timing-value">Advanced notice</div>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert-preview">
+                        <h4>Selected Alerts Preview</h4>
+                        <div id="selectedAlertsPreview" class="selected-alerts">
+                            <div class="alert-preview-item">
+                                <span class="preview-icon">⏰</span>
+                                <span class="preview-text">5 minutes before</span>
+                            </div>
+                            <div class="alert-preview-item">
+                                <span class="preview-icon">⏰</span>
+                                <span class="preview-text">15 minutes before</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Quick Time Buttons -->
                 <div class="quick-time-buttons">
                     <h4><span class="label-icon">⚡</span> Quick Times</h4>
@@ -242,405 +526,334 @@
             </button>
             <button type="submit" form="addReminderForm" class="btn-submit">
                 <span class="btn-icon">💾</span>
-                Create Reminder
+                Save to IndexedDB
             </button>
         </div>
     </div>
 </div>
 
-<!-- Enhanced Styles for New Features -->
-<style>
-    /* Clickable Statistics Cards */
-    .clickable-stat {
-        position: relative;
-        background: none;
-        border: none;
-        width: 100%;
-        text-align: left;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        overflow: hidden;
-    }
-
-    .clickable-stat:hover {
-        transform: translateY(-8px) scale(1.02);
-        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-    }
-
-    .clickable-stat:focus {
-        outline: 3px solid var(--primary-color);
-        outline-offset: 2px;
-    }
-
-    .click-indicator {
-        position: absolute;
-        bottom: 8px;
-        right: 12px;
-        font-size: 0.75rem;
-        opacity: 0;
-        color: var(--text-secondary);
-        transition: opacity 0.3s ease;
-        font-weight: 500;
-    }
-
-    .clickable-stat:hover .click-indicator {
-        opacity: 1;
-    }
-
-    /* Enhanced Reminders Section */
-    .section-controls {
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-sm);
-    }
-
-    .sort-select {
-        padding: var(--spacing-sm) var(--spacing-md);
-        border: 2px solid var(--border-color);
-        border-radius: var(--radius-md);
-        background: var(--bg-primary);
-        color: var(--text-primary);
-        font-size: var(--font-size-sm);
-        cursor: pointer;
-        transition: all var(--transition-fast);
-    }
-
-    .sort-select:focus {
-        outline: none;
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
-
-    /* Filter Info Bar */
-    .filter-info {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: var(--spacing-md);
-        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-        color: white;
-        border-radius: var(--radius-md);
-        margin-bottom: var(--spacing-md);
-        animation: slideInDown 0.3s ease;
-    }
-
-    .clear-filter-btn {
-        background: rgba(255, 255, 255, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        color: white;
-        padding: var(--spacing-xs) var(--spacing-sm);
-        border-radius: var(--radius-sm);
-        cursor: pointer;
-        font-size: var(--font-size-xs);
-        font-weight: 600;
-        transition: all var(--transition-fast);
-    }
-
-    .clear-filter-btn:hover {
-        background: rgba(255, 255, 255, 0.3);
-        transform: scale(1.05);
-    }
-
-    /* Enhanced Reminders List */
-    .reminders-list.enhanced {
-        max-height: 600px;
-        overflow-y: auto;
-    }
-
-    .reminder-item.enhanced {
-        display: grid;
-        grid-template-columns: auto 1fr auto auto;
-        gap: var(--spacing-md);
-        padding: var(--spacing-lg);
-        background: var(--bg-primary);
-        border: 1px solid var(--border-light);
-        border-radius: var(--radius-lg);
-        margin-bottom: var(--spacing-sm);
-        transition: all var(--transition-normal);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .reminder-item.enhanced::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 4px;
-        background: var(--primary-color);
-        transition: width var(--transition-fast);
-    }
-
-    .reminder-item.enhanced:hover {
-        transform: translateX(4px);
-        box-shadow: var(--shadow-lg);
-        border-color: var(--primary-color);
-    }
-
-    .reminder-item.enhanced:hover::before {
-        width: 8px;
-    }
-
-    .reminder-priority-indicator {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        margin-top: 2px;
-    }
-
-    .reminder-details {
-        display: flex;
-        flex-direction: column;
-        gap: var(--spacing-xs);
-    }
-
-    .reminder-title-enhanced {
-        font-weight: 600;
-        color: var(--text-primary);
-        font-size: var(--font-size-base);
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-xs);
-    }
-
-    .reminder-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--spacing-md);
-        font-size: var(--font-size-sm);
-        color: var(--text-secondary);
-    }
-
-    .reminder-description {
-        font-size: var(--font-size-sm);
-        color: var(--text-secondary);
-        margin-top: var(--spacing-xs);
-        font-style: italic;
-    }
-
-    .reminder-badges {
-        display: flex;
-        gap: var(--spacing-xs);
-        align-items: center;
-    }
-
-    .badge {
-        padding: var(--spacing-xs) var(--spacing-sm);
-        border-radius: var(--radius-sm);
-        font-size: var(--font-size-xs);
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .badge-priority-low { background: rgba(33, 150, 243, 0.1); color: #1976D2; }
-    .badge-priority-medium { background: rgba(255, 152, 0, 0.1); color: #F57C00; }
-    .badge-priority-high { background: rgba(255, 87, 34, 0.1); color: #E64A19; }
-    .badge-priority-urgent { background: rgba(244, 67, 54, 0.1); color: #D32F2F; }
-
-    .badge-category { background: rgba(76, 175, 80, 0.1); color: #388E3C; }
-
-    .badge-status-active { background: rgba(33, 150, 243, 0.1); color: #1976D2; }
-    .badge-status-completed { background: rgba(76, 175, 80, 0.1); color: #388E3C; }
-    .badge-status-overdue { background: rgba(244, 67, 54, 0.1); color: #D32F2F; }
-
-    .reminder-actions-enhanced {
-        display: flex;
-        gap: var(--spacing-xs);
-        align-items: center;
-    }
-
-    .action-btn-small {
-        width: 36px;
-        height: 36px;
-        border: none;
-        border-radius: var(--radius-md);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all var(--transition-fast);
-        font-size: var(--font-size-lg);
-    }
-
-    .action-btn-complete {
-        background: var(--success-gradient);
-        color: white;
-    }
-
-    .action-btn-delete {
-        background: var(--danger-gradient);
-        color: white;
-    }
-
-    .action-btn-small:hover {
-        transform: scale(1.1);
-        box-shadow: var(--shadow-md);
-    }
-
-    /* Pagination */
-    .pagination {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: var(--spacing-md);
-        margin-top: var(--spacing-lg);
-        padding: var(--spacing-md);
-    }
-
-    .page-btn {
-        padding: var(--spacing-sm) var(--spacing-md);
-        background: var(--bg-primary);
-        border: 2px solid var(--border-color);
-        border-radius: var(--radius-md);
-        cursor: pointer;
-        transition: all var(--transition-fast);
-        font-weight: 500;
-    }
-
-    .page-btn:hover:not(:disabled) {
-        border-color: var(--primary-color);
-        color: var(--primary-color);
-        transform: translateY(-1px);
-    }
-
-    .page-btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .page-info {
-        font-weight: 600;
-        color: var(--text-primary);
-    }
-
-    /* Empty State */
-    .empty-state-enhanced {
-        text-align: center;
-        padding: var(--spacing-3xl);
-        color: var(--text-muted);
-        background: var(--bg-secondary);
-        border-radius: var(--radius-lg);
-        border: 2px dashed var(--border-color);
-    }
-
-    .empty-state-enhanced .empty-icon {
-        font-size: 3rem;
-        margin-bottom: var(--spacing-lg);
-        opacity: 0.5;
-    }
-
-    .empty-state-enhanced h3 {
-        color: var(--text-secondary);
-        font-size: var(--font-size-xl);
-        margin-bottom: var(--spacing-md);
-    }
-
-    .empty-state-action {
-        padding: var(--spacing-md) var(--spacing-xl);
-        background: var(--primary-gradient);
-        color: white;
-        border: none;
-        border-radius: var(--radius-lg);
-        font-weight: 600;
-        cursor: pointer;
-        transition: all var(--transition-normal);
-    }
-
-    .empty-state-action:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-lg);
-    }
-
-    /* Animations */
-    @keyframes slideInDown {
-        from { transform: translateY(-20px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-
-    /* Responsive Design */
-    @media (max-width: 768px) {
-        .reminder-item.enhanced {
-            grid-template-columns: auto 1fr;
-            gap: var(--spacing-sm);
-        }
-
-        .reminder-actions-enhanced {
-            grid-column: 1 / -1;
-            justify-content: flex-end;
-            margin-top: var(--spacing-sm);
-        }
-
-        .section-controls {
-            flex-direction: column;
-            align-items: stretch;
-            gap: var(--spacing-sm);
-        }
-    }
-</style>
-
-<!-- Clean ES6 Module Dashboard Script -->
+<!-- IndexedDB Dashboard Script -->
 <script type="module">
     import { DashboardController } from '../js/DashboardController.js';
+    import { NotificationService } from '../js/NotificationService.js';
 
-    // Initialize dashboard
+    // Initialize IndexedDB dashboard
     const dashboard = new DashboardController();
 
-    // Make globally accessible for onclick handlers
+    // Make globally accessible
     window.dashboard = dashboard;
-    window.closeModal = (modalId) => dashboard.closeModal(modalId);
+    window.closeModal = (modalId) => {
+        const modal = document.getElementById(modalId);
+        if (modal) modal.style.display = 'none';
+    };
 
-    // Initialize when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            dashboard.initialize();
-        });
-    } else {
-        dashboard.initialize();
+    // Loading state management
+    function showLoading(message = 'Loading from IndexedDB...') {
+        const overlay = document.getElementById('loadingOverlay');
+        const loadingContent = overlay.querySelector('.loading-content h3');
+        if (loadingContent) loadingContent.textContent = message;
+        overlay.style.display = 'flex';
     }
 
-    console.log('📱 Clean dashboard script loaded');
+    function hideLoading() {
+        const overlay = document.getElementById('loadingOverlay');
+        overlay.style.display = 'none';
+    }
+
+    // Enhanced form handling with IndexedDB
+    function setupEnhancedFormHandlers() {
+        const form = document.getElementById('addReminderForm');
+        const preview = document.getElementById('selectedAlertsPreview');
+
+        if (!form || !preview) return;
+
+        // Remove any existing handlers to prevent duplicates
+        const newForm = form.cloneNode(true);
+        form.parentNode.replaceChild(newForm, form);
+
+        // Get fresh references
+        const freshForm = document.getElementById('addReminderForm');
+        const freshPreview = document.getElementById('selectedAlertsPreview');
+
+        // Update alert preview
+        const updateAlertPreview = () => {
+            const selectedAlerts = Array.from(freshForm.querySelectorAll('input[name="alertTiming"]:checked'))
+                .map(input => parseInt(input.value))
+                .sort((a, b) => a - b);
+
+            if (selectedAlerts.length === 0) {
+                freshPreview.innerHTML = '<p class="no-alerts">No alerts selected</p>';
+                return;
+            }
+
+            const alertOptions = NotificationService.getAlertTimingOptions();
+            freshPreview.innerHTML = selectedAlerts.map(value => {
+                const option = alertOptions.find(opt => opt.value === value);
+                return `
+                    <div class="alert-preview-item">
+                        <span class="preview-icon">${option?.icon || '⏰'}</span>
+                        <span class="preview-text">${option?.label || `${value} minutes before`}</span>
+                    </div>
+                `;
+            }).join('');
+        };
+
+        // Single change listener for alert timing updates
+        freshForm.addEventListener('change', (e) => {
+            if (e.target.name === 'alertTiming') {
+                updateAlertPreview();
+            }
+        });
+
+        // Single submit handler with duplicate prevention
+        let isSubmitting = false;
+        freshForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (isSubmitting) return;
+            isSubmitting = true;
+
+            try {
+                showLoading('Saving to IndexedDB...');
+
+                const formData = new FormData(freshForm);
+                const selectedAlerts = Array.from(freshForm.querySelectorAll('input[name="alertTiming"]:checked'))
+                    .map(input => parseInt(input.value));
+
+                const reminderData = {
+                    title: formData.get('title'),
+                    description: formData.get('description'),
+                    datetime: formData.get('datetime'),
+                    category: formData.get('category'),
+                    priority: formData.get('priority'),
+                    notification: formData.get('notification') === 'on',
+                    alertTimings: selectedAlerts
+                };
+
+                await dashboard.createReminder(reminderData);
+                closeModal('addReminderModal');
+
+            } catch (error) {
+                console.error('Failed to create reminder:', error);
+            } finally {
+                hideLoading();
+                isSubmitting = false;
+            }
+        });
+
+        // Initialize preview
+        updateAlertPreview();
+    }
+
+    // Enhanced button handlers for IndexedDB features
+    function setupEnhancedHandlers() {
+        // Alert preferences button
+        document.getElementById('alertPrefsBtn')?.addEventListener('click', () => {
+            dashboard.showAlertPreferencesModal();
+        });
+
+        // Alert preferences button (in quick actions)
+        document.getElementById('alertPreferencesBtn')?.addEventListener('click', () => {
+            dashboard.showAlertPreferencesModal();
+        });
+
+        // Enhanced test notification
+        document.getElementById('testNotificationBtn')?.addEventListener('click', () => {
+            dashboard.testNotificationSystem();
+        });
+
+        // Database info button
+        document.getElementById('dbInfoBtn')?.addEventListener('click', async () => {
+            try {
+                showLoading('Getting database information...');
+                await dashboard.getDatabaseInfo().then(info => {
+                    hideLoading();
+                    dashboard._showDatabaseInfo();
+                });
+            } catch (error) {
+                hideLoading();
+                console.error('Failed to get database info:', error);
+            }
+        });
+
+        // Export data button
+        document.getElementById('exportBtn')?.addEventListener('click', async () => {
+            try {
+                showLoading('Exporting data from IndexedDB...');
+                await dashboard.exportData();
+                hideLoading();
+            } catch (error) {
+                hideLoading();
+                console.error('Export failed:', error);
+            }
+        });
+
+        // Import data button
+        document.getElementById('importBtn')?.addEventListener('click', async () => {
+            try {
+                showLoading('Importing data to IndexedDB...');
+                await dashboard.importData();
+                hideLoading();
+            } catch (error) {
+                hideLoading();
+                console.error('Import failed:', error);
+            }
+        });
+
+        // Clear all data button
+        document.getElementById('clearDataBtn')?.addEventListener('click', async () => {
+            if (!confirm('⚠️ This will permanently delete ALL your reminders from IndexedDB. This cannot be undone!\n\nAre you absolutely sure?')) {
+                return;
+            }
+
+            try {
+                showLoading('Clearing all data from IndexedDB...');
+                await dashboard.clearAllData();
+                hideLoading();
+            } catch (error) {
+                hideLoading();
+                console.error('Clear data failed:', error);
+            }
+        });
+
+        // Refresh with loading indicator
+        document.getElementById('refreshBtn')?.addEventListener('click', async () => {
+            try {
+                showLoading('Refreshing data from IndexedDB...');
+                await new Promise(resolve => {
+                    dashboard.refresh();
+                    setTimeout(resolve, 1000); // Small delay to show loading
+                });
+                hideLoading();
+            } catch (error) {
+                hideLoading();
+                console.error('Refresh failed:', error);
+            }
+        });
+    }
+
+    // Update notification statistics display
+    async function updateNotificationStats() {
+        try {
+            const stats = await dashboard.getNotificationStats();
+            const container = document.getElementById('notificationStats');
+
+            if (container) {
+                container.innerHTML = `
+                    <div class="stat-mini">
+                        <div class="stat-mini-value">${stats.totalScheduled || 0}</div>
+                        <div class="stat-mini-label">Scheduled Alerts</div>
+                    </div>
+                    <div class="stat-mini">
+                        <div class="stat-mini-value">${stats.activeReminders || 0}</div>
+                        <div class="stat-mini-label">Active Reminders</div>
+                    </div>
+                    <div class="stat-mini">
+                        <div class="stat-mini-value">${stats.totalConfiguredAlerts || 0}</div>
+                        <div class="stat-mini-label">Total Alerts</div>
+                    </div>
+                    <div class="stat-mini">
+                        <div class="stat-mini-value">${stats.averageAlertsPerReminder || 0}</div>
+                        <div class="stat-mini-label">Avg per Reminder</div>
+                    </div>
+                    <div class="stat-mini">
+                        <div class="stat-mini-value">IndexedDB</div>
+                        <div class="stat-mini-label">Storage Type</div>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Failed to update notification stats:', error);
+        }
+    }
+
+    // Enhanced dashboard initialization with safeguards
+    let dashboardInitialized = false;
+
+    async function initializeDashboard() {
+        if (dashboardInitialized) return;
+        dashboardInitialized = true;
+
+        try {
+            showLoading('Initializing IndexedDB storage...');
+
+            await dashboard.initialize();
+            setupEnhancedFormHandlers();
+            setupEnhancedHandlers();
+            await updateNotificationStats();
+
+            hideLoading();
+            console.log('📱 Enhanced dashboard with IndexedDB initialized successfully');
+        } catch (error) {
+            hideLoading();
+            console.error('Dashboard initialization failed:', error);
+            dashboardInitialized = false; // Allow retry
+
+            // Show error message
+            alert(`Failed to initialize IndexedDB dashboard: ${error.message}\n\nPlease refresh the page to try again.`);
+        }
+    }
+
+    // Handle browser compatibility
+    if (!window.indexedDB) {
+        alert('Your browser does not support IndexedDB. Please use a modern browser like Chrome, Firefox, Safari, or Edge.');
+    } else {
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeDashboard);
+        } else {
+            initializeDashboard();
+        }
+    }
+
+    console.log('📱 IndexedDB dashboard script loaded');
 </script>
 
-<!-- Fallback for browsers without module support -->
+<!-- Fallback and error handling -->
 <script nomodule>
     document.body.innerHTML = `
-    <div style="
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        display: flex; align-items: center; justify-content: center;
-        color: white; font-family: system-ui, sans-serif; text-align: center;
-    ">
-        <div>
-            <h1>Browser Update Required</h1>
-            <p>This application requires ES6 module support.</p>
-            <p>Please update your browser to continue.</p>
+        <div style="
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-family: system-ui, sans-serif; text-align: center;
+        ">
+            <div>
+                <h1>Browser Update Required</h1>
+                <p>This IndexedDB application requires ES6 module support.</p>
+                <p>Please update your browser to continue.</p>
+            </div>
         </div>
-    </div>
-`;
+    `;
 </script>
 
-<!-- Error boundary -->
 <script>
     window.addEventListener('error', (event) => {
-        console.error('Dashboard error:', event.error);
+        console.error('IndexedDB dashboard error:', event.error);
 
         const errorDiv = document.createElement('div');
         errorDiv.style.cssText = `
-        position: fixed; top: 20px; right: 20px; left: 20px;
-        background: #fee; border: 1px solid #fcc; color: #c66;
-        padding: 15px; border-radius: 5px; z-index: 10001;
-        font-family: system-ui, sans-serif; text-align: center;
-    `;
+            position: fixed; top: 20px; right: 20px; left: 20px;
+            background: #fee; border: 1px solid #fcc; color: #c66;
+            padding: 15px; border-radius: 5px; z-index: 10001;
+            font-family: system-ui, sans-serif; text-align: center;
+        `;
         errorDiv.innerHTML = `
-        <strong>⚠️ Application Error</strong><br>
-        ${event.error?.message || 'Something went wrong'}<br>
-        <button onclick="window.location.reload()" style="margin-top: 10px; padding: 5px 10px;">
-            🔄 Refresh Page
-        </button>
-    `;
+            <strong>⚠️ IndexedDB Dashboard Error</strong><br>
+            ${event.error?.message || 'Something went wrong with IndexedDB'}<br>
+            <button onclick="window.location.reload()" style="margin-top: 10px; padding: 5px 10px;">
+                🔄 Refresh Page
+            </button>
+        `;
         document.body.appendChild(errorDiv);
+    });
+
+    // Handle IndexedDB quota exceeded errors
+    window.addEventListener('unhandledrejection', (event) => {
+        if (event.reason?.name === 'QuotaExceededError') {
+            alert('IndexedDB storage quota exceeded! Please export your data and clear some old reminders.');
+            event.preventDefault();
+        }
     });
 </script>
 </body>

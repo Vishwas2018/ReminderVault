@@ -1,13 +1,25 @@
 /**
- * NotificationService - Modern notification system with popup alerts
- * Handles browser notifications, sound alerts, and custom popups
+ * Enhanced NotificationService - Advanced notification system with configurable alert timing
+ * Supports multiple alert schedules per reminder (5min, 15min, 30min, 1hr, 2hr, 1day, 2days before due)
  */
 export class NotificationService {
-    #scheduledNotifications = new Map();
+    #scheduledNotifications = new Map(); // reminderId -> Set of timeoutIds
     #activePopups = new Set();
     #permissionState = 'default';
     #checkInterval = null;
     #audioContext = null;
+    #alertHistory = new Map(); // Track sent alerts to avoid duplicates
+
+    // Pre-defined alert timing options (in minutes before due time)
+    static ALERT_TIMINGS = {
+        FIVE_MINUTES: { value: 5, label: '5 minutes before', icon: '⏰' },
+        FIFTEEN_MINUTES: { value: 15, label: '15 minutes before', icon: '⏰' },
+        THIRTY_MINUTES: { value: 30, label: '30 minutes before', icon: '⏰' },
+        ONE_HOUR: { value: 60, label: '1 hour before', icon: '🕐' },
+        TWO_HOURS: { value: 120, label: '2 hours before', icon: '🕐' },
+        ONE_DAY: { value: 1440, label: '1 day before', icon: '📅' },
+        TWO_DAYS: { value: 2880, label: '2 days before', icon: '📅' }
+    };
 
     constructor() {
         this.#initializeAudioContext();
@@ -18,88 +30,154 @@ export class NotificationService {
      * Initialize notification system with permission request
      */
     async initialize() {
-        console.log('🔔 Initializing notification system...');
+        console.log('🔔 Initializing enhanced notification system...');
 
         await this.#requestPermission();
         this.#startNotificationChecker();
         this.#setupEventListeners();
 
-        console.log('✅ Notification system ready');
+        console.log('✅ Enhanced notification system ready');
         return this;
     }
 
     /**
-     * Schedule notification for a reminder
+     * Schedule notifications for a reminder with user-selected alert timings
+     * @param {Object} reminder - The reminder object
+     * @param {Array} alertTimings - Array of timing values in minutes (e.g., [5, 15, 60, 1440])
      */
-    scheduleNotification(reminder) {
+    scheduleNotification(reminder, alertTimings = [5, 15]) {
         const reminderTime = new Date(reminder.datetime);
         const now = new Date();
-        const delay = reminderTime.getTime() - now.getTime();
+        const maxAdvanceTime = 3 * 24 * 60 * 60 * 1000; // 3 days max advance scheduling
 
-        // Only schedule future notifications within 24 hours
-        if (delay <= 0 || delay > 24 * 60 * 60 * 1000) return null;
+        // Clear any existing notifications for this reminder
+        this.cancelNotification(reminder.id);
 
-        console.log(`⏰ Scheduling notification for "${reminder.title}" in ${Math.round(delay/60000)} minutes`);
+        const timeoutIds = new Set();
+        let scheduledCount = 0;
 
-        const timeoutId = setTimeout(() => {
-            this.#triggerNotification(reminder);
-        }, delay);
+        alertTimings.forEach(minutesBefore => {
+            const alertTime = new Date(reminderTime.getTime() - (minutesBefore * 60 * 1000));
+            const delay = alertTime.getTime() - now.getTime();
 
-        this.#scheduledNotifications.set(reminder.id, timeoutId);
-        return timeoutId;
+            // Only schedule future notifications within reasonable timeframe
+            if (delay > 0 && delay <= maxAdvanceTime) {
+                const timeoutId = setTimeout(() => {
+                    this.#triggerNotification(reminder, minutesBefore);
+                }, delay);
+
+                timeoutIds.add(timeoutId);
+                scheduledCount++;
+
+                console.log(`⏰ Scheduled alert for "${reminder.title}" ${minutesBefore} minutes before (${this.#formatDelay(delay)})`);
+            }
+        });
+
+        if (scheduledCount > 0) {
+            this.#scheduledNotifications.set(reminder.id, timeoutIds);
+            console.log(`📅 Scheduled ${scheduledCount} alerts for reminder #${reminder.id}`);
+        }
+
+        return scheduledCount;
     }
 
     /**
-     * Cancel scheduled notification
+     * Cancel all scheduled notifications for a reminder
      */
     cancelNotification(reminderId) {
-        const timeoutId = this.#scheduledNotifications.get(reminderId);
-        if (timeoutId) {
+        const timeoutIds = this.#scheduledNotifications.get(reminderId);
+        if (!timeoutIds) return false;
+
+        let cancelledCount = 0;
+        timeoutIds.forEach(timeoutId => {
             clearTimeout(timeoutId);
-            this.#scheduledNotifications.delete(reminderId);
-            return true;
-        }
-        return false;
+            cancelledCount++;
+        });
+
+        this.#scheduledNotifications.delete(reminderId);
+        this.#alertHistory.delete(reminderId);
+
+        console.log(`🚫 Cancelled ${cancelledCount} alerts for reminder #${reminderId}`);
+        return true;
     }
 
     /**
-     * Check for due reminders and trigger notifications
+     * Check for due reminders and trigger immediate notifications
      */
     checkDueReminders(reminders) {
         const now = new Date();
 
-        const dueReminders = reminders.filter(reminder => {
-            if (reminder.status !== 'active' || !reminder.notification) return false;
+        reminders.forEach(reminder => {
+            if (reminder.status !== 'active' || !reminder.notification) return;
 
             const reminderTime = new Date(reminder.datetime);
             const timeDiff = reminderTime - now;
 
-            // Trigger if within 1 minute of due time
-            return timeDiff <= 60000 && timeDiff > -60000;
-        });
+            // Check each alert timing to see if we should trigger
+            Object.values(NotificationService.ALERT_TIMINGS).forEach(timing => {
+                const alertThreshold = timing.value * 60 * 1000; // Convert to milliseconds
+                const alertKey = `${reminder.id}-${timing.value}`;
 
-        dueReminders.forEach(reminder => {
-            if (!this.#scheduledNotifications.has(reminder.id)) {
-                this.#triggerNotification(reminder);
-                this.#scheduledNotifications.set(reminder.id, Date.now());
+                // Trigger if within alert window and not already sent
+                if (timeDiff <= alertThreshold &&
+                    timeDiff > (alertThreshold - 60000) && // 1-minute window
+                    !this.#alertHistory.has(alertKey)) {
+
+                    this.#triggerNotification(reminder, timing.value);
+                    this.#alertHistory.set(alertKey, now);
+                }
+            });
+
+            // Special handling for overdue reminders
+            if (timeDiff <= 0 && timeDiff > -60000 && !this.#alertHistory.has(`${reminder.id}-overdue`)) {
+                this.#triggerNotification(reminder, 0, true);
+                this.#alertHistory.set(`${reminder.id}-overdue`, now);
             }
         });
     }
 
     /**
-     * Test notification system
+     * Get available alert timing options for UI
+     */
+    static getAlertTimingOptions() {
+        return Object.entries(NotificationService.ALERT_TIMINGS).map(([key, timing]) => ({
+            key,
+            value: timing.value,
+            label: timing.label,
+            icon: timing.icon,
+            category: timing.value < 60 ? 'minutes' : timing.value < 1440 ? 'hours' : 'days'
+        }));
+    }
+
+    /**
+     * Test notification system with sample alert
      */
     testNotification() {
         const testReminder = {
             id: 9999,
-            title: 'Test Notification',
-            description: 'This is a test to verify notifications are working correctly.',
-            datetime: new Date().toISOString(),
+            title: 'Test Notification Alert',
+            description: 'This is a test to verify the enhanced notification system is working correctly.',
+            datetime: new Date(Date.now() + 5 * 60 * 1000).toISOString(), // 5 minutes from now
             priority: 3,
             category: 'personal'
         };
 
-        this.#triggerNotification(testReminder);
+        this.#triggerNotification(testReminder, 5, false);
+    }
+
+    /**
+     * Get notification statistics
+     */
+    getNotificationStats() {
+        const totalScheduled = Array.from(this.#scheduledNotifications.values())
+            .reduce((sum, timeouts) => sum + timeouts.size, 0);
+
+        return {
+            totalScheduled,
+            activeReminders: this.#scheduledNotifications.size,
+            alertHistory: this.#alertHistory.size,
+            permissionState: this.#permissionState
+        };
     }
 
     /**
@@ -112,8 +190,8 @@ export class NotificationService {
         }
 
         // Clear all scheduled notifications
-        this.#scheduledNotifications.forEach((timeoutId) => {
-            clearTimeout(timeoutId);
+        this.#scheduledNotifications.forEach((timeoutIds) => {
+            timeoutIds.forEach(timeoutId => clearTimeout(timeoutId));
         });
         this.#scheduledNotifications.clear();
 
@@ -122,7 +200,8 @@ export class NotificationService {
             this.#closePopup(reminderId);
         });
 
-        console.log('🧹 Notification system cleaned up');
+        this.#alertHistory.clear();
+        console.log('🧹 Enhanced notification system cleaned up');
     }
 
     // === PRIVATE METHODS ===
@@ -178,29 +257,36 @@ export class NotificationService {
         });
     }
 
-    async #triggerNotification(reminder) {
-        console.log(`🔔 Triggering notification: ${reminder.title}`);
+    async #triggerNotification(reminder, minutesBefore, isOverdue = false) {
+        const alertType = isOverdue ? 'OVERDUE' : this.#getAlertType(minutesBefore);
+        const alertKey = `${reminder.id}-${minutesBefore || 'overdue'}`;
 
-        // Play sound
-        await this.#playNotificationSound();
+        console.log(`🔔 Triggering ${alertType} notification: ${reminder.title} (${minutesBefore}min before)`);
+
+        // Play contextual sound based on alert timing
+        await this.#playNotificationSound(alertType);
 
         // Show browser notification if permitted
         if (this.#permissionState === 'granted') {
-            this.#showBrowserNotification(reminder);
+            this.#showBrowserNotification(reminder, minutesBefore, isOverdue);
         }
 
-        // Show custom popup
-        this.#showCustomPopup(reminder);
+        // Show custom popup with enhanced information
+        this.#showEnhancedPopup(reminder, minutesBefore, isOverdue);
 
         // Emit event for external handling
-        this.#emitEvent('notification-triggered', reminder);
+        this.#emitEvent('notification-triggered', {
+            reminder,
+            minutesBefore,
+            isOverdue,
+            alertType
+        });
     }
 
-    async #playNotificationSound() {
+    async #playNotificationSound(alertType) {
         if (!this.#audioContext) return;
 
         try {
-            // Resume audio context if suspended
             if (this.#audioContext.state === 'suspended') {
                 await this.#audioContext.resume();
             }
@@ -211,184 +297,323 @@ export class NotificationService {
             oscillator.connect(gainNode);
             gainNode.connect(this.#audioContext.destination);
 
-            // Pleasant notification chime
-            oscillator.frequency.setValueAtTime(800, this.#audioContext.currentTime);
-            oscillator.frequency.setValueAtTime(1000, this.#audioContext.currentTime + 0.1);
-            oscillator.frequency.setValueAtTime(600, this.#audioContext.currentTime + 0.2);
+            // Different sound patterns for different alert types
+            const soundPatterns = {
+                OVERDUE: { frequencies: [400, 600, 400], duration: 0.6 },
+                URGENT: { frequencies: [800, 1000, 1200], duration: 0.5 },
+                NORMAL: { frequencies: [600, 800, 600], duration: 0.4 },
+                ADVANCE: { frequencies: [500, 700, 500], duration: 0.3 }
+            };
+
+            const pattern = soundPatterns[alertType] || soundPatterns.NORMAL;
+            const stepDuration = pattern.duration / pattern.frequencies.length;
+
+            pattern.frequencies.forEach((freq, index) => {
+                const time = this.#audioContext.currentTime + (index * stepDuration);
+                oscillator.frequency.setValueAtTime(freq, time);
+            });
 
             gainNode.gain.setValueAtTime(0.3, this.#audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, this.#audioContext.currentTime + 0.4);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.#audioContext.currentTime + pattern.duration);
 
             oscillator.start();
-            oscillator.stop(this.#audioContext.currentTime + 0.4);
+            oscillator.stop(this.#audioContext.currentTime + pattern.duration);
 
         } catch (error) {
             console.warn('Failed to play notification sound:', error);
         }
     }
 
-    #showBrowserNotification(reminder) {
+    #showBrowserNotification(reminder, minutesBefore, isOverdue) {
         if (this.#permissionState !== 'granted') return;
 
-        const notification = new Notification('Reminder Alert! 🔔', {
-            body: reminder.title,
+        const title = isOverdue ?
+            '⚠️ Overdue Reminder!' :
+            `🔔 Reminder Alert! (${minutesBefore} min)`;
+
+        const body = isOverdue ?
+            `Overdue: ${reminder.title}` :
+            `Coming up in ${minutesBefore} minutes: ${reminder.title}`;
+
+        const notification = new Notification(title, {
+            body,
             icon: '/favicon.png',
-            tag: `reminder-${reminder.id}`,
-            requireInteraction: true,
-            data: { reminderId: reminder.id }
+            tag: `reminder-${reminder.id}-${minutesBefore || 'overdue'}`,
+            requireInteraction: isOverdue || minutesBefore <= 5,
+            data: { reminderId: reminder.id, minutesBefore, isOverdue }
         });
 
         notification.onclick = () => {
             window.focus();
             notification.close();
-            this.#emitEvent('notification-clicked', reminder);
+            this.#emitEvent('notification-clicked', { reminder, minutesBefore, isOverdue });
         };
 
-        setTimeout(() => notification.close(), 10000);
+        const autoCloseDelay = isOverdue ? 30000 : (minutesBefore <= 15 ? 15000 : 10000);
+        setTimeout(() => notification.close(), autoCloseDelay);
     }
 
-    #showCustomPopup(reminder) {
-        if (this.#activePopups.has(reminder.id)) return;
+    #showEnhancedPopup(reminder, minutesBefore, isOverdue) {
+        const popupId = `${reminder.id}-${minutesBefore || 'overdue'}`;
+        if (this.#activePopups.has(popupId)) return;
 
-        this.#activePopups.add(reminder.id);
+        this.#activePopups.add(popupId);
 
-        const overlay = this.#createPopupOverlay(reminder);
+        const overlay = this.#createEnhancedPopupOverlay(reminder, minutesBefore, isOverdue);
         document.body.appendChild(overlay);
 
-        // Auto-dismiss after 30 seconds
-        this.#startCountdown(reminder.id, 30);
+        // Auto-dismiss timing based on urgency
+        const autoDismissTime = isOverdue ? 60 : (minutesBefore <= 15 ? 45 : 30);
+        this.#startCountdown(popupId, autoDismissTime);
 
         // Setup event handlers
-        this.#setupPopupHandlers(overlay, reminder);
+        this.#setupEnhancedPopupHandlers(overlay, reminder, minutesBefore, isOverdue);
     }
 
-    #createPopupOverlay(reminder) {
+    #createEnhancedPopupOverlay(reminder, minutesBefore, isOverdue) {
         const overlay = document.createElement('div');
-        overlay.className = 'reminder-alert-overlay';
-        overlay.dataset.reminderId = reminder.id;
+        overlay.className = 'reminder-alert-overlay enhanced';
+        overlay.dataset.popupId = `${reminder.id}-${minutesBefore || 'overdue'}`;
 
         const priorityIcon = this.#getPriorityIcon(reminder.priority);
         const formattedTime = this.#formatTime(reminder.datetime);
+        const alertInfo = this.#getAlertInfo(minutesBefore, isOverdue);
 
         overlay.innerHTML = `
-      <div class="reminder-alert-popup">
-        <div class="alert-header">
-          <div class="alert-icon">🔔</div>
-          <h2 class="alert-title">Reminder Alert!</h2>
-        </div>
-        
-        <div class="alert-content">
-          <div class="alert-reminder-title">
-            ${priorityIcon} ${this.#escapeHtml(reminder.title)}
-          </div>
-          
-          <div class="alert-reminder-time">
-            ⏰ <strong>Due:</strong> ${formattedTime}
-          </div>
-          
-          ${reminder.description ? `
-            <div class="alert-reminder-description">
-              📝 ${this.#escapeHtml(reminder.description)}
+            <div class="reminder-alert-popup enhanced ${isOverdue ? 'overdue' : ''}">
+                <div class="alert-header ${isOverdue ? 'overdue' : ''}">
+                    <div class="alert-icon ${isOverdue ? 'overdue' : ''}">${alertInfo.icon}</div>
+                    <h2 class="alert-title">${alertInfo.title}</h2>
+                    <div class="alert-timing">${alertInfo.subtitle}</div>
+                </div>
+                
+                <div class="alert-content">
+                    <div class="alert-reminder-title">
+                        ${priorityIcon} ${this.#escapeHtml(reminder.title)}
+                    </div>
+                    
+                    <div class="alert-reminder-time ${isOverdue ? 'overdue' : ''}">
+                        ⏰ <strong>${isOverdue ? 'Was due' : 'Due'}:</strong> ${formattedTime}
+                    </div>
+                    
+                    ${reminder.description ? `
+                        <div class="alert-reminder-description">
+                            📝 ${this.#escapeHtml(reminder.description)}
+                        </div>
+                    ` : ''}
+                    
+                    <div class="alert-reminder-meta">
+                        <span class="meta-item">
+                            📂 Category: <strong>${reminder.category}</strong>
+                        </span>
+                        <span class="meta-item">
+                            ⭐ Priority: <strong>${this.#getPriorityName(reminder.priority)}</strong>
+                        </span>
+                    </div>
+                    
+                    <div class="alert-actions enhanced">
+                        ${!isOverdue ? `
+                            <button class="alert-btn alert-btn-complete" data-action="complete">
+                                ✅ Complete Now
+                            </button>
+                            <button class="alert-btn alert-btn-snooze" data-action="snooze">
+                                ⏰ Snooze
+                            </button>
+                        ` : `
+                            <button class="alert-btn alert-btn-complete priority" data-action="complete">
+                                ✅ Mark Complete
+                            </button>
+                            <button class="alert-btn alert-btn-reschedule" data-action="reschedule">
+                                📅 Reschedule
+                            </button>
+                        `}
+                        <button class="alert-btn alert-btn-dismiss" data-action="dismiss">
+                            ❌ Dismiss
+                        </button>
+                    </div>
+                    
+                    <div class="alert-auto-dismiss">
+                        Auto-dismiss in <span class="countdown">${isOverdue ? 60 : (minutesBefore <= 15 ? 45 : 30)}</span> seconds
+                    </div>
+                </div>
             </div>
-          ` : ''}
-          
-          <div class="alert-actions">
-            <button class="alert-btn alert-btn-complete" data-action="complete">
-              ✅ Complete
-            </button>
-            <button class="alert-btn alert-btn-snooze" data-action="snooze">
-              ⏰ Snooze
-            </button>
-            <button class="alert-btn alert-btn-dismiss" data-action="dismiss">
-              ❌ Dismiss
-            </button>
-          </div>
-          
-          <div class="alert-auto-dismiss">
-            Auto-dismiss in <span class="countdown">${30}</span> seconds
-          </div>
-        </div>
-      </div>
-    `;
+        `;
 
         return overlay;
     }
 
-    #setupPopupHandlers(overlay, reminder) {
+    #setupEnhancedPopupHandlers(overlay, reminder, minutesBefore, isOverdue) {
         // Action button handlers
         overlay.addEventListener('click', (e) => {
             const action = e.target.dataset.action;
             if (action) {
                 e.preventDefault();
-                this.#handlePopupAction(reminder.id, action);
+                this.#handleEnhancedPopupAction(reminder.id, action, minutesBefore, isOverdue);
             }
         });
 
         // Close on overlay click
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) {
-                this.#closePopup(reminder.id);
+                this.#closePopup(`${reminder.id}-${minutesBefore || 'overdue'}`);
             }
         });
 
         // ESC key handler
         const escapeHandler = (e) => {
             if (e.key === 'Escape') {
-                this.#closePopup(reminder.id);
+                this.#closePopup(`${reminder.id}-${minutesBefore || 'overdue'}`);
                 document.removeEventListener('keydown', escapeHandler);
             }
         };
         document.addEventListener('keydown', escapeHandler);
     }
 
-    #handlePopupAction(reminderId, action) {
+    #handleEnhancedPopupAction(reminderId, action, minutesBefore, isOverdue) {
+        const popupId = `${reminderId}-${minutesBefore || 'overdue'}`;
+
         switch (action) {
             case 'complete':
                 this.#emitEvent('reminder-complete', { reminderId });
-                this.#closePopup(reminderId);
+                this.#closePopup(popupId);
                 break;
             case 'snooze':
-                this.#showSnoozeOptions(reminderId);
+                this.#showEnhancedSnoozeOptions(reminderId, popupId);
+                break;
+            case 'reschedule':
+                this.#showRescheduleOptions(reminderId, popupId);
                 break;
             case 'dismiss':
-                this.#closePopup(reminderId);
+                this.#closePopup(popupId);
                 break;
         }
     }
 
-    #showSnoozeOptions(reminderId) {
-        const popup = document.querySelector(`[data-reminder-id="${reminderId}"] .alert-content`);
+    #showEnhancedSnoozeOptions(reminderId, popupId) {
+        const popup = document.querySelector(`[data-popup-id="${popupId}"] .alert-content`);
         if (!popup) return;
 
         popup.innerHTML = `
-      <div class="snooze-title">⏰ Snooze for how long?</div>
-      <div class="snooze-buttons">
-        <button class="snooze-btn" data-minutes="5">5 minutes</button>
-        <button class="snooze-btn" data-minutes="15">15 minutes</button>
-        <button class="snooze-btn" data-minutes="30">30 minutes</button>
-        <button class="snooze-btn" data-minutes="60">1 hour</button>
-        <button class="snooze-btn" data-minutes="120">2 hours</button>
-        <button class="snooze-btn" data-minutes="1440">Tomorrow</button>
-      </div>
-      <button class="alert-btn alert-btn-dismiss" data-action="cancel" style="width: 100%; margin-top: 1rem;">
-        Cancel
-      </button>
-    `;
+            <div class="snooze-header">
+                <div class="snooze-title">⏰ Snooze Reminder</div>
+                <div class="snooze-subtitle">How much more time do you need?</div>
+            </div>
+            
+            <div class="snooze-categories">
+                <div class="snooze-category">
+                    <h4>Quick Snooze</h4>
+                    <div class="snooze-buttons">
+                        <button class="snooze-btn quick" data-minutes="5">
+                            <span class="snooze-icon">⏰</span>
+                            <span class="snooze-time">5 min</span>
+                        </button>
+                        <button class="snooze-btn quick" data-minutes="15">
+                            <span class="snooze-icon">⏰</span>
+                            <span class="snooze-time">15 min</span>
+                        </button>
+                        <button class="snooze-btn quick" data-minutes="30">
+                            <span class="snooze-icon">⏰</span>
+                            <span class="snooze-time">30 min</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="snooze-category">
+                    <h4>Extended Snooze</h4>
+                    <div class="snooze-buttons">
+                        <button class="snooze-btn extended" data-minutes="60">
+                            <span class="snooze-icon">🕐</span>
+                            <span class="snooze-time">1 hour</span>
+                        </button>
+                        <button class="snooze-btn extended" data-minutes="120">
+                            <span class="snooze-icon">🕐</span>
+                            <span class="snooze-time">2 hours</span>
+                        </button>
+                        <button class="snooze-btn extended" data-minutes="1440">
+                            <span class="snooze-icon">📅</span>
+                            <span class="snooze-time">Tomorrow</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="alert-btn alert-btn-dismiss" data-action="cancel" style="width: 100%; margin-top: 1rem;">
+                ← Back to Alert
+            </button>
+        `;
 
-        // Setup snooze handlers
+        // Setup enhanced snooze handlers
         popup.addEventListener('click', (e) => {
-            const minutes = parseInt(e.target.dataset.minutes);
+            const minutes = parseInt(e.target.closest('[data-minutes]')?.dataset.minutes);
             if (minutes) {
                 this.#emitEvent('reminder-snooze', { reminderId, minutes });
-                this.#closePopup(reminderId);
+                this.#closePopup(popupId);
             } else if (e.target.dataset.action === 'cancel') {
-                this.#closePopup(reminderId);
+                this.#closePopup(popupId);
             }
         });
     }
 
-    #startCountdown(reminderId, seconds) {
-        const countdownElement = document.querySelector(`[data-reminder-id="${reminderId}"] .countdown`);
+    #showRescheduleOptions(reminderId, popupId) {
+        const popup = document.querySelector(`[data-popup-id="${popupId}"] .alert-content`);
+        if (!popup) return;
+
+        popup.innerHTML = `
+            <div class="reschedule-header">
+                <div class="reschedule-title">📅 Reschedule Reminder</div>
+                <div class="reschedule-subtitle">When would you like to be reminded instead?</div>
+            </div>
+            
+            <div class="reschedule-options">
+                <div class="quick-reschedule">
+                    <h4>Quick Options</h4>
+                    <div class="reschedule-buttons">
+                        <button class="reschedule-btn" data-hours="1">
+                            <span class="reschedule-icon">🕐</span>
+                            <span class="reschedule-time">In 1 hour</span>
+                        </button>
+                        <button class="reschedule-btn" data-hours="3">
+                            <span class="reschedule-icon">🕐</span>
+                            <span class="reschedule-time">In 3 hours</span>
+                        </button>
+                        <button class="reschedule-btn" data-days="1">
+                            <span class="reschedule-icon">📅</span>
+                            <span class="reschedule-time">Tomorrow</span>
+                        </button>
+                        <button class="reschedule-btn" data-days="7">
+                            <span class="reschedule-icon">📅</span>
+                            <span class="reschedule-time">Next week</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="alert-btn alert-btn-dismiss" data-action="cancel" style="width: 100%; margin-top: 1rem;">
+                ← Back to Alert
+            </button>
+        `;
+
+        // Setup reschedule handlers
+        popup.addEventListener('click', (e) => {
+            const hours = parseInt(e.target.closest('[data-hours]')?.dataset.hours);
+            const days = parseInt(e.target.closest('[data-days]')?.dataset.days);
+
+            if (hours) {
+                const minutes = hours * 60;
+                this.#emitEvent('reminder-snooze', { reminderId, minutes });
+                this.#closePopup(popupId);
+            } else if (days) {
+                const minutes = days * 24 * 60;
+                this.#emitEvent('reminder-snooze', { reminderId, minutes });
+                this.#closePopup(popupId);
+            } else if (e.target.dataset.action === 'cancel') {
+                this.#closePopup(popupId);
+            }
+        });
+    }
+
+    #startCountdown(popupId, seconds) {
+        const countdownElement = document.querySelector(`[data-popup-id="${popupId}"] .countdown`);
         if (!countdownElement) return;
 
         let remaining = seconds;
@@ -396,21 +621,27 @@ export class NotificationService {
             remaining--;
             if (countdownElement) {
                 countdownElement.textContent = remaining;
+
+                // Visual warning when time is running out
+                if (remaining <= 10) {
+                    countdownElement.style.color = '#EF4444';
+                    countdownElement.style.fontWeight = 'bold';
+                }
             }
 
             if (remaining <= 0) {
                 clearInterval(timer);
-                this.#closePopup(reminderId);
+                this.#closePopup(popupId);
             }
         }, 1000);
 
         // Store timer for cleanup
-        const overlay = document.querySelector(`[data-reminder-id="${reminderId}"]`);
+        const overlay = document.querySelector(`[data-popup-id="${popupId}"]`);
         if (overlay) overlay.dataset.timer = timer;
     }
 
-    #closePopup(reminderId) {
-        const overlay = document.querySelector(`[data-reminder-id="${reminderId}"]`);
+    #closePopup(popupId) {
+        const overlay = document.querySelector(`[data-popup-id="${popupId}"]`);
         if (!overlay) return;
 
         // Clear timer
@@ -418,11 +649,46 @@ export class NotificationService {
         if (timer) clearInterval(parseInt(timer));
 
         // Remove from active popups
-        this.#activePopups.delete(reminderId);
+        this.#activePopups.delete(popupId);
 
         // Animate out and remove
         overlay.style.animation = 'fadeOut 0.3s ease';
         setTimeout(() => overlay.remove(), 300);
+    }
+
+    // === UTILITY METHODS ===
+
+    #getAlertType(minutesBefore) {
+        if (minutesBefore <= 5) return 'URGENT';
+        if (minutesBefore <= 60) return 'NORMAL';
+        return 'ADVANCE';
+    }
+
+    #getAlertInfo(minutesBefore, isOverdue) {
+        if (isOverdue) {
+            return {
+                title: 'Overdue Reminder!',
+                subtitle: 'This reminder is past due',
+                icon: '⚠️'
+            };
+        }
+
+        const timing = Object.values(NotificationService.ALERT_TIMINGS)
+            .find(t => t.value === minutesBefore);
+
+        if (timing) {
+            return {
+                title: 'Reminder Alert!',
+                subtitle: timing.label,
+                icon: timing.icon
+            };
+        }
+
+        return {
+            title: 'Reminder Alert!',
+            subtitle: `${minutesBefore} minutes before due`,
+            icon: '🔔'
+        };
     }
 
     #getPriorityIcon(priority) {
@@ -430,17 +696,38 @@ export class NotificationService {
         return icons[priority] || '⚪';
     }
 
+    #getPriorityName(priority) {
+        const names = { 1: 'Low', 2: 'Medium', 3: 'High', 4: 'Urgent' };
+        return names[priority] || 'Unknown';
+    }
+
     #formatTime(datetime) {
         const date = new Date(datetime);
         const now = new Date();
         const diffMs = date - now;
 
-        if (diffMs < 0) return 'Now';
+        if (diffMs < 0) {
+            const pastTime = Math.abs(diffMs);
+            if (pastTime < 60000) return 'Just passed';
+            if (pastTime < 3600000) return `${Math.round(pastTime / 60000)} minutes ago`;
+            if (pastTime < 86400000) return `${Math.round(pastTime / 3600000)} hours ago`;
+            return `${Math.round(pastTime / 86400000)} days ago`;
+        }
+
         if (diffMs < 60000) return 'In less than a minute';
         if (diffMs < 3600000) return `In ${Math.round(diffMs / 60000)} minutes`;
+        if (diffMs < 86400000) return `In ${Math.round(diffMs / 3600000)} hours`;
+
         return new Intl.DateTimeFormat('en-US', {
             month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
         }).format(date);
+    }
+
+    #formatDelay(delayMs) {
+        const minutes = Math.round(delayMs / 60000);
+        if (minutes < 60) return `${minutes}m`;
+        if (minutes < 1440) return `${Math.round(minutes / 60)}h`;
+        return `${Math.round(minutes / 1440)}d`;
     }
 
     #escapeHtml(text) {
@@ -456,212 +743,243 @@ export class NotificationService {
     }
 
     #addNotificationStyles() {
-        if (document.getElementById('notification-styles')) return;
+        if (document.getElementById('enhanced-notification-styles')) return;
 
         const styles = document.createElement('style');
-        styles.id = 'notification-styles';
+        styles.id = 'enhanced-notification-styles';
         styles.textContent = `
-      .reminder-alert-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.6);
-        backdrop-filter: blur(5px);
-        z-index: 10000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        animation: fadeIn 0.3s ease;
-      }
+            .reminder-alert-overlay.enhanced {
+                background: rgba(0, 0, 0, 0.7);
+                backdrop-filter: blur(8px);
+            }
 
-      .reminder-alert-popup {
-        background: white;
-        border-radius: 16px;
-        min-width: 400px;
-        max-width: 500px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        animation: popupSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        overflow: hidden;
-        border: 3px solid #667eea;
-      }
+            .reminder-alert-popup.enhanced {
+                min-width: 450px;
+                max-width: 550px;
+                border: 3px solid #667eea;
+                box-shadow: 0 25px 80px rgba(0,0,0,0.4);
+            }
 
-      .alert-header {
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        color: white;
-        padding: 1.5rem;
-        text-align: center;
-      }
+            .reminder-alert-popup.enhanced.overdue {
+                border-color: #EF4444;
+                animation: urgentPulse 1s ease-in-out infinite;
+            }
 
-      .alert-icon {
-        font-size: 3rem;
-        margin-bottom: 0.5rem;
-        animation: alertPulse 2s ease-in-out infinite;
-      }
+            .alert-header.overdue {
+                background: linear-gradient(135deg, #EF4444, #DC2626);
+            }
 
-      .alert-title {
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin: 0;
-      }
+            .alert-timing {
+                font-size: 0.9rem;
+                opacity: 0.9;
+                margin-top: 0.25rem;
+                font-weight: 500;
+            }
 
-      .alert-content {
-        padding: 1.5rem;
-      }
+            .alert-reminder-time.overdue {
+                background: rgba(239, 68, 68, 0.15);
+                border-left-color: #EF4444;
+                color: #DC2626;
+                font-weight: 600;
+            }
 
-      .alert-reminder-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #2c3e50;
-        margin-bottom: 0.5rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
+            .alert-reminder-meta {
+                display: flex;
+                gap: 1rem;
+                margin: 1rem 0;
+                flex-wrap: wrap;
+            }
 
-      .alert-reminder-time {
-        font-size: 1rem;
-        color: #e74c3c;
-        font-weight: 500;
-        margin-bottom: 1rem;
-        padding: 0.5rem;
-        background: rgba(231, 76, 60, 0.1);
-        border-radius: 8px;
-        border-left: 4px solid #e74c3c;
-      }
+            .meta-item {
+                font-size: 0.85rem;
+                color: #666;
+                background: #f8f9fa;
+                padding: 0.4rem 0.8rem;
+                border-radius: 6px;
+                border: 1px solid #e9ecef;
+            }
 
-      .alert-reminder-description {
-        font-size: 0.95rem;
-        color: #555;
-        background: #f8f9fa;
-        padding: 1rem;
-        border-radius: 8px;
-        margin-bottom: 1rem;
-        border-left: 4px solid #667eea;
-      }
+            .alert-actions.enhanced {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                gap: 0.75rem;
+                margin-top: 1.5rem;
+            }
 
-      .alert-actions {
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
-        gap: 0.75rem;
-        margin-top: 1.5rem;
-      }
+            .alert-btn.priority {
+                background: linear-gradient(135deg, #059669, #10B981);
+                transform: scale(1.05);
+                box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+            }
 
-      .alert-btn {
-        padding: 0.75rem 1rem;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        font-size: 0.9rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-      }
+            .alert-btn-reschedule {
+                background: linear-gradient(135deg, #7C3AED, #8B5CF6);
+                color: white;
+            }
 
-      .alert-btn-complete {
-        background: linear-gradient(135deg, #27ae60, #2ecc71);
-        color: white;
-      }
+            .snooze-header {
+                text-align: center;
+                margin-bottom: 1.5rem;
+            }
 
-      .alert-btn-snooze {
-        background: linear-gradient(135deg, #f39c12, #e67e22);
-        color: white;
-      }
+            .snooze-title {
+                font-size: 1.2rem;
+                font-weight: 600;
+                color: #2c3e50;
+                margin-bottom: 0.5rem;
+            }
 
-      .alert-btn-dismiss {
-        background: #ecf0f1;
-        color: #2c3e50;
-        border: 2px solid #bdc3c7;
-      }
+            .snooze-subtitle {
+                font-size: 0.9rem;
+                color: #666;
+            }
 
-      .alert-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      }
+            .snooze-categories {
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
+            }
 
-      .alert-auto-dismiss {
-        text-align: center;
-        margin-top: 1rem;
-        font-size: 0.8rem;
-        color: #7f8c8d;
-      }
+            .snooze-category h4 {
+                font-size: 1rem;
+                font-weight: 600;
+                color: #374151;
+                margin-bottom: 0.75rem;
+                text-align: center;
+            }
 
-      .countdown {
-        font-weight: bold;
-        color: #e74c3c;
-      }
+            .snooze-buttons {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 0.5rem;
+            }
 
-      .snooze-title {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #2c3e50;
-        margin-bottom: 1rem;
-        text-align: center;
-      }
+            .snooze-btn {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0.25rem;
+                padding: 0.75rem 0.5rem;
+                border: 2px solid #e5e7eb;
+                border-radius: 8px;
+                background: white;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                font-size: 0.85rem;
+            }
 
-      .snooze-buttons {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.5rem;
-        margin-bottom: 1rem;
-      }
+            .snooze-btn:hover {
+                border-color: #667eea;
+                background: #f8faff;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+            }
 
-      .snooze-btn {
-        padding: 0.5rem;
-        background: #f8f9fa;
-        border: 2px solid #dee2e6;
-        border-radius: 6px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        font-weight: 500;
-        text-align: center;
-      }
+            .snooze-btn.quick:hover {
+                border-color: #10B981;
+                background: #f0fdf4;
+            }
 
-      .snooze-btn:hover {
-        background: #e9ecef;
-        border-color: #667eea;
-        color: #667eea;
-      }
+            .snooze-btn.extended:hover {
+                border-color: #F59E0B;
+                background: #fffbeb;
+            }
 
-      @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
+            .snooze-icon {
+                font-size: 1.2rem;
+            }
 
-      @keyframes fadeOut {
-        from { opacity: 1; }
-        to { opacity: 0; }
-      }
+            .snooze-time {
+                font-weight: 600;
+                color: #374151;
+            }
 
-      @keyframes popupSlideIn {
-        from { transform: scale(0.8) translateY(-20px); opacity: 0; }
-        to { transform: scale(1) translateY(0); opacity: 1; }
-      }
+            .reschedule-header {
+                text-align: center;
+                margin-bottom: 1.5rem;
+            }
 
-      @keyframes alertPulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.1); }
-      }
+            .reschedule-title {
+                font-size: 1.2rem;
+                font-weight: 600;
+                color: #2c3e50;
+                margin-bottom: 0.5rem;
+            }
 
-      @media (max-width: 768px) {
-        .reminder-alert-popup {
-          min-width: 90%;
-          margin: 1rem;
-        }
-        
-        .alert-actions {
-          grid-template-columns: 1fr;
-        }
-        
-        .snooze-buttons {
-          grid-template-columns: 1fr;
-        }
-      }
-    `;
+            .reschedule-subtitle {
+                font-size: 0.9rem;
+                color: #666;
+            }
+
+            .quick-reschedule h4 {
+                font-size: 1rem;
+                font-weight: 600;
+                color: #374151;
+                margin-bottom: 0.75rem;
+                text-align: center;
+            }
+
+            .reschedule-buttons {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.5rem;
+            }
+
+            .reschedule-btn {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0.25rem;
+                padding: 0.75rem 0.5rem;
+                border: 2px solid #e5e7eb;
+                border-radius: 8px;
+                background: white;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                font-size: 0.85rem;
+            }
+
+            .reschedule-btn:hover {
+                border-color: #7C3AED;
+                background: #faf5ff;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(124, 58, 237, 0.15);
+            }
+
+            .reschedule-icon {
+                font-size: 1.2rem;
+            }
+
+            .reschedule-time {
+                font-weight: 600;
+                color: #374151;
+            }
+
+            @keyframes urgentPulse {
+                0%, 100% { transform: scale(1); box-shadow: 0 25px 80px rgba(0,0,0,0.4); }
+                50% { transform: scale(1.02); box-shadow: 0 30px 100px rgba(239, 68, 68, 0.3); }
+            }
+
+            @media (max-width: 768px) {
+                .reminder-alert-popup.enhanced {
+                    min-width: 90%;
+                    margin: 1rem;
+                }
+                
+                .alert-actions.enhanced {
+                    grid-template-columns: 1fr;
+                }
+                
+                .snooze-buttons {
+                    grid-template-columns: 1fr 1fr;
+                }
+                
+                .alert-reminder-meta {
+                    flex-direction: column;
+                    gap: 0.5rem;
+                }
+            }
+        `;
 
         document.head.appendChild(styles);
     }

@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Reminders Vault (IndexedDB)</title>
+    <title>Dashboard - Reminders Vault (Smart Storage)</title>
 
     <!-- Stylesheets -->
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/dashboard.css">
 
     <style>
-        .indexeddb-indicator {
+        /* Enhanced storage indicator styles */
+        .storage-indicator {
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
             padding: 0.5rem 1rem;
@@ -20,127 +21,77 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-left: 1rem;
+            position: relative;
+            overflow: hidden;
         }
 
-        .storage-info {
-            background: rgba(102, 126, 234, 0.1);
-            border: 1px solid rgba(102, 126, 234, 0.2);
+        .storage-indicator.localstorage {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        .storage-indicator.memory {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            animation: memoryPulse 2s ease-in-out infinite;
+        }
+
+        .storage-indicator.unknown {
+            background: linear-gradient(135deg, #6b7280, #4b5563);
+        }
+
+        @keyframes memoryPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .storage-warning {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
             border-radius: 0.5rem;
             padding: 1rem;
             margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .storage-icon {
-            font-size: 1.5rem;
-        }
-
-        .data-management-section {
-            background: linear-gradient(135deg, var(--bg-secondary), rgba(102, 126, 234, 0.05));
-            padding: var(--spacing-lg);
-            border-radius: var(--radius-lg);
-            margin-bottom: var(--spacing-xl);
-            border: 1px solid var(--border-light);
-        }
-
-        .data-actions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: var(--spacing-sm);
-            margin-top: var(--spacing-md);
-        }
-
-        .data-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: var(--spacing-xs);
-            padding: var(--spacing-sm) var(--spacing-md);
-            border: 2px solid var(--border-color);
-            border-radius: var(--radius-md);
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            font-size: var(--font-size-sm);
-            font-weight: 600;
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .data-btn:hover {
-            border-color: var(--primary-color);
-            color: var(--primary-color);
-            background: rgba(102, 126, 234, 0.05);
-            transform: translateY(-1px);
-        }
-
-        .data-btn.danger {
-            border-color: var(--danger-color);
-            color: var(--danger-color);
-        }
-
-        .data-btn.danger:hover {
-            background: rgba(231, 76, 60, 0.05);
-        }
-
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
             display: none;
             align-items: center;
-            justify-content: center;
-            z-index: 10000;
+            gap: 0.5rem;
+            color: #dc2626;
         }
 
-        .loading-content {
-            background: white;
-            padding: 2rem;
-            border-radius: 1rem;
-            text-align: center;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        .storage-warning.show {
+            display: flex;
         }
 
-        .spinner-large {
-            width: 60px;
-            height: 60px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--primary-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
+        .compatibility-info {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: none;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .compatibility-info.show {
+            display: block;
         }
     </style>
 </head>
 <body>
-<!-- Loading Overlay -->
+<!-- Enhanced Loading Overlay -->
 <div id="loadingOverlay" class="loading-overlay">
     <div class="loading-content">
         <div class="spinner-large"></div>
-        <h3>Loading from IndexedDB...</h3>
-        <p>Please wait while we fetch your data</p>
+        <h3 id="loadingTitle">Initializing Smart Storage...</h3>
+        <p id="loadingMessage">Detecting optimal storage mechanism</p>
+        <div id="storageSteps" style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.8;"></div>
     </div>
 </div>
 
 <!-- Dashboard Container -->
 <div class="dashboard-container">
-    <!-- Enhanced Header with Storage Indicator -->
+    <!-- Enhanced Header with Dynamic Storage Indicator -->
     <header class="dashboard-header" role="banner">
         <div class="header-content">
             <div class="header-left">
                 <h1>📝 Reminders Vault</h1>
-                <span class="indexeddb-indicator">💾 IndexedDB Storage</span>
+                <span id="storageIndicator" class="storage-indicator">🔍 Detecting Storage</span>
                 <time id="currentDate" class="current-date"></time>
             </div>
             <div class="header-right">
@@ -149,8 +100,8 @@
                     <button id="alertPrefsBtn" class="profile-btn" title="Alert Preferences">
                         🔔 Alerts
                     </button>
-                    <button id="dbInfoBtn" class="profile-btn" title="Database Info">
-                        📊 DB Info
+                    <button id="dbInfoBtn" class="profile-btn" title="Storage Info">
+                        📊 Storage Info
                     </button>
                     <button id="logoutBtn" class="logout-btn">🚪 Logout</button>
                 </nav>
@@ -160,16 +111,33 @@
 
     <!-- Main Content -->
     <main class="dashboard-main" role="main">
-        <!-- Storage Information -->
+        <!-- Storage Warning (for Memory storage) -->
+        <div id="storageWarning" class="storage-warning">
+            <div>⚠️</div>
+            <div>
+                <strong>Temporary Storage Active</strong>
+                <p>Your data is stored in memory and will be lost when you close this tab. Consider using a supported browser for persistent storage.</p>
+            </div>
+        </div>
+
+        <!-- Compatibility Info -->
+        <div id="compatibilityInfo" class="compatibility-info">
+            <div>
+                <strong>📱 Storage Compatibility</strong>
+                <p id="compatibilityMessage">Your browser supports multiple storage options for optimal performance.</p>
+            </div>
+        </div>
+
+        <!-- Enhanced Storage Information -->
         <section class="storage-info">
             <div class="storage-icon">💾</div>
             <div>
-                <strong>Persistent Storage Active</strong>
-                <p>Your reminders are stored in IndexedDB and will persist across browser sessions, restarts, and updates.</p>
+                <strong id="storageTitle">Smart Storage Active</strong>
+                <p id="storageDescription">Automatically selecting the best available storage mechanism for your device.</p>
             </div>
         </section>
 
-        <!-- Statistics Section -->
+        <!-- Statistics Section (unchanged) -->
         <section class="stats-section">
             <div class="stats-grid">
                 <button class="stat-card total-reminders clickable-stat" data-filter="all">
@@ -210,10 +178,10 @@
             </div>
         </section>
 
-        <!-- Data Management Section -->
+        <!-- Enhanced Data Management Section -->
         <section class="data-management-section">
-            <h2>📦 Data Management</h2>
-            <p>Manage your IndexedDB data with import, export, and maintenance options.</p>
+            <h2>📦 Smart Data Management</h2>
+            <p id="dataManagementDescription">Manage your data with intelligent storage selection and cross-platform compatibility.</p>
 
             <div class="data-actions">
                 <button class="data-btn" id="exportBtn">
@@ -226,7 +194,7 @@
                 </button>
                 <button class="data-btn" id="dbInfoBtn">
                     <span>📊</span>
-                    Database Info
+                    Storage Info
                 </button>
                 <button class="data-btn danger" id="clearDataBtn">
                     <span>🗑️</span>
@@ -234,6 +202,9 @@
                 </button>
             </div>
         </section>
+
+        <!-- Rest of the content remains the same... -->
+        <!-- Quick Actions, Reminders Section, Schedule Section unchanged -->
 
         <!-- Quick Actions -->
         <section class="quick-actions">
@@ -309,15 +280,16 @@
     </main>
 </div>
 
-<!-- Enhanced Add Reminder Modal with IndexedDB -->
+<!-- Enhanced Add Reminder Modal -->
 <div id="addReminderModal" class="modal" style="display: none;">
     <div class="modal-content enhanced">
         <div class="modal-header">
-            <h2><span class="label-icon">➕</span> Add New Reminder (IndexedDB)</h2>
+            <h2><span class="label-icon">➕</span> Add New Reminder (Smart Storage)</h2>
             <button class="close" aria-label="Close modal">&times;</button>
         </div>
         <div class="modal-body">
             <form id="addReminderForm">
+                <!-- Form content remains the same as original -->
                 <div class="form-group">
                     <label for="reminderTitle">
                         <span class="label-icon">📝</span>
@@ -385,7 +357,7 @@
 
                 <!-- Alert Timing Selection -->
                 <div class="alert-timing-section">
-                    <h4><span class="label-icon">⏰</span> Alert Timing (Stored in IndexedDB)</h4>
+                    <h4><span class="label-icon">⏰</span> Alert Timing (Smart Storage)</h4>
                     <p class="section-description">Choose when you want to be alerted before this reminder is due:</p>
 
                     <div class="timing-categories">
@@ -395,88 +367,6 @@
                                 <span class="category-subtitle">(immediate alerts)</span>
                             </div>
                             <div class="timing-options">
-                                <label class="timing-option">
-                                    <input type="checkbox" name="alertTiming" value="5" checked>
-                                    <div class="timing-card">
-                                        <div class="timing-icon">⏰</div>
-                                        <div class="timing-info">
-                                            <div class="timing-label">5 minutes before</div>
-                                            <div class="timing-value">Last-minute alert</div>
-                                        </div>
-                                    </div>
-                                </label>
-
-                                <label class="timing-option">
-                                    <input type="checkbox" name="alertTiming" value="15" checked>
-                                    <div class="timing-card">
-                                        <div class="timing-icon">⏰</div>
-                                        <div class="timing-info">
-                                            <div class="timing-label">15 minutes before</div>
-                                            <div class="timing-value">Quick preparation</div>
-                                        </div>
-                                    </div>
-                                </label>
-
-                                <label class="timing-option">
-                                    <input type="checkbox" name="alertTiming" value="30">
-                                    <div class="timing-card">
-                                        <div class="timing-icon">⏰</div>
-                                        <div class="timing-info">
-                                            <div class="timing-label">30 minutes before</div>
-                                            <div class="timing-value">Preparation time</div>
-                                        </div>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="timing-category">
-                            <div class="category-title">
-                                Hours Before
-                                <span class="category-subtitle">(advance planning)</span>
-                            </div>
-                            <div class="timing-options">
-                                <label class="timing-option">
-                                    <input type="checkbox" name="alertTiming" value="60">
-                                    <div class="timing-card">
-                                        <div class="timing-icon">🕐</div>
-                                        <div class="timing-info">
-                                            <div class="timing-label">1 hour before</div>
-                                            <div class="timing-value">Plan ahead</div>
-                                        </div>
-                                    </div>
-                                </label>
-
-                                <label class="timing-option">
-                                    <input type="checkbox" name="alertTiming" value="120">
-                                    <div class="timing-card">
-                                        <div class="timing-icon">🕐</div>
-                                        <div class="timing-info">
-                                            <div class="timing-label">2 hours before</div>
-                                            <div class="timing-value">Extended planning</div>
-                                        </div>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="timing-category">
-                            <div class="category-title">
-                                Days Before
-                                <span class="category-subtitle">(long-term planning)</span>
-                            </div>
-                            <div class="timing-options">
-                                <label class="timing-option">
-                                    <input type="checkbox" name="alertTiming" value="1440">
-                                    <div class="timing-card">
-                                        <div class="timing-icon">📅</div>
-                                        <div class="timing-info">
-                                            <div class="timing-label">1 day before</div>
-                                            <div class="timing-value">Daily planning</div>
-                                        </div>
-                                    </div>
-                                </label>
-
                                 <label class="timing-option">
                                     <input type="checkbox" name="alertTiming" value="2880">
                                     <div class="timing-card">
@@ -526,18 +416,19 @@
             </button>
             <button type="submit" form="addReminderForm" class="btn-submit">
                 <span class="btn-icon">💾</span>
-                Save to IndexedDB
+                Save with Smart Storage
             </button>
         </div>
     </div>
 </div>
 
-<!-- IndexedDB Dashboard Script -->
+<!-- Enhanced Smart Storage Dashboard Script -->
 <script type="module">
     import { DashboardController } from '../js/DashboardController.js';
     import { NotificationService } from '../js/NotificationService.js';
+    import { StorageFactory } from '../js/StorageFactory.js';
 
-    // Initialize IndexedDB dashboard
+    // Initialize smart storage dashboard
     const dashboard = new DashboardController();
 
     // Make globally accessible
@@ -547,11 +438,15 @@
         if (modal) modal.style.display = 'none';
     };
 
-    // Loading state management
-    function showLoading(message = 'Loading from IndexedDB...') {
+    // Enhanced loading state management with storage detection
+    function showLoading(message = 'Loading...', submessage = '') {
         const overlay = document.getElementById('loadingOverlay');
-        const loadingContent = overlay.querySelector('.loading-content h3');
-        if (loadingContent) loadingContent.textContent = message;
+        const titleElement = overlay.querySelector('#loadingTitle');
+        const messageElement = overlay.querySelector('#loadingMessage');
+
+        if (titleElement) titleElement.textContent = message;
+        if (messageElement) messageElement.textContent = submessage;
+
         overlay.style.display = 'flex';
     }
 
@@ -560,7 +455,49 @@
         overlay.style.display = 'none';
     }
 
-    // Enhanced form handling with IndexedDB
+    function updateLoadingSteps(steps) {
+        const stepsElement = document.getElementById('storageSteps');
+        if (stepsElement && Array.isArray(steps)) {
+            stepsElement.innerHTML = steps.map(step =>
+                `<div>${step.icon || '•'} ${step.message}</div>`
+            ).join('');
+        }
+    }
+
+    // Storage detection and compatibility display
+    async function displayStorageCompatibility() {
+        try {
+            const report = await StorageFactory.getCapabilitiesReport();
+            const { capabilities, recommendations } = report;
+
+            // Update compatibility info
+            const compatibilityInfo = document.getElementById('compatibilityInfo');
+            const compatibilityMessage = document.getElementById('compatibilityMessage');
+
+            if (capabilities.indexedDB?.available && capabilities.localStorage?.available) {
+                compatibilityMessage.textContent = 'Your browser supports both IndexedDB and localStorage for optimal performance and reliability.';
+                compatibilityInfo.classList.add('show');
+            } else if (capabilities.localStorage?.available) {
+                compatibilityMessage.textContent = 'Using localStorage fallback. Consider updating your browser for enhanced performance.';
+                compatibilityInfo.classList.add('show');
+            }
+
+            // Show warnings if needed
+            if (recommendations?.length > 0) {
+                const warningElement = document.getElementById('storageWarning');
+                const hasMemoryWarning = recommendations.some(r => r.message.includes('memory'));
+
+                if (hasMemoryWarning) {
+                    warningElement.classList.add('show');
+                }
+            }
+
+        } catch (error) {
+            console.warn('Failed to display storage compatibility:', error);
+        }
+    }
+
+    // Enhanced form handling with storage awareness
     function setupEnhancedFormHandlers() {
         const form = document.getElementById('addReminderForm');
         const preview = document.getElementById('selectedAlertsPreview');
@@ -614,7 +551,7 @@
             isSubmitting = true;
 
             try {
-                showLoading('Saving to IndexedDB...');
+                showLoading('Saving to Smart Storage...', 'Optimizing storage mechanism');
 
                 const formData = new FormData(freshForm);
                 const selectedAlerts = Array.from(freshForm.querySelectorAll('input[name="alertTiming"]:checked'))
@@ -645,7 +582,7 @@
         updateAlertPreview();
     }
 
-    // Enhanced button handlers for IndexedDB features
+    // Enhanced button handlers for smart storage features
     function setupEnhancedHandlers() {
         // Alert preferences button
         document.getElementById('alertPrefsBtn')?.addEventListener('click', () => {
@@ -662,24 +599,24 @@
             dashboard.testNotificationSystem();
         });
 
-        // Database info button
+        // Enhanced database info button
         document.getElementById('dbInfoBtn')?.addEventListener('click', async () => {
             try {
-                showLoading('Getting database information...');
+                showLoading('Getting storage information...', 'Analyzing storage health');
                 await dashboard.getDatabaseInfo().then(info => {
                     hideLoading();
                     dashboard._showDatabaseInfo();
                 });
             } catch (error) {
                 hideLoading();
-                console.error('Failed to get database info:', error);
+                console.error('Failed to get storage info:', error);
             }
         });
 
-        // Export data button
+        // Enhanced export data button
         document.getElementById('exportBtn')?.addEventListener('click', async () => {
             try {
-                showLoading('Exporting data from IndexedDB...');
+                showLoading('Exporting data...', 'Preparing smart storage export');
                 await dashboard.exportData();
                 hideLoading();
             } catch (error) {
@@ -688,10 +625,10 @@
             }
         });
 
-        // Import data button
+        // Enhanced import data button
         document.getElementById('importBtn')?.addEventListener('click', async () => {
             try {
-                showLoading('Importing data to IndexedDB...');
+                showLoading('Importing data...', 'Validating storage compatibility');
                 await dashboard.importData();
                 hideLoading();
             } catch (error) {
@@ -700,14 +637,16 @@
             }
         });
 
-        // Clear all data button
+        // Enhanced clear all data button
         document.getElementById('clearDataBtn')?.addEventListener('click', async () => {
-            if (!confirm('⚠️ This will permanently delete ALL your reminders from IndexedDB. This cannot be undone!\n\nAre you absolutely sure?')) {
+            const storageType = dashboard.getStorageType?.() || 'storage';
+
+            if (!confirm(`⚠️ This will permanently delete ALL your reminders from ${storageType}. This cannot be undone!\n\nAre you absolutely sure?`)) {
                 return;
             }
 
             try {
-                showLoading('Clearing all data from IndexedDB...');
+                showLoading('Clearing all data...', 'Removing data from smart storage');
                 await dashboard.clearAllData();
                 hideLoading();
             } catch (error) {
@@ -716,13 +655,13 @@
             }
         });
 
-        // Refresh with loading indicator
+        // Enhanced refresh with storage awareness
         document.getElementById('refreshBtn')?.addEventListener('click', async () => {
             try {
-                showLoading('Refreshing data from IndexedDB...');
+                showLoading('Refreshing data...', 'Syncing with smart storage');
                 await new Promise(resolve => {
                     dashboard.refresh();
-                    setTimeout(resolve, 1000); // Small delay to show loading
+                    setTimeout(resolve, 1000);
                 });
                 hideLoading();
             } catch (error) {
@@ -732,42 +671,7 @@
         });
     }
 
-    // Update notification statistics display
-    async function updateNotificationStats() {
-        try {
-            const stats = await dashboard.getNotificationStats();
-            const container = document.getElementById('notificationStats');
-
-            if (container) {
-                container.innerHTML = `
-                    <div class="stat-mini">
-                        <div class="stat-mini-value">${stats.totalScheduled || 0}</div>
-                        <div class="stat-mini-label">Scheduled Alerts</div>
-                    </div>
-                    <div class="stat-mini">
-                        <div class="stat-mini-value">${stats.activeReminders || 0}</div>
-                        <div class="stat-mini-label">Active Reminders</div>
-                    </div>
-                    <div class="stat-mini">
-                        <div class="stat-mini-value">${stats.totalConfiguredAlerts || 0}</div>
-                        <div class="stat-mini-label">Total Alerts</div>
-                    </div>
-                    <div class="stat-mini">
-                        <div class="stat-mini-value">${stats.averageAlertsPerReminder || 0}</div>
-                        <div class="stat-mini-label">Avg per Reminder</div>
-                    </div>
-                    <div class="stat-mini">
-                        <div class="stat-mini-value">IndexedDB</div>
-                        <div class="stat-mini-label">Storage Type</div>
-                    </div>
-                `;
-            }
-        } catch (error) {
-            console.error('Failed to update notification stats:', error);
-        }
-    }
-
-    // Enhanced dashboard initialization with safeguards
+    // Enhanced dashboard initialization with comprehensive error handling
     let dashboardInitialized = false;
 
     async function initializeDashboard() {
@@ -775,41 +679,100 @@
         dashboardInitialized = true;
 
         try {
-            showLoading('Initializing IndexedDB storage...');
+            // Show loading with storage detection steps
+            showLoading('Initializing Smart Storage System...', 'Detecting browser capabilities');
 
+            updateLoadingSteps([
+                { icon: '🔍', message: 'Detecting storage capabilities' },
+                { icon: '⚡', message: 'Selecting optimal storage mechanism' },
+                { icon: '🔧', message: 'Initializing storage service' },
+                { icon: '📱', message: 'Setting up dashboard interface' }
+            ]);
+
+            // Initialize dashboard with smart storage
             await dashboard.initialize();
+
+            // Setup enhanced handlers
             setupEnhancedFormHandlers();
             setupEnhancedHandlers();
-            await updateNotificationStats();
+
+            // Display storage compatibility info
+            await displayStorageCompatibility();
 
             hideLoading();
-            console.log('📱 Enhanced dashboard with IndexedDB initialized successfully');
+            console.log('📱 Enhanced dashboard with smart storage initialized successfully');
+
         } catch (error) {
             hideLoading();
             console.error('Dashboard initialization failed:', error);
-            dashboardInitialized = false; // Allow retry
+            dashboardInitialized = false;
 
-            // Show error message
-            alert(`Failed to initialize IndexedDB dashboard: ${error.message}\n\nPlease refresh the page to try again.`);
+            // Enhanced error message with storage context
+            const errorMsg = error.message.includes('Storage')
+                ? `Storage system failed: ${error.message}\n\nThis may be due to browser restrictions or storage quota limits.`
+                : `Failed to initialize dashboard: ${error.message}`;
+
+            alert(`${errorMsg}\n\nPlease refresh the page to try again.`);
         }
     }
 
-    // Handle browser compatibility
-    if (!window.indexedDB) {
-        alert('Your browser does not support IndexedDB. Please use a modern browser like Chrome, Firefox, Safari, or Edge.');
+    // Enhanced browser compatibility handling
+    async function checkBrowserCompatibility() {
+        try {
+            const report = await StorageFactory.getCapabilitiesReport();
+
+            if (!report.capabilities.indexedDB?.available && !report.capabilities.localStorage?.available) {
+                document.body.innerHTML = `
+                    <div style="
+                        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                        display: flex; align-items: center; justify-content: center;
+                        color: white; font-family: system-ui, sans-serif; text-align: center;
+                        padding: 2rem;
+                    ">
+                        <div>
+                            <h1>🚫 Storage Not Available</h1>
+                            <p>This application requires either IndexedDB or localStorage support.</p>
+                            <p>Please update your browser or check your privacy settings.</p>
+                            <button onclick="window.location.reload()" style="
+                                margin-top: 2rem; padding: 1rem 2rem;
+                                background: white; color: #dc2626; border: none;
+                                border-radius: 8px; font-weight: bold; cursor: pointer;
+                            ">
+                                🔄 Try Again
+                            </button>
+                        </div>
+                    </div>
+                `;
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Browser compatibility check failed:', error);
+            return true; // Assume compatible and let the app handle errors
+        }
+    }
+
+    // Initialize when DOM is ready with compatibility check
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (await checkBrowserCompatibility()) {
+                initializeDashboard();
+            }
+        });
     } else {
-        // Initialize when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeDashboard);
-        } else {
-            initializeDashboard();
-        }
+        checkBrowserCompatibility().then(isCompatible => {
+            if (isCompatible) {
+                initializeDashboard();
+            }
+        });
     }
 
-    console.log('📱 IndexedDB dashboard script loaded');
+    console.log('📱 Smart storage dashboard script loaded');
 </script>
 
-<!-- Fallback and error handling -->
+<!-- Enhanced Fallback and Error Handling -->
 <script nomodule>
     document.body.innerHTML = `
         <div style="
@@ -819,17 +782,22 @@
             color: white; font-family: system-ui, sans-serif; text-align: center;
         ">
             <div>
-                <h1>Browser Update Required</h1>
-                <p>This IndexedDB application requires ES6 module support.</p>
+                <h1>🔄 Browser Update Required</h1>
+                <p>This smart storage application requires ES6 module support.</p>
                 <p>Please update your browser to continue.</p>
+                <div style="margin-top: 2rem;">
+                    <p><strong>Recommended browsers:</strong></p>
+                    <p>Chrome 61+, Firefox 60+, Safari 11+, Edge 16+</p>
+                </div>
             </div>
         </div>
     `;
 </script>
 
+<!-- Enhanced Error Boundary -->
 <script>
     window.addEventListener('error', (event) => {
-        console.error('IndexedDB dashboard error:', event.error);
+        console.error('Smart storage dashboard error:', event.error);
 
         const errorDiv = document.createElement('div');
         errorDiv.style.cssText = `
@@ -838,9 +806,16 @@
             padding: 15px; border-radius: 5px; z-index: 10001;
             font-family: system-ui, sans-serif; text-align: center;
         `;
+
+        const isStorageError = event.error?.message?.includes('storage') ||
+            event.error?.message?.includes('IndexedDB') ||
+            event.error?.message?.includes('localStorage');
+
+        const errorType = isStorageError ? 'Smart Storage' : 'Dashboard';
+
         errorDiv.innerHTML = `
-            <strong>⚠️ IndexedDB Dashboard Error</strong><br>
-            ${event.error?.message || 'Something went wrong with IndexedDB'}<br>
+            <strong>⚠️ ${errorType} Error</strong><br>
+            ${event.error?.message || 'Something went wrong with the storage system'}<br>
             <button onclick="window.location.reload()" style="margin-top: 10px; padding: 5px 10px;">
                 🔄 Refresh Page
             </button>
@@ -848,13 +823,100 @@
         document.body.appendChild(errorDiv);
     });
 
-    // Handle IndexedDB quota exceeded errors
+    // Enhanced storage quota error handling
     window.addEventListener('unhandledrejection', (event) => {
         if (event.reason?.name === 'QuotaExceededError') {
-            alert('IndexedDB storage quota exceeded! Please export your data and clear some old reminders.');
+            alert('Storage quota exceeded! The system will attempt to clean up old data automatically.');
+            event.preventDefault();
+        }
+
+        if (event.reason?.message?.includes('storage') || event.reason?.message?.includes('IndexedDB')) {
+            console.error('Storage system error:', event.reason);
             event.preventDefault();
         }
     });
 </script>
 </body>
 </html>
+<input type="checkbox" name="alertTiming" value="5" checked>
+<div class="timing-card">
+    <div class="timing-icon">⏰</div>
+    <div class="timing-info">
+        <div class="timing-label">5 minutes before</div>
+        <div class="timing-value">Last-minute alert</div>
+    </div>
+</div>
+</label>
+
+<label class="timing-option">
+    <input type="checkbox" name="alertTiming" value="15" checked>
+    <div class="timing-card">
+        <div class="timing-icon">⏰</div>
+        <div class="timing-info">
+            <div class="timing-label">15 minutes before</div>
+            <div class="timing-value">Quick preparation</div>
+        </div>
+    </div>
+</label>
+
+<label class="timing-option">
+    <input type="checkbox" name="alertTiming" value="30">
+    <div class="timing-card">
+        <div class="timing-icon">⏰</div>
+        <div class="timing-info">
+            <div class="timing-label">30 minutes before</div>
+            <div class="timing-value">Preparation time</div>
+        </div>
+    </div>
+</label>
+</div>
+</div>
+
+<div class="timing-category">
+    <div class="category-title">
+        Hours Before
+        <span class="category-subtitle">(advance planning)</span>
+    </div>
+    <div class="timing-options">
+        <label class="timing-option">
+            <input type="checkbox" name="alertTiming" value="60">
+            <div class="timing-card">
+                <div class="timing-icon">🕐</div>
+                <div class="timing-info">
+                    <div class="timing-label">1 hour before</div>
+                    <div class="timing-value">Plan ahead</div>
+                </div>
+            </div>
+        </label>
+
+        <label class="timing-option">
+            <input type="checkbox" name="alertTiming" value="120">
+            <div class="timing-card">
+                <div class="timing-icon">🕐</div>
+                <div class="timing-info">
+                    <div class="timing-label">2 hours before</div>
+                    <div class="timing-value">Extended planning</div>
+                </div>
+            </div>
+        </label>
+    </div>
+</div>
+
+<div class="timing-category">
+    <div class="category-title">
+        Days Before
+        <span class="category-subtitle">(long-term planning)</span>
+    </div>
+    <div class="timing-options">
+        <label class="timing-option">
+            <input type="checkbox" name="alertTiming" value="1440">
+            <div class="timing-card">
+                <div class="timing-icon">📅</div>
+                <div class="timing-info">
+                    <div class="timing-label">1 day before</div>
+                    <div class="timing-value">Daily planning</div>
+                </div>
+            </div>
+        </label>
+
+        <label class="timing-option">

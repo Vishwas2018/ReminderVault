@@ -175,7 +175,7 @@ export class FallbackStorageService {
         }
 
         this.#setRawData(data);
-        console.log(`💾 Reminder saved to localStorage: ${reminder.title}`);
+        console.log('💾 Reminder saved to localStorage: ${reminder.title}');
 
         return reminder;
     }
@@ -208,7 +208,7 @@ export class FallbackStorageService {
         const sortBy = filters.sortBy || 'datetime';
         reminders.sort(this.#getSortFunction(sortBy));
 
-        console.log(`📄 Retrieved ${reminders.length} reminders from localStorage`);
+        console.log('📄 Retrieved ${reminders.length} reminders from localStorage');
         return reminders;
     }
 
@@ -230,7 +230,7 @@ export class FallbackStorageService {
     async updateReminder(id, updates) {
         const existing = await this.getReminderById(id);
         if (!existing) {
-            throw new Error(`Reminder with id ${id} not found`);
+            throw new Error('Reminder with id ${id} not found');
         }
 
         const updatedReminder = {
@@ -257,7 +257,7 @@ export class FallbackStorageService {
 
         if (data.reminders.length < initialLength) {
             this.#setRawData(data);
-            console.log(`🗑️ Reminder deleted from localStorage: ${id}`);
+            console.log('🗑️ Reminder deleted from localStorage: ${id}');
             return true;
         }
 
@@ -272,7 +272,7 @@ export class FallbackStorageService {
         const deletePromises = reminders.map(r => this.deleteReminder(r.id));
 
         await Promise.all(deletePromises);
-        console.log(`🧹 Deleted ${reminders.length} ${status} reminders from localStorage`);
+        console.log('🧹 Deleted ${reminders.length} ${status} reminders from localStorage');
 
         return reminders.length;
     }
@@ -295,7 +295,7 @@ export class FallbackStorageService {
         };
 
         this.#setRawData(data);
-        console.log(`⚙️ User preferences saved to localStorage: ${userId}`);
+        console.log('⚙️ User preferences saved to localStorage: ${userId}');
 
         return data.userPreferences[userId];
     }
@@ -385,7 +385,7 @@ export class FallbackStorageService {
             const data = localStorage.getItem(FallbackStorageService.#STORAGE_KEY);
             const sizeBytes = new Blob([data || '']).size;
             const sizeKB = Math.round(sizeBytes / 1024);
-            return `${sizeKB} KB`;
+            return '${sizeKB} KB';
         } catch {
             return 'Unknown';
         }
@@ -434,7 +434,7 @@ export class FallbackStorageService {
             await this.saveUserPreferences(userId, preferences);
         }
 
-        console.log(`📥 Imported ${results.length} reminders to localStorage`);
+        console.log('📥 Imported ${results.length} reminders to localStorage');
         return results;
     }
 
@@ -452,7 +452,7 @@ export class FallbackStorageService {
             this.#deleteUserPreferences(userId)
         ]);
 
-        console.log(`🧹 Cleared all localStorage data for user: ${userId}`);
+        console.log('🧹 Cleared all localStorage data for user: ${userId}');
         return reminders.length;
     }
 

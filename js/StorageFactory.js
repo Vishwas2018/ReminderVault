@@ -21,7 +21,7 @@ export class StorageFactory {
      * Singleton pattern - ensures consistent storage service across app
      */
     static async getInstance(userId = 'default') {
-        const cacheKey = `storage_${userId}`;
+        const cacheKey = 'storage_${userId}';
 
         if (this.#storageServiceCache.has(cacheKey)) {
             return this.#storageServiceCache.get(cacheKey);
@@ -50,11 +50,11 @@ export class StorageFactory {
                 const service = await strategy();
                 const storageType = service.constructor.name;
 
-                console.log(`✅ Storage initialized: ${storageType} for user: ${userId}`);
+                console.log('✅ Storage initialized: ${storageType} for user: ${userId}');
                 return this.#wrapWithMetrics(service, storageType);
 
             } catch (error) {
-                console.warn(`Storage strategy failed:`, error.message);
+                console.warn('Storage strategy failed:', error.message);
                 continue;
             }
         }
@@ -101,7 +101,7 @@ export class StorageFactory {
 
                 request.onerror = () => {
                     clearTimeout(timeout);
-                    reject(new Error(`IndexedDB error: ${request.error?.message}`));
+                    reject(new Error('IndexedDB error: ${request.error?.message}'));
                 };
 
                 request.onsuccess = () => {
@@ -221,7 +221,7 @@ export class StorageFactory {
      */
     static async #tryIndexedDB() {
         if (!this.#capabilities.indexedDB?.available) {
-            throw new Error(`IndexedDB unavailable: ${this.#capabilities.indexedDB?.reason}`);
+            throw new Error('IndexedDB unavailable: ${this.#capabilities.indexedDB?.reason}');
         }
 
         const service = new IndexedDBStorageService();
@@ -235,7 +235,7 @@ export class StorageFactory {
      */
     static async #tryLocalStorage() {
         if (!this.#capabilities.localStorage?.available) {
-            throw new Error(`localStorage unavailable: ${this.#capabilities.localStorage?.reason}`);
+            throw new Error('localStorage unavailable: ${this.#capabilities.localStorage?.reason}');
         }
 
         const service = new FallbackStorageService();
@@ -264,7 +264,7 @@ export class StorageFactory {
                 if (typeof originalMethod === 'function' && factory.#shouldMonitor(prop)) {
                     return async function(...args) {
                         const startTime = performance.now();
-                        const operationId = `${storageType}.${prop}`;
+                        const operationId = '${storageType}.${prop}';
 
                         try {
                             const result = await originalMethod.apply(target, args);
@@ -309,7 +309,7 @@ export class StorageFactory {
             ...(error && { error })
         };
 
-        console.debug(`📊 Storage metric:`, metric);
+        console.debug('📊 Storage metric:', metric);
     }
 
     /**
@@ -402,13 +402,13 @@ export class StorageFactory {
 
         const factory = factories[type.toLowerCase()];
         if (!factory) {
-            throw new Error(`Unknown storage type: ${type}`);
+            throw new Error('Unknown storage type: ${type}');
         }
 
         const service = factory();
         await service; // Trigger initialization
 
-        console.log(`🔧 Force-created ${type} storage for testing`);
+        console.log('🔧 Force-created ${type} storage for testing');
         return service;
     }
 }
@@ -454,7 +454,7 @@ class MemoryStorageService {
 
     async updateReminder(id, updates) {
         const existing = await this.getReminderById(id);
-        if (!existing) throw new Error(`Reminder ${id} not found`);
+        if (!existing) throw new Error('Reminder ${id} not found');
 
         return this.saveReminder({ ...existing, ...updates, id });
     }
@@ -509,7 +509,7 @@ class MemoryStorageService {
             name: 'Memory Storage',
             type: 'Emergency Fallback',
             persistent: false,
-            size: `${JSON.stringify(this.#data).length} bytes`
+            size: '${JSON.stringify(this.#data).length} bytes'
         };
     }
 

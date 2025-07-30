@@ -538,7 +538,7 @@
         const stepsElement = document.getElementById('storageSteps');
         if (stepsElement && Array.isArray(steps)) {
             stepsElement.innerHTML = steps.map(step =>
-                `<div>${step.icon || '•'} ${step.message}</div>`
+                '<div>${step.icon || '•'} ${step.message}</div>'
             ).join('');
         }
     }
@@ -605,12 +605,12 @@
             const alertOptions = NotificationService.getAlertTimingOptions();
             freshPreview.innerHTML = selectedAlerts.map(value => {
                 const option = alertOptions.find(opt => opt.value === value);
-                return `
+                return '
                     <div class="alert-preview-item">
                         <span class="preview-icon">${option?.icon || '⏰'}</span>
-                        <span class="preview-text">${option?.label || `${value} minutes before`}</span>
+                        <span class="preview-text">${option?.label || '${value} minutes before'}</span>
                     </div>
-                `;
+                ';
             }).join('');
         };
 
@@ -734,7 +734,7 @@
         document.getElementById('clearDataBtn')?.addEventListener('click', async () => {
             const storageType = dashboard.getStorageType?.() || 'storage';
 
-            if (!confirm(`⚠️ This will permanently delete ALL your reminders from ${storageType}. This cannot be undone!\n\nAre you absolutely sure?`)) {
+            if (!confirm('⚠️ This will permanently delete ALL your reminders from ${storageType}. This cannot be undone!\n\nAre you absolutely sure?')) {
                 return;
             }
 
@@ -802,10 +802,10 @@
 
             // Enhanced error message with storage context
             const errorMsg = error.message.includes('Storage')
-                ? `Storage system failed: ${error.message}\n\nThis may be due to browser restrictions or storage quota limits.`
-                : `Failed to initialize dashboard: ${error.message}`;
+                ? 'Storage system failed: ${error.message}\n\nThis may be due to browser restrictions or storage quota limits.'
+                : 'Failed to initialize dashboard: ${error.message}';
 
-            alert(`${errorMsg}\n\nPlease refresh the page to try again.`);
+            alert('${errorMsg}\n\nPlease refresh the page to try again.');
         }
     }
 
@@ -815,7 +815,7 @@
             const report = await StorageFactory.getCapabilitiesReport();
 
             if (!report.capabilities.indexedDB?.available && !report.capabilities.localStorage?.available) {
-                document.body.innerHTML = `
+                document.body.innerHTML = '
                     <div style="
                         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
                         background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
@@ -836,7 +836,7 @@
                             </button>
                         </div>
                     </div>
-                `;
+                ';
                 return false;
             }
 
@@ -867,7 +867,7 @@
 
 <!-- Enhanced Fallback and Error Handling -->
 <script nomodule>
-    document.body.innerHTML = `
+    document.body.innerHTML = '
         <div style="
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -884,7 +884,7 @@
                 </div>
             </div>
         </div>
-    `;
+    ';
 </script>
 
 <!-- Enhanced Error Boundary -->
@@ -893,12 +893,12 @@
         console.error('Smart storage dashboard error:', event.error);
 
         const errorDiv = document.createElement('div');
-        errorDiv.style.cssText = `
+        errorDiv.style.cssText = '
             position: fixed; top: 20px; right: 20px; left: 20px;
             background: #fee; border: 1px solid #fcc; color: #c66;
             padding: 15px; border-radius: 5px; z-index: 10001;
             font-family: system-ui, sans-serif; text-align: center;
-        `;
+        ';
 
         const isStorageError = event.error?.message?.includes('storage') ||
             event.error?.message?.includes('IndexedDB') ||
@@ -906,13 +906,13 @@
 
         const errorType = isStorageError ? 'Smart Storage' : 'Dashboard';
 
-        errorDiv.innerHTML = `
+        errorDiv.innerHTML = '
             <strong>⚠️ ${errorType} Error</strong><br>
             ${event.error?.message || 'Something went wrong with the storage system'}<br>
             <button onclick="window.location.reload()" style="margin-top: 10px; padding: 5px 10px;">
                 🔄 Refresh Page
             </button>
-        `;
+        ';
         document.body.appendChild(errorDiv);
     });
 

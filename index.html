@@ -402,10 +402,10 @@
 
             if (statusText) {
                 const progress = Math.round((this.currentStep / this.initializationSteps.length) * 100);
-                statusText.textContent = `Progress: ${progress}%`;
+                statusText.textContent = 'Progress: ${progress}%';
             }
 
-            console.log(`📍 ${message}`);
+            console.log('📍 ${message}');
         }
 
         showError(title, details = '') {

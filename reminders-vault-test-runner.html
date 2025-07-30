@@ -498,8 +498,8 @@
             if (!logContainer) return;
 
             const logDiv = document.createElement('div');
-            logDiv.className = `log-entry log-${testResult.type}`;
-            logDiv.innerHTML = `[${new Date(testResult.timestamp).toLocaleTimeString()}] ${testResult.message}`;
+            logDiv.className = 'log-entry log-${testResult.type}';
+            logDiv.innerHTML = '[${new Date(testResult.timestamp).toLocaleTimeString()}] ${testResult.message}';
 
             logContainer.appendChild(logDiv);
             logContainer.scrollTop = logContainer.scrollHeight;
@@ -542,7 +542,7 @@
 
             const progressFill = document.getElementById('progressFill');
             if (progressFill) {
-                progressFill.style.width = `${Math.min(progress, 100)}%`;
+                progressFill.style.width = '${Math.min(progress, 100)}%';
             }
         }
 
@@ -564,15 +564,15 @@
             }
 
             issuesSection.style.display = 'block';
-            issuesList.innerHTML = this.issues.map(issue => `
+            issuesList.innerHTML = this.issues.map(issue => '
                 <div class="issue-item severity-${issue.severity}">
                     <div style="font-weight: bold; color: #2c3e50; margin-bottom: 8px;">
                         ${issue.severity.toUpperCase()}: ${issue.title}
                     </div>
                     <div style="margin-bottom: 8px;">${issue.description}</div>
-                    ${issue.recommendation ? `<div style="font-style: italic; color: #666;"><strong>Recommendation:</strong> ${issue.recommendation}</div>` : ''}
+                    ${issue.recommendation ? '<div style="font-style: italic; color: #666;"><strong>Recommendation:</strong> ${issue.recommendation}</div>' : ''}
                 </div>
-            `).join('');
+            ').join('');
         }
 
         startTimer() {
@@ -584,7 +584,7 @@
 
                 const timerElement = document.getElementById('testTimer');
                 if (timerElement) {
-                    timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    timerElement.textContent = '${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}';
                 }
             }, 1000);
         }
@@ -660,7 +660,7 @@
                     this.updateProgressText('All tests completed');
                 }
             } catch (error) {
-                this.log(TestTypes.ERROR, `❌ Test suite failed: ${error.message}`);
+                this.log(TestTypes.ERROR, '❌ Test suite failed: ${error.message}');
                 this.updateProgressText('Tests failed');
             } finally {
                 this.setRunningState(false);
@@ -683,7 +683,7 @@
                 this.log(TestTypes.SUCCESS, '✅ Quick tests completed');
                 this.updateProgressText('Quick tests completed');
             } catch (error) {
-                this.log(TestTypes.ERROR, `❌ Quick tests failed: ${error.message}`);
+                this.log(TestTypes.ERROR, '❌ Quick tests failed: ${error.message}');
                 this.updateProgressText('Quick tests failed');
             }
         }
@@ -701,7 +701,7 @@
                 this.log(TestTypes.SUCCESS, '✅ Stress tests completed');
                 this.updateProgressText('Stress tests completed');
             } catch (error) {
-                this.log(TestTypes.ERROR, `❌ Stress tests failed: ${error.message}`);
+                this.log(TestTypes.ERROR, '❌ Stress tests failed: ${error.message}');
                 this.updateProgressText('Stress tests failed');
             }
         }
@@ -712,9 +712,9 @@
             this.currentTest++;
 
             const { name, version } = this.browserInfo.parsed;
-            this.log(TestTypes.INFO, `Browser: ${name} ${version}`);
-            this.log(TestTypes.INFO, `Platform: ${this.browserInfo.platform}`);
-            this.log(TestTypes.INFO, `Language: ${this.browserInfo.language}`);
+            this.log(TestTypes.INFO, 'Browser: ${name} ${version}');
+            this.log(TestTypes.INFO, 'Platform: ${this.browserInfo.platform}');
+            this.log(TestTypes.INFO, 'Language: ${this.browserInfo.language}');
 
             const criticalAPIs = {
                 'localStorage': 'localStorage' in window,
@@ -730,11 +730,11 @@
             Object.entries(criticalAPIs).forEach(([api, supported]) => {
                 if (supported) {
                     supportedAPIs++;
-                    this.log(TestTypes.SUCCESS, `✅ ${api}: Supported`);
+                    this.log(TestTypes.SUCCESS, '✅ ${api}: Supported');
                 } else {
-                    this.log(TestTypes.ERROR, `❌ ${api}: Not supported`);
-                    this.addIssue(IssueSeverity.CRITICAL, 'compatibility', `${api} Not Supported`,
-                        `${api} is required for core functionality`,
+                    this.log(TestTypes.ERROR, '❌ ${api}: Not supported');
+                    this.addIssue(IssueSeverity.CRITICAL, 'compatibility', '${api} Not Supported',
+                        '${api} is required for core functionality',
                         'Update to a modern browser that supports this API');
                 }
             });
@@ -742,7 +742,7 @@
             const totalAPIs = Object.keys(criticalAPIs).length;
             if (supportedAPIs < totalAPIs) {
                 this.addIssue(IssueSeverity.CRITICAL, 'compatibility', 'Missing Browser APIs',
-                    `Only ${supportedAPIs}/${totalAPIs} critical APIs supported`,
+                    'Only ${supportedAPIs}/${totalAPIs} critical APIs supported',
                     'Use a modern browser for full functionality');
             }
 
@@ -765,18 +765,18 @@
             const requiredFeatures = {
                 'ES6 Classes': typeof class {} === 'function',
                 'Arrow Functions': (() => true)(),
-                'Template Literals': `test` === 'test',
+                'Template Literals': 'test' === 'test',
                 'Destructuring': (() => { try { const [a] = [1]; return true; } catch { return false; } })(),
                 'Async/Await': typeof (async () => {}) === 'function'
             };
 
             Object.entries(requiredFeatures).forEach(([feature, supported]) => {
                 if (supported) {
-                    this.log(TestTypes.SUCCESS, `✅ ${feature}: Supported`);
+                    this.log(TestTypes.SUCCESS, '✅ ${feature}: Supported');
                 } else {
-                    this.log(TestTypes.ERROR, `❌ ${feature}: Not supported`);
-                    this.addIssue(IssueSeverity.MAJOR, 'compatibility', `${feature} Not Supported`,
-                        `Modern JavaScript feature ${feature} is not available`,
+                    this.log(TestTypes.ERROR, '❌ ${feature}: Not supported');
+                    this.addIssue(IssueSeverity.MAJOR, 'compatibility', '${feature} Not Supported',
+                        'Modern JavaScript feature ${feature} is not available',
                         'Use a modern browser or enable JavaScript features');
                 }
             });
@@ -808,7 +808,7 @@
 
                 this.log(TestTypes.SUCCESS, '✅ localStorage basic operations working');
             } catch (error) {
-                this.log(TestTypes.ERROR, `❌ localStorage test failed: ${error.message}`);
+                this.log(TestTypes.ERROR, '❌ localStorage test failed: ${error.message}');
                 this.addIssue(IssueSeverity.CRITICAL, 'storage', 'localStorage Test Failed',
                     error.message,
                     'Check browser settings and localStorage availability');
@@ -879,7 +879,7 @@
                 this.addIssue(IssueSeverity.MAJOR, 'storage', 'IndexedDB Test Failed',
                     error.message,
                     'Check browser compatibility and IndexedDB support');
-                this.log(TestTypes.ERROR, `❌ IndexedDB test failed: ${error.message}`);
+                this.log(TestTypes.ERROR, '❌ IndexedDB test failed: ${error.message}');
             }
         }
 
@@ -893,17 +893,17 @@
                     const usageKB = Math.round(estimate.usage / 1024);
                     const usagePercent = (estimate.usage / estimate.quota) * 100;
 
-                    this.log(TestTypes.INFO, `📊 Storage: ${quotaMB}MB quota, ${usageKB}KB used (${usagePercent.toFixed(1)}%)`);
+                    this.log(TestTypes.INFO, '📊 Storage: ${quotaMB}MB quota, ${usageKB}KB used (${usagePercent.toFixed(1)}%)');
 
                     if (usagePercent > 80) {
                         this.addIssue(IssueSeverity.MAJOR, 'storage', 'High Storage Usage',
-                            `Storage usage is ${usagePercent.toFixed(1)}%`,
+                            'Storage usage is ${usagePercent.toFixed(1)}%',
                             'Clear browser data or implement data cleanup');
                     } else {
                         this.log(TestTypes.SUCCESS, '✅ Storage usage within acceptable limits');
                     }
                 } catch (error) {
-                    this.log(TestTypes.WARNING, `⚠️ Could not estimate storage capacity: ${error.message}`);
+                    this.log(TestTypes.WARNING, '⚠️ Could not estimate storage capacity: ${error.message}');
                 }
             } else {
                 this.log(TestTypes.WARNING, '⚠️ Storage estimation API not available');
@@ -920,16 +920,16 @@
                 for (let i = 0; i < 10; i++) {
                     const reminder = {
                         id: i,
-                        title: `Test Reminder ${i}`,
-                        description: `Test description ${i}`,
+                        title: 'Test Reminder ${i}',
+                        description: 'Test description ${i}',
                         datetime: new Date(Date.now() + i * 3600000).toISOString(),
                         status: 'active'
                     };
                     mockReminders.push(reminder);
                 }
-                this.log(TestTypes.SUCCESS, `✅ Created ${mockReminders.length} test reminders`);
+                this.log(TestTypes.SUCCESS, '✅ Created ${mockReminders.length} test reminders');
             } catch (error) {
-                this.log(TestTypes.ERROR, `❌ Create operation failed: ${error.message}`);
+                this.log(TestTypes.ERROR, '❌ Create operation failed: ${error.message}');
                 this.addIssue(IssueSeverity.MAJOR, 'crud', 'Create Operation Failed',
                     'Unable to create reminder objects',
                     'Check reminder creation logic and validation');
@@ -939,9 +939,9 @@
             try {
                 const activeReminders = mockReminders.filter(r => r.status === 'active');
                 const sortedReminders = [...mockReminders].sort((a, b) => a.title.localeCompare(b.title));
-                this.log(TestTypes.SUCCESS, `✅ Read operations: ${activeReminders.length} active, ${sortedReminders.length} total`);
+                this.log(TestTypes.SUCCESS, '✅ Read operations: ${activeReminders.length} active, ${sortedReminders.length} total');
             } catch (error) {
-                this.log(TestTypes.ERROR, `❌ Read operation failed: ${error.message}`);
+                this.log(TestTypes.ERROR, '❌ Read operation failed: ${error.message}');
             }
 
             // Test Update
@@ -952,16 +952,16 @@
                     this.log(TestTypes.SUCCESS, '✅ Update operation successful');
                 }
             } catch (error) {
-                this.log(TestTypes.ERROR, `❌ Update operation failed: ${error.message}`);
+                this.log(TestTypes.ERROR, '❌ Update operation failed: ${error.message}');
             }
 
             // Test Delete
             try {
                 const initialCount = mockReminders.length;
                 mockReminders.splice(0, 1);
-                this.log(TestTypes.SUCCESS, `✅ Delete operation: ${initialCount} → ${mockReminders.length} reminders`);
+                this.log(TestTypes.SUCCESS, '✅ Delete operation: ${initialCount} → ${mockReminders.length} reminders');
             } catch (error) {
-                this.log(TestTypes.ERROR, `❌ Delete operation failed: ${error.message}`);
+                this.log(TestTypes.ERROR, '❌ Delete operation failed: ${error.message}');
             }
 
             this.currentTest += 10;
@@ -989,7 +989,7 @@
             }
 
             const permission = Notification.permission;
-            this.log(TestTypes.INFO, `🔔 Current permission: ${permission}`);
+            this.log(TestTypes.INFO, '🔔 Current permission: ${permission}');
 
             switch (permission) {
                 case 'denied':
@@ -1021,7 +1021,7 @@
                     setTimeout(() => testNotification.close(), 2000);
                     this.log(TestTypes.SUCCESS, '✅ Browser notification display working');
                 } catch (error) {
-                    this.log(TestTypes.ERROR, `❌ Notification display failed: ${error.message}`);
+                    this.log(TestTypes.ERROR, '❌ Notification display failed: ${error.message}');
                     this.addIssue(IssueSeverity.MINOR, 'notifications', 'Notification Display Error',
                         error.message,
                         'Check notification API implementation');
@@ -1073,9 +1073,9 @@
 
             } catch (error) {
                 this.addIssue(IssueSeverity.MINOR, 'notifications', 'Audio Test Failed',
-                    `Audio notifications may not work: ${error.message}`,
+                    'Audio notifications may not work: ${error.message}',
                     'Implement fallback notification methods');
-                this.log(TestTypes.WARNING, `⚠️ Audio notification test: ${error.message}`);
+                this.log(TestTypes.WARNING, '⚠️ Audio notification test: ${error.message}');
             }
         }
 
@@ -1104,12 +1104,12 @@
             requiredElements.forEach(element => {
                 const found = document.querySelector(element.selector);
                 if (found) {
-                    this.log(TestTypes.SUCCESS, `✅ ${element.name} found`);
+                    this.log(TestTypes.SUCCESS, '✅ ${element.name} found');
                 } else {
-                    this.log(TestTypes.ERROR, `❌ ${element.name} missing`);
-                    this.addIssue(IssueSeverity.MINOR, 'ui', `Missing ${element.name}`,
-                        `${element.name} not found in DOM`,
-                        `Add ${element.selector} to the HTML`);
+                    this.log(TestTypes.ERROR, '❌ ${element.name} missing');
+                    this.addIssue(IssueSeverity.MINOR, 'ui', 'Missing ${element.name}',
+                        '${element.name} not found in DOM',
+                        'Add ${element.selector} to the HTML');
                     missingElements++;
                 }
             });
@@ -1134,8 +1134,8 @@
             // Test CSS media queries
             const breakpoints = [320, 768, 1024, 1440];
             breakpoints.forEach(width => {
-                const mediaQuery = window.matchMedia(`(max-width: ${width}px)`);
-                this.log(TestTypes.INFO, `📱 Breakpoint ${width}px: ${mediaQuery.matches ? 'Active' : 'Inactive'}`);
+                const mediaQuery = window.matchMedia('(max-width: ${width}px)');
+                this.log(TestTypes.INFO, '📱 Breakpoint ${width}px: ${mediaQuery.matches ? 'Active' : 'Inactive'}');
             });
 
             this.log(TestTypes.SUCCESS, '✅ Responsive design checks completed');
@@ -1153,7 +1153,7 @@
             );
             if (semanticElements.length > 0) {
                 accessibilityScore += 2;
-                this.log(TestTypes.SUCCESS, `✅ Found ${semanticElements.length} semantic HTML elements`);
+                this.log(TestTypes.SUCCESS, '✅ Found ${semanticElements.length} semantic HTML elements');
             } else {
                 this.addIssue(IssueSeverity.MINOR, 'accessibility', 'Limited Semantic HTML',
                     'Few semantic HTML elements found',
@@ -1168,7 +1168,7 @@
                 this.log(TestTypes.SUCCESS, '✅ Image alt attributes check passed');
             } else {
                 this.addIssue(IssueSeverity.MINOR, 'accessibility', 'Missing Alt Attributes',
-                    `${images.length - imagesWithAlt.length} images missing alt text`,
+                    '${images.length - imagesWithAlt.length} images missing alt text',
                     'Add descriptive alt attributes to all images');
             }
 
@@ -1176,7 +1176,7 @@
             const elementsWithAria = document.querySelectorAll('[aria-label], [aria-labelledby], [role]');
             if (elementsWithAria.length > 0) {
                 accessibilityScore += 2;
-                this.log(TestTypes.SUCCESS, `✅ Found ${elementsWithAria.length} elements with ARIA attributes`);
+                this.log(TestTypes.SUCCESS, '✅ Found ${elementsWithAria.length} elements with ARIA attributes');
             } else {
                 this.addIssue(IssueSeverity.MINOR, 'accessibility', 'Limited ARIA Usage',
                     'Few or no ARIA attributes found',
@@ -1189,15 +1189,15 @@
             );
             if (focusableElements.length > 0) {
                 accessibilityScore += 2;
-                this.log(TestTypes.SUCCESS, `✅ Found ${focusableElements.length} focusable elements`);
+                this.log(TestTypes.SUCCESS, '✅ Found ${focusableElements.length} focusable elements');
             }
 
             const accessibilityPercentage = (accessibilityScore / maxScore) * 100;
-            this.log(TestTypes.INFO, `♿ Accessibility score: ${accessibilityScore}/${maxScore} (${accessibilityPercentage}%)`);
+            this.log(TestTypes.INFO, '♿ Accessibility score: ${accessibilityScore}/${maxScore} (${accessibilityPercentage}%)');
 
             if (accessibilityPercentage < TestConfig.ACCESSIBILITY_MIN_SCORE) {
                 this.addIssue(IssueSeverity.MAJOR, 'accessibility', 'Low Accessibility Score',
-                    `Accessibility score is ${accessibilityPercentage}%`,
+                    'Accessibility score is ${accessibilityPercentage}%',
                     'Improve accessibility by adding ARIA labels, semantic HTML, and keyboard navigation');
             } else {
                 this.log(TestTypes.SUCCESS, '✅ Accessibility test passed');
@@ -1241,7 +1241,7 @@
                 document.body.removeChild(testElement);
 
             } catch (error) {
-                this.log(TestTypes.ERROR, `❌ Event handler test failed: ${error.message}`);
+                this.log(TestTypes.ERROR, '❌ Event handler test failed: ${error.message}');
             }
         }
 
@@ -1261,11 +1261,11 @@
             try {
                 if (performance.timing && performance.timing.loadEventEnd) {
                     const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
-                    this.log(TestTypes.INFO, `📊 Page load time: ${loadTime}ms`);
+                    this.log(TestTypes.INFO, '📊 Page load time: ${loadTime}ms');
 
                     if (loadTime > 3000) {
                         this.addIssue(IssueSeverity.MAJOR, 'performance', 'Slow Page Load',
-                            `Page load time is ${loadTime}ms`,
+                            'Page load time is ${loadTime}ms',
                             'Optimize resources, minimize JavaScript, and compress assets');
                     } else {
                         this.log(TestTypes.SUCCESS, '✅ Page load performance acceptable');
@@ -1276,11 +1276,11 @@
 
                 if (performance.timing && performance.timing.domContentLoadedEventEnd) {
                     const domReadyTime = performance.timing.domContentLoadedEventEnd - performance.timing.navigationStart;
-                    this.log(TestTypes.INFO, `📊 DOM ready time: ${domReadyTime}ms`);
+                    this.log(TestTypes.INFO, '📊 DOM ready time: ${domReadyTime}ms');
                 }
 
             } catch (error) {
-                this.log(TestTypes.ERROR, `❌ Page load performance test failed: ${error.message}`);
+                this.log(TestTypes.ERROR, '❌ Page load performance test failed: ${error.message}');
             }
         }
 
@@ -1294,13 +1294,13 @@
                     const totalMB = Math.round(memory.totalJSHeapSize / 1024 / 1024);
                     const limitMB = Math.round(memory.jsHeapSizeLimit / 1024 / 1024);
 
-                    this.log(TestTypes.INFO, `📊 Memory usage: ${usedMB}MB / ${totalMB}MB (limit: ${limitMB}MB)`);
+                    this.log(TestTypes.INFO, '📊 Memory usage: ${usedMB}MB / ${totalMB}MB (limit: ${limitMB}MB)');
 
                     const memoryUsagePercent = (memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100;
 
                     if (memoryUsagePercent > 80) {
                         this.addIssue(IssueSeverity.MAJOR, 'performance', 'High Memory Usage',
-                            `Memory usage is ${memoryUsagePercent.toFixed(1)}%`,
+                            'Memory usage is ${memoryUsagePercent.toFixed(1)}%',
                             'Optimize memory usage and check for memory leaks');
                     } else {
                         this.log(TestTypes.SUCCESS, '✅ Memory usage within acceptable limits');
@@ -1309,7 +1309,7 @@
                     this.log(TestTypes.WARNING, '⚠️ Memory API not available in this browser');
                 }
             } catch (error) {
-                this.log(TestTypes.ERROR, `❌ Memory usage test failed: ${error.message}`);
+                this.log(TestTypes.ERROR, '❌ Memory usage test failed: ${error.message}');
             }
         }
 
@@ -1324,7 +1324,7 @@
                 for (let i = 0; i < 1000; i++) {
                     largeDataset.push({
                         id: i,
-                        title: `Large Dataset Item ${i}`,
+                        title: 'Large Dataset Item ${i}',
                         description: 'Lorem ipsum '.repeat(20),
                         datetime: new Date(Date.now() + i * 3600000).toISOString()
                     });
@@ -1339,18 +1339,18 @@
                 const endTime = performance.now();
                 const processingTime = Math.round(endTime - startTime);
 
-                this.log(TestTypes.INFO, `📊 Processed 1000 items in ${processingTime}ms`);
+                this.log(TestTypes.INFO, '📊 Processed 1000 items in ${processingTime}ms');
 
                 if (processingTime > TestConfig.PERFORMANCE_THRESHOLD_MS) {
                     this.addIssue(IssueSeverity.MINOR, 'performance', 'Slow Large Data Processing',
-                        `Processing 1000 items took ${processingTime}ms`,
+                        'Processing 1000 items took ${processingTime}ms',
                         'Optimize data processing algorithms');
                 } else {
                     this.log(TestTypes.SUCCESS, '✅ Large dataset processing performance acceptable');
                 }
 
             } catch (error) {
-                this.log(TestTypes.ERROR, `❌ Large dataset test failed: ${error.message}`);
+                this.log(TestTypes.ERROR, '❌ Large dataset test failed: ${error.message}');
             }
         }
 
@@ -1382,15 +1382,15 @@
 
                 if (memoryIncrease > thresholdBytes) {
                     this.addIssue(IssueSeverity.MAJOR, 'performance', 'Potential Memory Leak',
-                        `Memory increased by ${Math.round(memoryIncrease / 1024 / 1024)}MB`,
+                        'Memory increased by ${Math.round(memoryIncrease / 1024 / 1024)}MB',
                         'Investigate memory leaks in object lifecycle management');
-                    this.log(TestTypes.WARNING, `⚠️ Memory increased by ${Math.round(memoryIncrease / 1024)}KB`);
+                    this.log(TestTypes.WARNING, '⚠️ Memory increased by ${Math.round(memoryIncrease / 1024)}KB');
                 } else {
                     this.log(TestTypes.SUCCESS, '✅ No significant memory leaks detected');
                 }
 
             } catch (error) {
-                this.log(TestTypes.ERROR, `❌ Memory leak test failed: ${error.message}`);
+                this.log(TestTypes.ERROR, '❌ Memory leak test failed: ${error.message}');
             }
         }
 
@@ -1416,13 +1416,13 @@
                 const endTime = performance.now();
 
                 if (results.length === 10) {
-                    this.log(TestTypes.SUCCESS, `✅ Concurrent operations completed in ${Math.round(endTime - startTime)}ms`);
+                    this.log(TestTypes.SUCCESS, '✅ Concurrent operations completed in ${Math.round(endTime - startTime)}ms');
                 } else {
-                    this.log(TestTypes.ERROR, `❌ Only ${results.length}/10 concurrent operations completed`);
+                    this.log(TestTypes.ERROR, '❌ Only ${results.length}/10 concurrent operations completed');
                 }
 
             } catch (error) {
-                this.log(TestTypes.ERROR, `❌ Concurrent operations failed: ${error.message}`);
+                this.log(TestTypes.ERROR, '❌ Concurrent operations failed: ${error.message}');
                 this.addIssue(IssueSeverity.MINOR, 'performance', 'Concurrent Operation Issues',
                     'Concurrent operations may have problems',
                     'Implement proper async/await handling and error recovery');
@@ -1449,10 +1449,10 @@
                     }
                 }
 
-                this.log(TestTypes.SUCCESS, `✅ Recovered from ${recoveredErrors}/${errorTests.length} test errors`);
+                this.log(TestTypes.SUCCESS, '✅ Recovered from ${recoveredErrors}/${errorTests.length} test errors');
 
             } catch (error) {
-                this.log(TestTypes.ERROR, `❌ Error recovery test failed: ${error.message}`);
+                this.log(TestTypes.ERROR, '❌ Error recovery test failed: ${error.message}');
             }
         }
 
@@ -1473,7 +1473,7 @@ this.addIssue(IssueSeverity.CRITICAL, 'security', 'XSS Vulnerability Risk',
 'Ensure all user input is properly escaped');
 }
 } catch (error) {
-this.log(TestTypes.ERROR, `❌ Security test failed: ${error.message}`);
+this.log(TestTypes.ERROR, '❌ Security test failed: ${error.message}');
 }
 
 // Test HTTPS usage
@@ -1498,7 +1498,7 @@ const focusableElements = document.querySelectorAll(
 );
 
 if (focusableElements.length > 0) {
-this.log(TestTypes.SUCCESS, `✅ Found ${focusableElements.length} keyboard-focusable elements`);
+this.log(TestTypes.SUCCESS, '✅ Found ${focusableElements.length} keyboard-focusable elements');
 } else {
 this.addIssue(IssueSeverity.MAJOR, 'accessibility', 'No Keyboard Navigation',
 'No focusable elements found',
@@ -1520,7 +1520,7 @@ this.currentTest += 2;
 // Utility methods
 showTestNotification(message, type) {
 const notification = document.createElement('div');
-notification.style.cssText = `
+notification.style.cssText = '
 position: fixed;
 top: 20px;
 right: 20px;
@@ -1534,7 +1534,7 @@ max-width: 300px;
 transform: translateX(100%);
 transition: transform 0.3s ease;
 font-family: 'Segoe UI', sans-serif;
-`;
+';
 notification.textContent = message;
 
 document.body.appendChild(notification);
@@ -1579,18 +1579,18 @@ this.totalTestsToRun = 0;
 
 const logContainer = document.getElementById('logContainer');
 if (logContainer) {
-logContainer.innerHTML = `
+logContainer.innerHTML = '
 <div class="log-entry log-info">
     Test results cleared. Ready for new tests.
 </div>
-`;
+';
 }
 
 const testResults = document.getElementById('testResults');
 if (testResults) {
-testResults.innerHTML = `
+testResults.innerHTML = '
 <p>No tests run yet. Use the buttons above to start testing.</p>
-`;
+';
 }
 
 const issuesSection = document.getElementById('issuesSection');
@@ -1637,7 +1637,7 @@ else if (overallScore >= 60) grade = 'D';
 
 const resultsDiv = document.getElementById('testResults');
 if (resultsDiv) {
-resultsDiv.innerHTML = `
+resultsDiv.innerHTML = '
 <div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px; margin-bottom: 20px;">
     <h2 style="color: #2c3e50; margin-bottom: 15px;">📊 Final Test Results</h2>
     <div style="font-size: 3rem; font-weight: bold; color: ${overallScore >= 70 ? '#27ae60' : overallScore >= 50 ? '#f39c12' : '#e74c3c'}; margin-bottom: 10px;">
@@ -1659,11 +1659,11 @@ resultsDiv.innerHTML = `
     <p><strong>Issues Found:</strong> ${this.issues.length}</p>
     <p><strong>Test Duration:</strong> ${document.getElementById('testTimer')?.textContent || '00:00'}</p>
 </div>
-`;
+';
 }
 
 this.finalReport = summary;
-this.log(TestTypes.SUCCESS, `✅ Test complete! Score: ${overallScore}% (${grade})`);
+this.log(TestTypes.SUCCESS, '✅ Test complete! Score: ${overallScore}% (${grade})');
 }
 
 exportResults(format) {
@@ -1673,7 +1673,7 @@ return;
 }
 
 const timestamp = new Date().toISOString().split('T')[0];
-const filename = `reminders-vault-test-report-${timestamp}`;
+const filename = 'reminders-vault-test-report-${timestamp}';
 
 if (format === 'json') {
 this.exportJSON(filename);
@@ -1693,7 +1693,7 @@ testLog: this.testLog,
 browserInfo: this.browserInfo
 };
 
-this.downloadFile(`${filename}.json`, JSON.stringify(data, null, 2), 'application/json');
+this.downloadFile('${filename}.json', JSON.stringify(data, null, 2), 'application/json');
 this.log(TestTypes.SUCCESS, '✅ JSON report exported successfully');
 }
 
@@ -1706,7 +1706,7 @@ const criticalIssues = this.issues.filter(issue => issue.severity === IssueSever
 const majorIssues = this.issues.filter(issue => issue.severity === IssueSeverity.MAJOR);
 const minorIssues = this.issues.filter(issue => issue.severity === IssueSeverity.MINOR);
 
-const html = `<!DOCTYPE html>
+const html = '<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1843,41 +1843,41 @@ const html = `<!DOCTYPE html>
             </div>
         </div>
 
-        ${this.issues.length > 0 ? `
+        ${this.issues.length > 0 ? '
         <div class="issues">
             <h2>🚨 Issues Found</h2>
-            ${criticalIssues.length > 0 ? `
+            ${criticalIssues.length > 0 ? '
             <h3 style="color: #e74c3c;">Critical Issues (${criticalIssues.length})</h3>
-            ${criticalIssues.map(issue => `
+            ${criticalIssues.map(issue => '
             <div class="issue critical">
                 <strong>${issue.title}</strong>
                 <p>${issue.description}</p>
-                ${issue.recommendation ? `<p><strong>Recommendation:</strong> ${issue.recommendation}</p>` : ''}
+                ${issue.recommendation ? '<p><strong>Recommendation:</strong> ${issue.recommendation}</p>' : ''}
             </div>
-            `).join('')}
-            ` : ''}
-            ${majorIssues.length > 0 ? `
+            ').join('')}
+            ' : ''}
+            ${majorIssues.length > 0 ? '
             <h3 style="color: #f39c12;">Major Issues (${majorIssues.length})</h3>
-            ${majorIssues.map(issue => `
+            ${majorIssues.map(issue => '
             <div class="issue major">
                 <strong>${issue.title}</strong>
                 <p>${issue.description}</p>
-                ${issue.recommendation ? `<p><strong>Recommendation:</strong> ${issue.recommendation}</p>` : ''}
+                ${issue.recommendation ? '<p><strong>Recommendation:</strong> ${issue.recommendation}</p>' : ''}
             </div>
-            `).join('')}
-            ` : ''}
-            ${minorIssues.length > 0 ? `
+            ').join('')}
+            ' : ''}
+            ${minorIssues.length > 0 ? '
             <h3 style="color: #3498db;">Minor Issues (${minorIssues.length})</h3>
-            ${minorIssues.map(issue => `
+            ${minorIssues.map(issue => '
             <div class="issue minor">
                 <strong>${issue.title}</strong>
                 <p>${issue.description}</p>
-                ${issue.recommendation ? `<p><strong>Recommendation:</strong> ${issue.recommendation}</p>` : ''}
+                ${issue.recommendation ? '<p><strong>Recommendation:</strong> ${issue.recommendation}</p>' : ''}
             </div>
-            `).join('')}
-            ` : ''}
+            ').join('')}
+            ' : ''}
         </div>
-        ` : '<div class="issues"><h2>✅ No Issues Found</h2><p>All tests passed without critical issues.</p></div>'}
+        ' : '<div class="issues"><h2>✅ No Issues Found</h2><p>All tests passed without critical issues.</p></div>'}
 
         <div class="browser-info">
             <h3>🌐 Browser Information</h3>
@@ -1890,18 +1890,18 @@ const html = `<!DOCTYPE html>
 
         <div class="log-section">
             <h3>📋 Test Log</h3>
-            ${this.testLog.slice(-50).map(entry => `
+            ${this.testLog.slice(-50).map(entry => '
             <div class="log-entry log-${entry.type}">
                 [${new Date(entry.timestamp).toLocaleTimeString()}] ${entry.message}
             </div>
-            `).join('')}
+            ').join('')}
         </div>
     </div>
 </div>
 </body>
-</html>`;
+</html>';
 
-this.downloadFile(`${filename}.html`, html, 'text/html');
+this.downloadFile('${filename}.html', html, 'text/html');
 this.log(TestTypes.SUCCESS, '✅ HTML report exported successfully');
 }
 
@@ -1920,8 +1920,8 @@ document.body.removeChild(link);
 
 setTimeout(() => URL.revokeObjectURL(url), 1000);
 } catch (error) {
-this.log(TestTypes.ERROR, `❌ File download failed: ${error.message}`);
-alert(`Failed to download file: ${error.message}`);
+this.log(TestTypes.ERROR, '❌ File download failed: ${error.message}');
+alert('Failed to download file: ${error.message}');
 }
 }
 }
@@ -1958,7 +1958,7 @@ initializeTestRunner();
 // Global error handlers
 window.addEventListener('error', (event) => {
 if (testRunner) {
-testRunner.log(TestTypes.ERROR, `🚨 Uncaught error: ${event.error?.message || event.message}`);
+testRunner.log(TestTypes.ERROR, '🚨 Uncaught error: ${event.error?.message || event.message}');
 testRunner.addIssue(IssueSeverity.CRITICAL, 'system', 'Uncaught JavaScript Error',
 event.error?.message || event.message,
 'Fix JavaScript errors to ensure proper functionality');
@@ -1968,7 +1968,7 @@ console.error('Global error:', event.error || event.message);
 
 window.addEventListener('unhandledrejection', (event) => {
 if (testRunner) {
-testRunner.log(TestTypes.ERROR, `🚨 Unhandled promise rejection: ${event.reason}`);
+testRunner.log(TestTypes.ERROR, '🚨 Unhandled promise rejection: ${event.reason}');
 testRunner.addIssue(IssueSeverity.MAJOR, 'system', 'Unhandled Promise Rejection',
 event.reason?.toString() || 'Promise rejection not caught',
 'Add proper error handling for all promises');

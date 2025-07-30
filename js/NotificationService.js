@@ -69,13 +69,13 @@ export class NotificationService {
                 timeoutIds.add(timeoutId);
                 scheduledCount++;
 
-                console.log(`⏰ Scheduled alert for "${reminder.title}" ${minutesBefore} minutes before (${this.#formatDelay(delay)})`);
+                console.log('⏰ Scheduled alert for "${reminder.title}" ${minutesBefore} minutes before (${this.#formatDelay(delay)})');
             }
         });
 
         if (scheduledCount > 0) {
             this.#scheduledNotifications.set(reminder.id, timeoutIds);
-            console.log(`📅 Scheduled ${scheduledCount} alerts for reminder #${reminder.id}`);
+            console.log('📅 Scheduled ${scheduledCount} alerts for reminder #${reminder.id}');
         }
 
         return scheduledCount;
@@ -97,7 +97,7 @@ export class NotificationService {
         this.#scheduledNotifications.delete(reminderId);
         this.#alertHistory.delete(reminderId);
 
-        console.log(`🚫 Cancelled ${cancelledCount} alerts for reminder #${reminderId}`);
+        console.log('🚫 Cancelled ${cancelledCount} alerts for reminder #${reminderId}');
         return true;
     }
 
@@ -116,7 +116,7 @@ export class NotificationService {
             // Check each alert timing to see if we should trigger
             Object.values(NotificationService.ALERT_TIMINGS).forEach(timing => {
                 const alertThreshold = timing.value * 60 * 1000; // Convert to milliseconds
-                const alertKey = `${reminder.id}-${timing.value}`;
+                const alertKey = '${reminder.id}-${timing.value}';
 
                 // Trigger if within alert window and not already sent
                 if (timeDiff <= alertThreshold &&
@@ -129,9 +129,9 @@ export class NotificationService {
             });
 
             // Special handling for overdue reminders
-            if (timeDiff <= 0 && timeDiff > -60000 && !this.#alertHistory.has(`${reminder.id}-overdue`)) {
+            if (timeDiff <= 0 && timeDiff > -60000 && !this.#alertHistory.has('${reminder.id}-overdue')) {
                 this.#triggerNotification(reminder, 0, true);
-                this.#alertHistory.set(`${reminder.id}-overdue`, now);
+                this.#alertHistory.set('${reminder.id}-overdue', now);
             }
         });
     }
@@ -224,7 +224,7 @@ export class NotificationService {
             this.#permissionState = Notification.permission;
         }
 
-        console.log(`🔔 Notification permission: ${this.#permissionState}`);
+        console.log('🔔 Notification permission: ${this.#permissionState}');
     }
 
     #initializeAudioContext() {
@@ -259,9 +259,9 @@ export class NotificationService {
 
     async #triggerNotification(reminder, minutesBefore, isOverdue = false) {
         const alertType = isOverdue ? 'OVERDUE' : this.#getAlertType(minutesBefore);
-        const alertKey = `${reminder.id}-${minutesBefore || 'overdue'}`;
+        const alertKey = '${reminder.id}-${minutesBefore || 'overdue'}';
 
-        console.log(`🔔 Triggering ${alertType} notification: ${reminder.title} (${minutesBefore}min before)`);
+        console.log('🔔 Triggering ${alertType} notification: ${reminder.title} (${minutesBefore}min before)');
 
         // Play contextual sound based on alert timing
         await this.#playNotificationSound(alertType);
@@ -329,16 +329,16 @@ export class NotificationService {
 
         const title = isOverdue ?
             '⚠️ Overdue Reminder!' :
-            `🔔 Reminder Alert! (${minutesBefore} min)`;
+            '🔔 Reminder Alert! (${minutesBefore} min)';
 
         const body = isOverdue ?
-            `Overdue: ${reminder.title}` :
-            `Coming up in ${minutesBefore} minutes: ${reminder.title}`;
+            'Overdue: ${reminder.title}' :
+            'Coming up in ${minutesBefore} minutes: ${reminder.title}';
 
         const notification = new Notification(title, {
             body,
             icon: '/favicon.png',
-            tag: `reminder-${reminder.id}-${minutesBefore || 'overdue'}`,
+            tag: 'reminder-${reminder.id}-${minutesBefore || 'overdue'}',
             requireInteraction: isOverdue || minutesBefore <= 5,
             data: { reminderId: reminder.id, minutesBefore, isOverdue }
         });
@@ -354,7 +354,7 @@ export class NotificationService {
     }
 
     #showEnhancedPopup(reminder, minutesBefore, isOverdue) {
-        const popupId = `${reminder.id}-${minutesBefore || 'overdue'}`;
+        const popupId = '${reminder.id}-${minutesBefore || 'overdue'}';
         if (this.#activePopups.has(popupId)) return;
 
         this.#activePopups.add(popupId);
@@ -373,13 +373,13 @@ export class NotificationService {
     #createEnhancedPopupOverlay(reminder, minutesBefore, isOverdue) {
         const overlay = document.createElement('div');
         overlay.className = 'reminder-alert-overlay enhanced';
-        overlay.dataset.popupId = `${reminder.id}-${minutesBefore || 'overdue'}`;
+        overlay.dataset.popupId = '${reminder.id}-${minutesBefore || 'overdue'}';
 
         const priorityIcon = this.#getPriorityIcon(reminder.priority);
         const formattedTime = this.#formatTime(reminder.datetime);
         const alertInfo = this.#getAlertInfo(minutesBefore, isOverdue);
 
-        overlay.innerHTML = `
+        overlay.innerHTML = '
             <div class="reminder-alert-popup enhanced ${isOverdue ? 'overdue' : ''}">
                 <div class="alert-header ${isOverdue ? 'overdue' : ''}">
                     <div class="alert-icon ${isOverdue ? 'overdue' : ''}">${alertInfo.icon}</div>
@@ -396,11 +396,11 @@ export class NotificationService {
                         ⏰ <strong>${isOverdue ? 'Was due' : 'Due'}:</strong> ${formattedTime}
                     </div>
                     
-                    ${reminder.description ? `
+                    ${reminder.description ? '
                         <div class="alert-reminder-description">
                             📝 ${this.#escapeHtml(reminder.description)}
                         </div>
-                    ` : ''}
+                    ' : ''}
                     
                     <div class="alert-reminder-meta">
                         <span class="meta-item">
@@ -412,21 +412,21 @@ export class NotificationService {
                     </div>
                     
                     <div class="alert-actions enhanced">
-                        ${!isOverdue ? `
+                        ${!isOverdue ? '
                             <button class="alert-btn alert-btn-complete" data-action="complete">
                                 ✅ Complete Now
                             </button>
                             <button class="alert-btn alert-btn-snooze" data-action="snooze">
                                 ⏰ Snooze
                             </button>
-                        ` : `
+                        ' : '
                             <button class="alert-btn alert-btn-complete priority" data-action="complete">
                                 ✅ Mark Complete
                             </button>
                             <button class="alert-btn alert-btn-reschedule" data-action="reschedule">
                                 📅 Reschedule
                             </button>
-                        `}
+                        '}
                         <button class="alert-btn alert-btn-dismiss" data-action="dismiss">
                             ❌ Dismiss
                         </button>
@@ -437,7 +437,7 @@ export class NotificationService {
                     </div>
                 </div>
             </div>
-        `;
+        ';
 
         return overlay;
     }
@@ -455,14 +455,14 @@ export class NotificationService {
         // Close on overlay click
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) {
-                this.#closePopup(`${reminder.id}-${minutesBefore || 'overdue'}`);
+                this.#closePopup('${reminder.id}-${minutesBefore || 'overdue'}');
             }
         });
 
         // ESC key handler
         const escapeHandler = (e) => {
             if (e.key === 'Escape') {
-                this.#closePopup(`${reminder.id}-${minutesBefore || 'overdue'}`);
+                this.#closePopup('${reminder.id}-${minutesBefore || 'overdue'}');
                 document.removeEventListener('keydown', escapeHandler);
             }
         };
@@ -470,7 +470,7 @@ export class NotificationService {
     }
 
     #handleEnhancedPopupAction(reminderId, action, minutesBefore, isOverdue) {
-        const popupId = `${reminderId}-${minutesBefore || 'overdue'}`;
+        const popupId = '${reminderId}-${minutesBefore || 'overdue'}';
 
         switch (action) {
             case 'complete':
@@ -490,10 +490,10 @@ export class NotificationService {
     }
 
     #showEnhancedSnoozeOptions(reminderId, popupId) {
-        const popup = document.querySelector(`[data-popup-id="${popupId}"] .alert-content`);
+        const popup = document.querySelector('[data-popup-id="${popupId}"] .alert-content');
         if (!popup) return;
 
-        popup.innerHTML = `
+        popup.innerHTML = '
             <div class="snooze-header">
                 <div class="snooze-title">⏰ Snooze Reminder</div>
                 <div class="snooze-subtitle">How much more time do you need?</div>
@@ -540,7 +540,7 @@ export class NotificationService {
             <button class="alert-btn alert-btn-dismiss" data-action="cancel" style="width: 100%; margin-top: 1rem;">
                 ← Back to Alert
             </button>
-        `;
+        ';
 
         // Setup enhanced snooze handlers
         popup.addEventListener('click', (e) => {
@@ -555,10 +555,10 @@ export class NotificationService {
     }
 
     #showRescheduleOptions(reminderId, popupId) {
-        const popup = document.querySelector(`[data-popup-id="${popupId}"] .alert-content`);
+        const popup = document.querySelector('[data-popup-id="${popupId}"] .alert-content');
         if (!popup) return;
 
-        popup.innerHTML = `
+        popup.innerHTML = '
             <div class="reschedule-header">
                 <div class="reschedule-title">📅 Reschedule Reminder</div>
                 <div class="reschedule-subtitle">When would you like to be reminded instead?</div>
@@ -591,7 +591,7 @@ export class NotificationService {
             <button class="alert-btn alert-btn-dismiss" data-action="cancel" style="width: 100%; margin-top: 1rem;">
                 ← Back to Alert
             </button>
-        `;
+        ';
 
         // Setup reschedule handlers
         popup.addEventListener('click', (e) => {
@@ -613,7 +613,7 @@ export class NotificationService {
     }
 
     #startCountdown(popupId, seconds) {
-        const countdownElement = document.querySelector(`[data-popup-id="${popupId}"] .countdown`);
+        const countdownElement = document.querySelector('[data-popup-id="${popupId}"] .countdown');
         if (!countdownElement) return;
 
         let remaining = seconds;
@@ -636,12 +636,12 @@ export class NotificationService {
         }, 1000);
 
         // Store timer for cleanup
-        const overlay = document.querySelector(`[data-popup-id="${popupId}"]`);
+        const overlay = document.querySelector('[data-popup-id="${popupId}"]');
         if (overlay) overlay.dataset.timer = timer;
     }
 
     #closePopup(popupId) {
-        const overlay = document.querySelector(`[data-popup-id="${popupId}"]`);
+        const overlay = document.querySelector('[data-popup-id="${popupId}"]');
         if (!overlay) return;
 
         // Clear timer
@@ -686,7 +686,7 @@ export class NotificationService {
 
         return {
             title: 'Reminder Alert!',
-            subtitle: `${minutesBefore} minutes before due`,
+            subtitle: '${minutesBefore} minutes before due',
             icon: '🔔'
         };
     }
@@ -709,14 +709,14 @@ export class NotificationService {
         if (diffMs < 0) {
             const pastTime = Math.abs(diffMs);
             if (pastTime < 60000) return 'Just passed';
-            if (pastTime < 3600000) return `${Math.round(pastTime / 60000)} minutes ago`;
-            if (pastTime < 86400000) return `${Math.round(pastTime / 3600000)} hours ago`;
-            return `${Math.round(pastTime / 86400000)} days ago`;
+            if (pastTime < 3600000) return '${Math.round(pastTime / 60000)} minutes ago';
+            if (pastTime < 86400000) return '${Math.round(pastTime / 3600000)} hours ago';
+            return '${Math.round(pastTime / 86400000)} days ago';
         }
 
         if (diffMs < 60000) return 'In less than a minute';
-        if (diffMs < 3600000) return `In ${Math.round(diffMs / 60000)} minutes`;
-        if (diffMs < 86400000) return `In ${Math.round(diffMs / 3600000)} hours`;
+        if (diffMs < 3600000) return 'In ${Math.round(diffMs / 60000)} minutes';
+        if (diffMs < 86400000) return 'In ${Math.round(diffMs / 3600000)} hours';
 
         return new Intl.DateTimeFormat('en-US', {
             month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
@@ -725,9 +725,9 @@ export class NotificationService {
 
     #formatDelay(delayMs) {
         const minutes = Math.round(delayMs / 60000);
-        if (minutes < 60) return `${minutes}m`;
-        if (minutes < 1440) return `${Math.round(minutes / 60)}h`;
-        return `${Math.round(minutes / 1440)}d`;
+        if (minutes < 60) return '${minutes}m';
+        if (minutes < 1440) return '${Math.round(minutes / 60)}h';
+        return '${Math.round(minutes / 1440)}d';
     }
 
     #escapeHtml(text) {
@@ -738,7 +738,7 @@ export class NotificationService {
     }
 
     #emitEvent(eventName, data = {}) {
-        const event = new CustomEvent(`notification:${eventName}`, { detail: data });
+        const event = new CustomEvent('notification:${eventName}', { detail: data });
         document.dispatchEvent(event);
     }
 
@@ -747,7 +747,7 @@ export class NotificationService {
 
         const styles = document.createElement('style');
         styles.id = 'enhanced-notification-styles';
-        styles.textContent = `
+        styles.textContent = '
             .reminder-alert-overlay.enhanced {
                 background: rgba(0, 0, 0, 0.7);
                 backdrop-filter: blur(8px);
@@ -979,7 +979,7 @@ export class NotificationService {
                     gap: 0.5rem;
                 }
             }
-        `;
+        ';
 
         document.head.appendChild(styles);
     }

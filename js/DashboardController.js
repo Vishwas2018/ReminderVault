@@ -98,7 +98,7 @@ export class DashboardController {
             this.#render();
 
             this.#setLoadingState(false);
-            console.log(`✅ Dashboard initialized with ${this.#state.storageType} storage`);
+            console.log('✅ Dashboard initialized with ${this.#state.storageType} storage');
             return true;
         } catch (error) {
             console.error('❌ Dashboard initialization failed:', error);
@@ -117,7 +117,7 @@ export class DashboardController {
             alert(message);
         } catch (error) {
             console.error('Failed to show database info:', error);
-            alert(`Failed to get database information: ${error.message}`);
+            alert('Failed to get database information: ${error.message}');
         }
     }
 
@@ -163,7 +163,7 @@ export class DashboardController {
 
             await this.#updateReminderStatus(reminder, DashboardController.CONFIG.REMINDER_STATUS.COMPLETED);
             this.#notificationService.cancelNotification(reminderId);
-            this.#showNotification(`"${reminder.title}" completed!`, 'success');
+            this.#showNotification('"${reminder.title}" completed!', 'success');
         } catch (error) {
             console.error('Failed to complete reminder:', error);
             this.#showNotification('Failed to complete reminder', 'error');
@@ -189,7 +189,7 @@ export class DashboardController {
             this.#rescheduleNotifications(reminder);
 
             const timeText = this.#formatDuration(minutes);
-            this.#showNotification(`"${reminder.title}" snoozed for ${timeText}`, 'success');
+            this.#showNotification('"${reminder.title}" snoozed for ${timeText}', 'success');
         } catch (error) {
             console.error('Failed to snooze reminder:', error);
             this.#showNotification('Failed to snooze reminder', 'error');
@@ -204,7 +204,7 @@ export class DashboardController {
             this.#enhanceExportData(exportData);
             this.#downloadAsFile(exportData, 'json');
 
-            this.#showNotification(`Data exported from ${this.#state.storageType}!`, 'success');
+            this.#showNotification('Data exported from ${this.#state.storageType}!', 'success');
         } catch (error) {
             console.error('Failed to export data:', error);
             this.#showNotification('Failed to export data', 'error');
@@ -226,17 +226,17 @@ export class DashboardController {
             this.#refreshView();
 
             this.#showNotification(
-                `Imported ${results.length} reminders to ${this.#state.storageType}!`,
+                'Imported ${results.length} reminders to ${this.#state.storageType}!',
                 'success'
             );
         } catch (error) {
             console.error('Failed to import data:', error);
-            this.#showNotification(`Import failed: ${error.message}`, 'error');
+            this.#showNotification('Import failed: ${error.message}', 'error');
         }
     }
 
     async clearAllData() {
-        const confirmMessage = `⚠️ This will permanently delete ALL your reminders from ${this.#state.storageType}. This cannot be undone!\n\nAre you absolutely sure?`;
+        const confirmMessage = '⚠️ This will permanently delete ALL your reminders from ${this.#state.storageType}. This cannot be undone!\n\nAre you absolutely sure?';
 
         if (!confirm(confirmMessage)) return;
 
@@ -248,7 +248,7 @@ export class DashboardController {
             this.#notificationService?.cleanup();
             this.#refreshView();
 
-            this.#showNotification(`Cleared ${deletedCount} reminders from ${this.#state.storageType}`, 'success');
+            this.#showNotification('Cleared ${deletedCount} reminders from ${this.#state.storageType}', 'success');
         } catch (error) {
             console.error('Failed to clear data:', error);
             this.#showNotification('Failed to clear data', 'error');
@@ -261,7 +261,7 @@ export class DashboardController {
         this.#notificationService.testNotification();
 
         this.#showNotification(
-            `Test system activated! ${scheduledCount} alerts scheduled with ${this.#state.storageType} data.`,
+            'Test system activated! ${scheduledCount} alerts scheduled with ${this.#state.storageType} data.',
             'info'
         );
     }
@@ -275,7 +275,7 @@ export class DashboardController {
 
     refresh() {
         this.#loadData()
-            .then(() => this.#showNotification(`Dashboard refreshed from ${this.#state.storageType}!`, 'success'))
+            .then(() => this.#showNotification('Dashboard refreshed from ${this.#state.storageType}!', 'success'))
             .catch(error => {
                 console.error('Failed to refresh:', error);
                 this.#showNotification('Failed to refresh data', 'error');
@@ -300,11 +300,11 @@ export class DashboardController {
             this.#storageService = await StorageFactory.getInstance(userId);
             this.#state.storageType = await this.#detectStorageType();
 
-            console.log(`📦 Storage initialized: ${this.#state.storageType}`);
+            console.log('📦 Storage initialized: ${this.#state.storageType}');
             this.#updateStorageIndicator();
         } catch (error) {
             console.error('Storage initialization failed:', error);
-            throw new Error(`Storage unavailable: ${error.message}`);
+            throw new Error('Storage unavailable: ${error.message}');
         }
     }
 
@@ -381,7 +381,7 @@ export class DashboardController {
     #scheduleNotificationForReminder(reminder) {
         if (reminder.notification && reminder.status === DashboardController.CONFIG.REMINDER_STATUS.ACTIVE) {
             const scheduledCount = this.#notificationService.scheduleNotification(reminder, reminder.alertTimings);
-            console.log(`📅 Scheduled ${scheduledCount} alerts for reminder: ${reminder.title}`);
+            console.log('📅 Scheduled ${scheduledCount} alerts for reminder: ${reminder.title}');
         }
     }
 
@@ -423,8 +423,8 @@ export class DashboardController {
     #createTestReminder() {
         return {
             id: 99999,
-            title: `Test ${this.#state.storageType} System`,
-            description: `Testing the enhanced notification system with ${this.#state.storageType} storage`,
+            title: 'Test ${this.#state.storageType} System',
+            description: 'Testing the enhanced notification system with ${this.#state.storageType} storage',
             datetime: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
             priority: 3,
             category: 'personal',
@@ -442,7 +442,7 @@ export class DashboardController {
     }
 
     #downloadAsFile(data, format) {
-        const filename = `reminders-${this.#state.storageType.toLowerCase()}-export-${new Date().toISOString().split('T')[0]}.${format}`;
+        const filename = 'reminders-${this.#state.storageType.toLowerCase()}-export-${new Date().toISOString().split('T')[0]}.${format}';
         const mimeType = format === 'json' ? 'application/json' : 'text/plain';
 
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: mimeType });
@@ -546,34 +546,34 @@ export class DashboardController {
     #formatDuration(minutes) {
         if (minutes >= 1440) {
             const days = Math.floor(minutes / 1440);
-            return `${days} day${days > 1 ? 's' : ''}`;
+            return '${days} day${days > 1 ? 's' : ''}';
         }
         if (minutes >= 60) {
             const hours = Math.floor(minutes / 60);
-            return `${hours} hour${hours > 1 ? 's' : ''}`;
+            return '${hours} hour${hours > 1 ? 's' : ''}';
         }
-        return `${minutes} minute${minutes > 1 ? 's' : ''}`;
+        return '${minutes} minute${minutes > 1 ? 's' : ''}';
     }
 
     #formatDatabaseInfoMessage(dbInfo, stats) {
-        let message = `Storage Information:\n\n`;
-        message += `Type: ${this.#state.storageType}\n`;
-        message += `Database: ${dbInfo.name || 'N/A'}\n`;
-        message += `Version: ${dbInfo.version || 'N/A'}\n`;
+        let message = 'Storage Information:\n\n';
+        message += 'Type: ${this.#state.storageType}\n';
+        message += 'Database: ${dbInfo.name || 'N/A'}\n';
+        message += 'Version: ${dbInfo.version || 'N/A'}\n';
 
         if (dbInfo.storageEstimate) {
-            message += `\nStorage Usage:\n`;
-            message += `Used: ${dbInfo.storageEstimate.usage}\n`;
-            message += `Available: ${dbInfo.storageEstimate.available}\n`;
-            message += `Total: ${dbInfo.storageEstimate.quota}\n`;
-            message += `Usage: ${dbInfo.storageEstimate.usagePercentage}%\n`;
+            message += '\nStorage Usage:\n';
+            message += 'Used: ${dbInfo.storageEstimate.usage}\n';
+            message += 'Available: ${dbInfo.storageEstimate.available}\n';
+            message += 'Total: ${dbInfo.storageEstimate.quota}\n';
+            message += 'Usage: ${dbInfo.storageEstimate.usagePercentage}%\n';
         }
 
-        message += `\nStatistics:\n`;
-        message += `- Total Reminders: ${stats.totalReminders || 0}\n`;
-        message += `- Active: ${stats.active || 0}\n`;
-        message += `- Completed: ${stats.completed || 0}\n`;
-        message += `- Overdue: ${stats.overdue || 0}\n`;
+        message += '\nStatistics:\n';
+        message += '- Total Reminders: ${stats.totalReminders || 0}\n';
+        message += '- Active: ${stats.active || 0}\n';
+        message += '- Completed: ${stats.completed || 0}\n';
+        message += '- Overdue: ${stats.overdue || 0}\n';
 
         return message;
     }

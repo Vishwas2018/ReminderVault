@@ -15,7 +15,7 @@ A modern, responsive web application for managing reminders and tasks. Built wit
 
 ## 🏗️ Project Structure
 
-```
+'''
 reminder-manager/
 ├── index.html                 # Main entry point (redirects to login/dashboard)
 ├── pages/
@@ -36,7 +36,7 @@ reminder-manager/
 │   ├── images/               # Images and graphics
 │   └── icons/                # Icons and favicons
 └── README.md                 # This file
-```
+'''
 
 ## 🚀 Getting Started
 
@@ -48,26 +48,26 @@ reminder-manager/
 ### Installation
 
 1. **Clone or download the project**
-   ```bash
+   '''bash
    git clone <repository-url>
    cd reminder-manager
-   ```
+   '''
 
 2. **Set up a local web server**
 
    **Option A: Using IntelliJ IDEA**
     - Open the project in IntelliJ IDEA
-    - Right-click on `index.html` → "Open in Browser" → "Built-in Server"
+    - Right-click on 'index.html' → "Open in Browser" → "Built-in Server"
     - Or use the "Run" configuration for JavaScript applications
 
    **Option B: Using Node.js (http-server)**
-   ```bash
+   '''bash
    npx http-server
    # Navigate to http://localhost:8080
-   ```
+   '''
 
    **Option C: Using Python**
-   ```bash
+   '''bash
    # Python 3
    python -m http.server 8000
    
@@ -75,11 +75,11 @@ reminder-manager/
    python -m SimpleHTTPServer 8000
    
    # Navigate to http://localhost:8000
-   ```
+   '''
 
    **Option D: Using Live Server (VS Code Extension)**
     - Install "Live Server" extension in VS Code
-    - Right-click on `index.html` → "Open with Live Server"
+    - Right-click on 'index.html' → "Open with Live Server"
 
 3. **Access the application**
     - Open your browser and navigate to the local server URL
@@ -91,9 +91,9 @@ The application comes with pre-configured demo accounts:
 
 | Role | Username | Password |
 |------|----------|----------|
-| Admin | `admin` | `password123` |
-| User | `user` | `userpass123` |
-| Manager | `manager` | `manager456` |
+| Admin | 'admin' | 'password123' |
+| User | 'user' | 'userpass123' |
+| Manager | 'manager' | 'manager456' |
 
 ## 🎯 Usage
 
@@ -122,17 +122,17 @@ The application comes with pre-configured demo accounts:
 
 | Shortcut | Action |
 |----------|--------|
-| `Ctrl/Cmd + N` | New reminder (dashboard) |
-| `Ctrl/Cmd + R` | Refresh dashboard |
-| `Ctrl/Cmd + Shift + D` | Show debug information |
-| `Ctrl/Cmd + Shift + R` | Reset application data |
-| `Escape` | Close modal/dialog |
+| 'Ctrl/Cmd + N' | New reminder (dashboard) |
+| 'Ctrl/Cmd + R' | Refresh dashboard |
+| 'Ctrl/Cmd + Shift + D' | Show debug information |
+| 'Ctrl/Cmd + Shift + R' | Reset application data |
+| 'Escape' | Close modal/dialog |
 
 ## 🔧 Configuration
 
 ### Application Settings
 
-Edit `config/constants.js` to customize:
+Edit 'config/constants.js' to customize:
 
 - **Session timeout duration**
 - **Storage keys**
@@ -142,30 +142,30 @@ Edit `config/constants.js` to customize:
 
 ### CSS Variables
 
-Customize the appearance by modifying CSS variables in `css/styles.css`:
+Customize the appearance by modifying CSS variables in 'css/styles.css':
 
-```css
+'''css
 :root {
     --primary-color: #4CAF50;
     --secondary-color: #2196F3;
     --danger-color: #f44336;
     /* ... more variables */
 }
-```
+'''
 
 ## 🛠️ Development
 
 ### Adding New Features
 
-1. **New Page**: Create HTML file in `pages/` and corresponding CSS in `css/`
-2. **New Module**: Add JavaScript module in `js/` following the existing pattern
+1. **New Page**: Create HTML file in 'pages/' and corresponding CSS in 'css/'
+2. **New Module**: Add JavaScript module in 'js/' following the existing pattern
 3. **Styling**: Use existing CSS variables and utility classes for consistency
 
 ### Code Structure
 
 - **Modular Architecture**: Each feature is in its own module
 - **Separation of Concerns**: HTML structure, CSS styling, and JS logic are separated
-- **Utility-First**: Common functions are centralized in `utils.js`
+- **Utility-First**: Common functions are centralized in 'utils.js'
 - **Event-Driven**: Uses custom events for inter-module communication
 
 ### Best Practices
@@ -234,14 +234,14 @@ For production deployment, consider:
 
 ### Debug Mode
 
-Enable debug mode by setting `enableDebug: true` in `config/constants.js` or use the keyboard shortcut `Ctrl/Cmd + Shift + D`.
+Enable debug mode by setting 'enableDebug: true' in 'config/constants.js' or use the keyboard shortcut 'Ctrl/Cmd + Shift + D'.
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+2. Create a feature branch ('git checkout -b feature/amazing-feature')
+3. Commit your changes ('git commit -m 'Add amazing feature'')
+4. Push to the branch ('git push origin feature/amazing-feature')
 5. Open a Pull Request
 
 ## 📄 License

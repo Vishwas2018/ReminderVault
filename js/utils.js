@@ -39,7 +39,7 @@ export const DOM = {
     // Add event listener with better error handling
     on: (element, event, handler, options = {}) => {
         if (!element) {
-            console.warn(`DOM.on: Element not found for event "${event}"`);
+            console.warn('DOM.on: Element not found for event "${event}"');
             return;
         }
 
@@ -47,7 +47,7 @@ export const DOM = {
             try {
                 handler(e);
             } catch (error) {
-                console.error(`Error in event handler for "${event}":`, error);
+                console.error('Error in event handler for "${event}":', error);
             }
         };
 
@@ -132,7 +132,7 @@ export const Storage = {
             const parsed = JSON.parse(item);
             return parsed;
         } catch (error) {
-            console.warn(`Storage.get error for key "${key}":`, error);
+            console.warn('Storage.get error for key "${key}":', error);
 
             // Attempt to clean corrupted data
             Storage.remove(key);
@@ -210,13 +210,13 @@ export const Storage = {
 
     // Get timestamp for a key (used for cleanup)
     getTimestamp: (key) => {
-        const timestampKey = `${key}_timestamp`;
+        const timestampKey = '${key}_timestamp';
         return parseInt(localStorage.getItem(timestampKey) || Date.now());
     },
 
     // Set timestamp for a key
     setTimestamp: (key) => {
-        const timestampKey = `${key}_timestamp`;
+        const timestampKey = '${key}_timestamp';
         localStorage.setItem(timestampKey, Date.now().toString());
     }
 };
@@ -298,9 +298,9 @@ export const DateTime = {
         const hours = Math.floor(minutes / 60);
         const days = Math.floor(hours / 24);
 
-        if (days > 0) return `${days} day${days > 1 ? 's' : ''} ${diffMs > 0 ? 'ago' : 'from now'}`;
-        if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ${diffMs > 0 ? 'ago' : 'from now'}`;
-        if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ${diffMs > 0 ? 'ago' : 'from now'}`;
+        if (days > 0) return '${days} day${days > 1 ? 's' : ''} ${diffMs > 0 ? 'ago' : 'from now'}';
+        if (hours > 0) return '${hours} hour${hours > 1 ? 's' : ''} ${diffMs > 0 ? 'ago' : 'from now'}';
+        if (minutes > 0) return '${minutes} minute${minutes > 1 ? 's' : ''} ${diffMs > 0 ? 'ago' : 'from now'}';
         return 'Just now';
     },
 
@@ -403,7 +403,7 @@ export const Validation = {
             try {
                 // Required validation
                 if (rule.required && !Validation.isRequired(value)) {
-                    errors[field] = rule.requiredMessage || `${field} is required`;
+                    errors[field] = rule.requiredMessage || '${field} is required';
                     continue;
                 }
 
@@ -412,26 +412,26 @@ export const Validation = {
 
                 // Type validation
                 if (rule.type && !Validation.validateType(value, rule.type)) {
-                    errors[field] = rule.typeMessage || `${field} must be a valid ${rule.type}`;
+                    errors[field] = rule.typeMessage || '${field} must be a valid ${rule.type}';
                     continue;
                 }
 
                 // Pattern validation
                 if (rule.pattern && !rule.pattern.test(value)) {
-                    errors[field] = rule.patternMessage || `${field} format is invalid`;
+                    errors[field] = rule.patternMessage || '${field} format is invalid';
                     continue;
                 }
 
                 // Length validation
                 if (rule.minLength && value.length < rule.minLength) {
                     errors[field] = rule.minLengthMessage ||
-                        `${field} must be at least ${rule.minLength} characters`;
+                        '${field} must be at least ${rule.minLength} characters';
                     continue;
                 }
 
                 if (rule.maxLength && value.length > rule.maxLength) {
                     errors[field] = rule.maxLengthMessage ||
-                        `${field} must be no more than ${rule.maxLength} characters`;
+                        '${field} must be no more than ${rule.maxLength} characters';
                     continue;
                 }
 
@@ -439,7 +439,7 @@ export const Validation = {
                 if (rule.validate && typeof rule.validate === 'function') {
                     const customResult = await rule.validate(value, formData);
                     if (customResult !== true) {
-                        errors[field] = customResult || `${field} is invalid`;
+                        errors[field] = customResult || '${field} is invalid';
                         continue;
                     }
                 }
@@ -453,7 +453,7 @@ export const Validation = {
                 }
 
             } catch (error) {
-                console.error(`Validation error for field ${field}:`, error);
+                console.error('Validation error for field ${field}:', error);
                 errors[field] = 'Validation failed';
             }
         }
@@ -655,12 +655,12 @@ export const Navigation = {
 export const UI = {
     showNotification: (message, type = 'info', duration = 5000) => {
         // Remove existing notifications of same type
-        const existingNotifications = document.querySelectorAll(`.notification.${type}`);
+        const existingNotifications = document.querySelectorAll('.notification.${type}');
         existingNotifications.forEach(notification => notification.remove());
 
         const notification = DOM.createElement('div', {
-            className: `notification ${type}`,
-            style: `
+            className: 'notification ${type}',
+            style: '
         position: fixed;
         top: 20px;
         right: 20px;
@@ -674,7 +674,7 @@ export const UI = {
         backdrop-filter: blur(10px);
         transform: translateX(100%);
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      `
+      '
         }, message);
 
         // Set colors based on type
@@ -689,7 +689,7 @@ export const UI = {
 
         // Add close button
         const closeBtn = DOM.createElement('button', {
-            style: `
+            style: '
         position: absolute;
         top: 5px;
         right: 8px;
@@ -700,7 +700,7 @@ export const UI = {
         cursor: pointer;
         opacity: 0.7;
         line-height: 1;
-      `,
+      ',
             onClick: () => notification.remove()
         }, '×');
 
@@ -832,7 +832,7 @@ export const formatFileSize = (bytes) => {
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+    return '${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}';
 };
 
 // Default export for convenience

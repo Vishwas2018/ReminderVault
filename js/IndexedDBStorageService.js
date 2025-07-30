@@ -54,7 +54,7 @@ export class IndexedDBStorageService {
 
         return new Promise((resolve, reject) => {
             const timeoutId = setTimeout(() => {
-                reject(new Error(`IndexedDB connection timeout after ${TIMEOUT_MS}ms`));
+                reject(new Error('IndexedDB connection timeout after ${TIMEOUT_MS}ms'));
             }, TIMEOUT_MS);
 
             let request;
@@ -62,7 +62,7 @@ export class IndexedDBStorageService {
                 request = indexedDB.open(IndexedDBStorageService.#DB_NAME, IndexedDBStorageService.#DB_VERSION);
             } catch (error) {
                 clearTimeout(timeoutId);
-                reject(new Error(`Failed to open IndexedDB: ${error.message}`));
+                reject(new Error('Failed to open IndexedDB: ${error.message}'));
                 return;
             }
 
@@ -70,7 +70,7 @@ export class IndexedDBStorageService {
                 clearTimeout(timeoutId);
                 const error = request.error;
                 if (this.#isQuotaError(error) && retryCount < MAX_RETRIES) {
-                    console.warn(`IndexedDB quota exceeded, attempting cleanup (retry ${retryCount + 1})`);
+                    console.warn('IndexedDB quota exceeded, attempting cleanup (retry ${retryCount + 1})');
                     setTimeout(() => {
                         this.#attemptConnection(retryCount + 1).then(resolve).catch(reject);
                     }, 1000 * (retryCount + 1));
@@ -94,7 +94,7 @@ export class IndexedDBStorageService {
                     this.#createObjectStores(db);
                 } catch (error) {
                     clearTimeout(timeoutId);
-                    reject(new Error(`Database upgrade failed: ${error.message}`));
+                    reject(new Error('Database upgrade failed: ${error.message}'));
                 }
             };
         });
@@ -120,7 +120,7 @@ export class IndexedDBStorageService {
                 try {
                     reminderStore.createIndex(name, keyPath, options);
                 } catch (error) {
-                    console.warn(`Failed to create index ${name}:`, error.message);
+                    console.warn('Failed to create index ${name}:', error.message);
                 }
             });
         }
@@ -160,7 +160,7 @@ export class IndexedDBStorageService {
             try {
                 transaction = this.#db.transaction(storeNames, mode);
             } catch (error) {
-                reject(new Error(`Transaction creation failed: ${error.message}`));
+                reject(new Error('Transaction creation failed: ${error.message}'));
                 return;
             }
 
@@ -202,7 +202,7 @@ export class IndexedDBStorageService {
             } catch (error) {
                 if (!hasResolved) {
                     hasResolved = true;
-                    reject(new Error(`Operation failed: ${error.message}`));
+                    reject(new Error('Operation failed: ${error.message}'));
                 }
             }
         });
@@ -232,7 +232,7 @@ export class IndexedDBStorageService {
                     const request = store.put(reminder);
                     request.onsuccess = () => {
                         const savedReminder = { ...reminder, id: request.result };
-                        console.log(`💾 Reminder saved: ${savedReminder.title}`);
+                        console.log('💾 Reminder saved: ${savedReminder.title}');
                         resolve(savedReminder);
                     };
                     request.onerror = () => reject(request.error);
@@ -270,7 +270,7 @@ export class IndexedDBStorageService {
                             }
                             cursor.continue();
                         } else {
-                            console.log(`📄 Retrieved ${reminders.length} reminders`);
+                            console.log('📄 Retrieved ${reminders.length} reminders');
                             resolve(this.#sortReminders(reminders, filters.sortBy));
                         }
                     };
@@ -298,7 +298,7 @@ export class IndexedDBStorageService {
     async updateReminder(id, updates) {
         const existing = await this.getReminderById(id);
         if (!existing) {
-            throw new Error(`Reminder with id ${id} not found`);
+            throw new Error('Reminder with id ${id} not found');
         }
 
         const updatedReminder = {
@@ -319,7 +319,7 @@ export class IndexedDBStorageService {
                 return new Promise((resolve, reject) => {
                     const request = store.delete(id);
                     request.onsuccess = () => {
-                        console.log(`🗑️ Reminder deleted: ${id}`);
+                        console.log('🗑️ Reminder deleted: ${id}');
                         resolve(true);
                     };
                     request.onerror = () => reject(request.error);
@@ -333,7 +333,7 @@ export class IndexedDBStorageService {
         const deletePromises = reminders.map(r => this.deleteReminder(r.id));
 
         await Promise.all(deletePromises);
-        console.log(`🧹 Deleted ${reminders.length} ${status} reminders`);
+        console.log('🧹 Deleted ${reminders.length} ${status} reminders');
         return reminders.length;
     }
 
@@ -353,7 +353,7 @@ export class IndexedDBStorageService {
                 return new Promise((resolve, reject) => {
                     const request = store.put(userPrefs);
                     request.onsuccess = () => {
-                        console.log(`⚙️ User preferences saved: ${userId}`);
+                        console.log('⚙️ User preferences saved: ${userId}');
                         resolve(userPrefs);
                     };
                     request.onerror = () => reject(request.error);
@@ -486,7 +486,7 @@ export class IndexedDBStorageService {
             await this.saveUserPreferences(userId, preferences);
         }
 
-        console.log(`📥 Imported ${results.length} reminders to IndexedDB`);
+        console.log('📥 Imported ${results.length} reminders to IndexedDB');
         return results;
     }
 
@@ -502,7 +502,7 @@ export class IndexedDBStorageService {
             this.#deleteUserPreferences(userId)
         ]);
 
-        console.log(`🧹 Cleared all IndexedDB data for user: ${userId}`);
+        console.log('🧹 Cleared all IndexedDB data for user: ${userId}');
         return reminders.length;
     }
 
@@ -586,7 +586,7 @@ export class IndexedDBStorageService {
         const units = ['B', 'KB', 'MB', 'GB'];
         const index = Math.floor(Math.log(bytes) / Math.log(1024));
         const size = (bytes / Math.pow(1024, index)).toFixed(1);
-        return `${size} ${units[index]}`;
+        return '${size} ${units[index]}';
     }
 
     #getErrorMessage(error) {
@@ -601,7 +601,7 @@ export class IndexedDBStorageService {
         };
 
         const errorName = error?.name || 'UnknownError';
-        return errorMessages[errorName] || `Database error: ${error?.message || 'Unknown'}`;
+        return errorMessages[errorName] || 'Database error: ${error?.message || 'Unknown'}';
     }
 
     #isQuotaError(error) {

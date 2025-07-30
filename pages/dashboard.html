@@ -100,7 +100,7 @@
                     <button id="alertPrefsBtn" class="profile-btn" title="Alert Preferences">
                         🔔 Alerts
                     </button>
-                    <button id="dbInfoBtn" class="profile-btn" title="Storage Info">
+                    <button id="headerDbInfoBtn" class="profile-btn" title="Storage Info">
                         📊 Storage Info
                     </button>
                     <button id="logoutBtn" class="logout-btn">🚪 Logout</button>
@@ -137,7 +137,7 @@
             </div>
         </section>
 
-        <!-- Statistics Section (unchanged) -->
+        <!-- Statistics Section -->
         <section class="stats-section">
             <div class="stats-grid">
                 <button class="stat-card total-reminders clickable-stat" data-filter="all">
@@ -202,9 +202,6 @@
                 </button>
             </div>
         </section>
-
-        <!-- Rest of the content remains the same... -->
-        <!-- Quick Actions, Reminders Section, Schedule Section unchanged -->
 
         <!-- Quick Actions -->
         <section class="quick-actions">
@@ -289,7 +286,7 @@
         </div>
         <div class="modal-body">
             <form id="addReminderForm">
-                <!-- Form content remains the same as original -->
+                <!-- Basic Form Fields -->
                 <div class="form-group">
                     <label for="reminderTitle">
                         <span class="label-icon">📝</span>
@@ -355,7 +352,7 @@
                     </label>
                 </div>
 
-                <!-- Alert Timing Selection -->
+                <!-- Fixed Alert Timing Selection -->
                 <div class="alert-timing-section">
                     <h4><span class="label-icon">⏰</span> Alert Timing (Smart Storage)</h4>
                     <p class="section-description">Choose when you want to be alerted before this reminder is due:</p>
@@ -367,6 +364,88 @@
                                 <span class="category-subtitle">(immediate alerts)</span>
                             </div>
                             <div class="timing-options">
+                                <label class="timing-option">
+                                    <input type="checkbox" name="alertTiming" value="5" checked>
+                                    <div class="timing-card">
+                                        <div class="timing-icon">⏰</div>
+                                        <div class="timing-info">
+                                            <div class="timing-label">5 minutes before</div>
+                                            <div class="timing-value">Last-minute alert</div>
+                                        </div>
+                                    </div>
+                                </label>
+
+                                <label class="timing-option">
+                                    <input type="checkbox" name="alertTiming" value="15" checked>
+                                    <div class="timing-card">
+                                        <div class="timing-icon">⏰</div>
+                                        <div class="timing-info">
+                                            <div class="timing-label">15 minutes before</div>
+                                            <div class="timing-value">Quick preparation</div>
+                                        </div>
+                                    </div>
+                                </label>
+
+                                <label class="timing-option">
+                                    <input type="checkbox" name="alertTiming" value="30">
+                                    <div class="timing-card">
+                                        <div class="timing-icon">⏰</div>
+                                        <div class="timing-info">
+                                            <div class="timing-label">30 minutes before</div>
+                                            <div class="timing-value">Preparation time</div>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="timing-category">
+                            <div class="category-title">
+                                Hours Before
+                                <span class="category-subtitle">(advance planning)</span>
+                            </div>
+                            <div class="timing-options">
+                                <label class="timing-option">
+                                    <input type="checkbox" name="alertTiming" value="60">
+                                    <div class="timing-card">
+                                        <div class="timing-icon">🕐</div>
+                                        <div class="timing-info">
+                                            <div class="timing-label">1 hour before</div>
+                                            <div class="timing-value">Plan ahead</div>
+                                        </div>
+                                    </div>
+                                </label>
+
+                                <label class="timing-option">
+                                    <input type="checkbox" name="alertTiming" value="120">
+                                    <div class="timing-card">
+                                        <div class="timing-icon">🕐</div>
+                                        <div class="timing-info">
+                                            <div class="timing-label">2 hours before</div>
+                                            <div class="timing-value">Extended planning</div>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="timing-category">
+                            <div class="category-title">
+                                Days Before
+                                <span class="category-subtitle">(long-term planning)</span>
+                            </div>
+                            <div class="timing-options">
+                                <label class="timing-option">
+                                    <input type="checkbox" name="alertTiming" value="1440">
+                                    <div class="timing-card">
+                                        <div class="timing-icon">📅</div>
+                                        <div class="timing-info">
+                                            <div class="timing-label">1 day before</div>
+                                            <div class="timing-value">Daily planning</div>
+                                        </div>
+                                    </div>
+                                </label>
+
                                 <label class="timing-option">
                                     <input type="checkbox" name="alertTiming" value="2880">
                                     <div class="timing-card">
@@ -599,7 +678,21 @@
             dashboard.testNotificationSystem();
         });
 
-        // Enhanced database info button
+        // Enhanced database info button (header)
+        document.getElementById('headerDbInfoBtn')?.addEventListener('click', async () => {
+            try {
+                showLoading('Getting storage information...', 'Analyzing storage health');
+                await dashboard.getDatabaseInfo().then(info => {
+                    hideLoading();
+                    dashboard._showDatabaseInfo();
+                });
+            } catch (error) {
+                hideLoading();
+                console.error('Failed to get storage info:', error);
+            }
+        });
+
+        // Enhanced database info button (data management section)
         document.getElementById('dbInfoBtn')?.addEventListener('click', async () => {
             try {
                 showLoading('Getting storage information...', 'Analyzing storage health');
@@ -838,85 +931,3 @@
 </script>
 </body>
 </html>
-<input type="checkbox" name="alertTiming" value="5" checked>
-<div class="timing-card">
-    <div class="timing-icon">⏰</div>
-    <div class="timing-info">
-        <div class="timing-label">5 minutes before</div>
-        <div class="timing-value">Last-minute alert</div>
-    </div>
-</div>
-</label>
-
-<label class="timing-option">
-    <input type="checkbox" name="alertTiming" value="15" checked>
-    <div class="timing-card">
-        <div class="timing-icon">⏰</div>
-        <div class="timing-info">
-            <div class="timing-label">15 minutes before</div>
-            <div class="timing-value">Quick preparation</div>
-        </div>
-    </div>
-</label>
-
-<label class="timing-option">
-    <input type="checkbox" name="alertTiming" value="30">
-    <div class="timing-card">
-        <div class="timing-icon">⏰</div>
-        <div class="timing-info">
-            <div class="timing-label">30 minutes before</div>
-            <div class="timing-value">Preparation time</div>
-        </div>
-    </div>
-</label>
-</div>
-</div>
-
-<div class="timing-category">
-    <div class="category-title">
-        Hours Before
-        <span class="category-subtitle">(advance planning)</span>
-    </div>
-    <div class="timing-options">
-        <label class="timing-option">
-            <input type="checkbox" name="alertTiming" value="60">
-            <div class="timing-card">
-                <div class="timing-icon">🕐</div>
-                <div class="timing-info">
-                    <div class="timing-label">1 hour before</div>
-                    <div class="timing-value">Plan ahead</div>
-                </div>
-            </div>
-        </label>
-
-        <label class="timing-option">
-            <input type="checkbox" name="alertTiming" value="120">
-            <div class="timing-card">
-                <div class="timing-icon">🕐</div>
-                <div class="timing-info">
-                    <div class="timing-label">2 hours before</div>
-                    <div class="timing-value">Extended planning</div>
-                </div>
-            </div>
-        </label>
-    </div>
-</div>
-
-<div class="timing-category">
-    <div class="category-title">
-        Days Before
-        <span class="category-subtitle">(long-term planning)</span>
-    </div>
-    <div class="timing-options">
-        <label class="timing-option">
-            <input type="checkbox" name="alertTiming" value="1440">
-            <div class="timing-card">
-                <div class="timing-icon">📅</div>
-                <div class="timing-info">
-                    <div class="timing-label">1 day before</div>
-                    <div class="timing-value">Daily planning</div>
-                </div>
-            </div>
-        </label>
-
-        <label class="timing-option">

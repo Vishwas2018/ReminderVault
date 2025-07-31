@@ -1,14 +1,14 @@
 /**
- * Main Application Class - Core orchestrator for Reminders Vault
+ * Main Application Class - Fixed core orchestrator for Reminders Vault
  * Manages services, routing, authentication, and application lifecycle
  */
 
 import { AuthService, NotificationService, ReminderService } from '../core/services/index.js';
 import { StorageFactory } from '../core/storage/index.js';
 import { Environment } from '../config/environment.js';
-import { LoginPage } from '../pages/LoginPage.js';
 import { showError, showSuccess } from '../components/ui/Notification.js';
 import { EventEmitter } from '../utils/helpers.js';
+import { Router } from './routes.js';
 
 export class App extends EventEmitter {
     #services = new Map();
@@ -16,10 +16,11 @@ export class App extends EventEmitter {
     #isInitialized = false;
     #router = null;
     #storageService = null;
+    #environment = null;
 
     constructor() {
         super();
-        this.environment = Environment.initialize();
+        this.#environment = Environment.initialize();
         this.#setupGlobalErrorHandlers();
     }
 
@@ -48,7 +49,7 @@ export class App extends EventEmitter {
             this.#setupGlobalListeners();
 
             this.#isInitialized = true;
-            this.emit('app:initialized', { environment: this.environment });
+            this.emit('app:initialized', { environment: this.#environment });
 
             console.log('✅ Application initialization complete');
             return this;
@@ -86,6 +87,8 @@ export class App extends EventEmitter {
      */
     async #initializeServices() {
         try {
+            console.log('⚙️ Initializing core services...');
+
             // Authentication service
             const authService = new AuthService();
             this.#services.set('auth', authService);
@@ -134,118 +137,44 @@ export class App extends EventEmitter {
 
         // Reminder service events
         const reminderService = this.#services.get('reminders');
-        reminderService.on('reminder-created', (data) => {
-            showSuccess(`Reminder "${data.reminder.title}" created successfully`);
-        });
+        if (reminderService) {
+            reminderService.on('reminder-created', (data) => {
+                showSuccess(`Reminder "${data.reminder.title}" created successfully`);
+            });
 
-        reminderService.on('reminder-error', (data) => {
-            showError(`Reminder operation failed: ${data.error.message}`);
-        });
+            reminderService.on('reminder-error', (data) => {
+                showError(`Reminder operation failed: ${data.error.message}`);
+            });
+        }
     }
 
     /**
      * Initialize client-side routing
      */
     #initializeRouter() {
-        this.#router = {
-            currentRoute: null,
-            routes: new Map([
-                ['/', () => this.#redirectBasedOnAuth()],
-                ['/login', () => this.#loadLoginPage()],
-                ['/dashboard', () => this.#loadDashboardPage()],
-                ['/logout', () => this.#handleLogout()]
-            ])
-        };
+        this.#router = new Router(this);
 
-        // Handle browser navigation
-        window.addEventListener('popstate', () => {
-            this.#handleRoute(window.location.pathname);
-        });
+        // Handle initial route
+        const currentPath = window.location.pathname;
+        this.#router.navigate(currentPath, { replace: true });
 
         console.log('🗺️ Router initialized');
-    }
-
-    /**
-     * Handle route changes with authentication checks
-     */
-    async #handleRoute(path = window.location.pathname) {
-        console.log(`🧭 Navigating to: ${path}`);
-
-        const handler = this.#router.routes.get(path);
-        if (!handler) {
-            console.warn(`Route not found: ${path}, redirecting to root`);
-            return this.navigateTo('/');
-        }
-
-        try {
-            this.#router.currentRoute = path;
-            await handler();
-            this.emit('route:changed', { path, route: this.#router.currentRoute });
-        } catch (error) {
-            console.error(`Route handler error for ${path}:`, error);
-            this.#handleRouteError(error, path);
-        }
     }
 
     /**
      * Programmatic navigation
      */
     navigateTo(path, replace = false) {
-        if (replace) {
-            window.history.replaceState({}, '', path);
+        if (this.#router) {
+            return this.#router.navigate(path, { replace });
         } else {
-            window.history.pushState({}, '', path);
-        }
-        this.#handleRoute(path);
-    }
-
-    /**
-     * Route handlers
-     */
-    async #redirectBasedOnAuth() {
-        const authService = this.#services.get('auth');
-        const isAuthenticated = authService.isAuthenticated();
-
-        this.navigateTo(isAuthenticated ? '/dashboard' : '/login', true);
-    }
-
-    async #loadLoginPage() {
-        if (this.#currentPage?.cleanup) {
-            this.#currentPage.cleanup();
-        }
-
-        // Check if already authenticated
-        const authService = this.#services.get('auth');
-        if (authService.isAuthenticated()) {
-            return this.navigateTo('/dashboard', true);
-        }
-
-        this.#currentPage = new LoginPage(this);
-        await this.#currentPage.initialize();
-
-        console.log('🔐 Login page loaded');
-    }
-
-    async #loadDashboardPage() {
-        const authService = this.#services.get('auth');
-        if (!authService.isAuthenticated()) {
-            return this.navigateTo('/login', true);
-        }
-
-        if (this.#currentPage?.cleanup) {
-            this.#currentPage.cleanup();
-        }
-
-        // Dynamic import for better code splitting
-        try {
-            const { DashboardPage } = await import('../pages/DashboardPage.js');
-            this.#currentPage = new DashboardPage(this);
-            await this.#currentPage.initialize();
-
-            console.log('📊 Dashboard page loaded');
-        } catch (error) {
-            console.error('Failed to load dashboard:', error);
-            showError('Failed to load dashboard. Please refresh the page.');
+            // Fallback navigation
+            if (replace) {
+                window.history.replaceState({}, '', path);
+            } else {
+                window.history.pushState({}, '', path);
+            }
+            window.location.href = path;
         }
     }
 
@@ -259,7 +188,9 @@ export class App extends EventEmitter {
 
     #handleLogout() {
         const authService = this.#services.get('auth');
-        authService.logout();
+        if (authService) {
+            authService.logout();
+        }
 
         if (this.#currentPage?.cleanup) {
             this.#currentPage.cleanup();
@@ -281,7 +212,7 @@ export class App extends EventEmitter {
     #setupGlobalListeners() {
         // Handle app lifecycle
         window.addEventListener('beforeunload', () => {
-            this.#cleanup();
+            this.cleanup();
         });
 
         // Handle visibility changes for mobile
@@ -290,7 +221,7 @@ export class App extends EventEmitter {
                 this.emit('app:focus');
                 // Check for session updates when app regains focus
                 const authService = this.#services.get('auth');
-                if (authService.isAuthenticated()) {
+                if (authService?.isAuthenticated()) {
                     authService.refreshSession();
                 }
             } else {
@@ -308,6 +239,8 @@ export class App extends EventEmitter {
             this.emit('app:offline');
             showError('Connection lost - working offline');
         });
+
+        console.log('📡 Global event listeners setup complete');
     }
 
     /**
@@ -352,39 +285,31 @@ export class App extends EventEmitter {
             : 'Application failed to start. Please refresh the page.';
 
         document.body.innerHTML = `
-      <div style="
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: linear-gradient(135deg, #ef4444, #dc2626);
-        display: flex; align-items: center; justify-content: center;
-        color: white; font-family: system-ui, sans-serif; text-align: center;
-        padding: 2rem;
-      ">
-        <div>
-          <h1>⚠️ Startup Error</h1>
-          <p>${errorMessage}</p>
-          <button onclick="window.location.reload()" style="
-            margin-top: 2rem; padding: 1rem 2rem;
-            background: white; color: #dc2626; border: none;
-            border-radius: 8px; font-weight: bold; cursor: pointer;
-          ">
-            🔄 Reload Application
-          </button>
-        </div>
-      </div>
-    `;
+            <div style="
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: linear-gradient(135deg, #ef4444, #dc2626);
+                display: flex; align-items: center; justify-content: center;
+                color: white; font-family: system-ui, sans-serif; text-align: center;
+                padding: 2rem; z-index: 99999;
+            ">
+                <div>
+                    <h1>⚠️ Startup Error</h1>
+                    <p>${errorMessage}</p>
+                    <button onclick="window.location.reload()" style="
+                        margin-top: 2rem; padding: 1rem 2rem;
+                        background: white; color: #dc2626; border: none;
+                        border-radius: 8px; font-weight: bold; cursor: pointer;
+                    ">
+                        🔄 Reload Application
+                    </button>
+                </div>
+            </div>
+        `;
     }
 
     #handleModuleError(error) {
         console.error('Module loading error:', error);
         showError('Failed to load application module. Please refresh the page.');
-    }
-
-    #handleRouteError(error, path) {
-        console.error(`Route error for ${path}:`, error);
-        showError(`Navigation error: ${error.message}`);
-
-        // Fallback to root route
-        this.navigateTo('/');
     }
 
     /**
@@ -400,7 +325,7 @@ export class App extends EventEmitter {
     }
 
     getService(name) {
-        return this.#services.get(name);
+        return this.#services.get(name) || this.#storageService;
     }
 
     /**
@@ -411,17 +336,35 @@ export class App extends EventEmitter {
     }
 
     getCurrentRoute() {
-        return this.#router?.currentRoute;
+        return this.#router?.getCurrentRoute();
     }
 
     getCurrentUser() {
         return this.#services.get('auth')?.getCurrentUser();
     }
 
+    getEnvironment() {
+        return this.#environment;
+    }
+
+    /**
+     * Page management
+     */
+    setCurrentPage(page) {
+        if (this.#currentPage?.cleanup) {
+            this.#currentPage.cleanup();
+        }
+        this.#currentPage = page;
+    }
+
+    getCurrentPage() {
+        return this.#currentPage;
+    }
+
     /**
      * Cleanup and shutdown
      */
-    #cleanup() {
+    cleanup() {
         console.log('🧹 Cleaning up application...');
 
         try {
@@ -430,18 +373,29 @@ export class App extends EventEmitter {
                 this.#currentPage.cleanup();
             }
 
+            // Cleanup router
+            if (this.#router?.destroy) {
+                this.#router.destroy();
+            }
+
             // Cleanup services
             this.#services.forEach((service, name) => {
-                if (service.cleanup) {
-                    service.cleanup();
-                } else if (service.destroy) {
-                    service.destroy();
+                try {
+                    if (service.cleanup) {
+                        service.cleanup();
+                    } else if (service.destroy) {
+                        service.destroy();
+                    }
+                } catch (error) {
+                    console.warn(`Failed to cleanup service ${name}:`, error);
                 }
             });
 
             // Close storage
             if (this.#storageService?.close) {
-                this.#storageService.close();
+                this.#storageService.close().catch(error => {
+                    console.warn('Storage close warning:', error);
+                });
             }
 
             // Clear event listeners
@@ -460,7 +414,7 @@ export class App extends EventEmitter {
     async restart() {
         console.log('🔄 Restarting application...');
 
-        this.#cleanup();
+        this.cleanup();
         this.#isInitialized = false;
         this.#services.clear();
 
@@ -474,11 +428,56 @@ export class App extends EventEmitter {
     debug() {
         return {
             services: Array.from(this.#services.keys()),
-            currentRoute: this.#router?.currentRoute,
+            currentRoute: this.#router?.getCurrentRoute(),
+            currentPage: this.#currentPage?.constructor?.name,
             isInitialized: this.#isInitialized,
-            environment: this.environment,
+            environment: this.#environment,
             storageType: StorageFactory.getStorageTypeFromService(this.#storageService),
             currentUser: this.getCurrentUser()
         };
+    }
+
+    /**
+     * Health check
+     */
+    async healthCheck() {
+        const health = {
+            timestamp: new Date().toISOString(),
+            isInitialized: this.#isInitialized,
+            services: {},
+            storage: null,
+            router: null
+        };
+
+        // Check services
+        for (const [name, service] of this.#services) {
+            try {
+                if (service.healthCheck) {
+                    health.services[name] = await service.healthCheck();
+                } else {
+                    health.services[name] = { healthy: true, note: 'No health check available' };
+                }
+            } catch (error) {
+                health.services[name] = { healthy: false, error: error.message };
+            }
+        }
+
+        // Check storage
+        try {
+            if (this.#storageService?.getDatabaseInfo) {
+                const dbInfo = await this.#storageService.getDatabaseInfo();
+                health.storage = { healthy: true, info: dbInfo };
+            }
+        } catch (error) {
+            health.storage = { healthy: false, error: error.message };
+        }
+
+        // Check router
+        health.router = {
+            healthy: !!this.#router,
+            currentRoute: this.getCurrentRoute()
+        };
+
+        return health;
     }
 }

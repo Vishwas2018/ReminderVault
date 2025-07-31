@@ -1,122 +1,43 @@
 /**
- * Modern Routing System for Reminders Vault
- * Clean, efficient route definitions with lazy loading and middleware support
+ * Fixed Routing System for Reminders Vault
+ * Simplified, reliable route handling with proper error management
  */
 
 /**
- * Route configuration with lazy loading and guard middleware
+ * Route configuration with lazy loading
  */
 export const routes = new Map([
     ['/', {
         handler: 'redirect',
-        middleware: ['determineDestination'],
         meta: { title: 'Reminders Vault' }
     }],
 
     ['/login', {
         handler: 'page',
         component: () => import('../pages/LoginPage.js'),
-        middleware: ['redirectIfAuthenticated'],
         meta: {
             title: 'Login - Reminders Vault',
-            requiresAuth: false,
-            redirectTo: '/dashboard'
+            requiresAuth: false
         }
     }],
 
     ['/dashboard', {
         handler: 'page',
         component: () => import('../pages/DashboardPage.js'),
-        middleware: ['requiresAuthentication'],
         meta: {
             title: 'Dashboard - Reminders Vault',
-            requiresAuth: true,
-            redirectTo: '/login'
+            requiresAuth: true
         }
     }],
 
     ['/logout', {
         handler: 'action',
-        middleware: ['executeLogout'],
         meta: { title: 'Logging out...' }
     }]
 ]);
 
 /**
- * Middleware functions for route protection and logic
- */
-export const middleware = {
-    /**
-     * Determines initial destination based on auth status
-     */
-    determineDestination: (context) => {
-        const { app } = context;
-        const isAuthenticated = app.getServices().auth.isAuthenticated();
-
-        return {
-            redirect: isAuthenticated ? '/dashboard' : '/login',
-            handled: true
-        };
-    },
-
-    /**
-     * Redirects authenticated users away from login
-     */
-    redirectIfAuthenticated: (context) => {
-        const { app, route } = context;
-        const isAuthenticated = app.getServices().auth.isAuthenticated();
-
-        if (isAuthenticated) {
-            return {
-                redirect: route.meta.redirectTo,
-                handled: true
-            };
-        }
-
-        return { handled: false };
-    },
-
-    /**
-     * Ensures user is authenticated before accessing protected routes
-     */
-    requiresAuthentication: (context) => {
-        const { app, route } = context;
-        const isAuthenticated = app.getServices().auth.isAuthenticated();
-
-        if (!isAuthenticated) {
-            return {
-                redirect: route.meta.redirectTo,
-                handled: true
-            };
-        }
-
-        return { handled: false };
-    },
-
-    /**
-     * Executes logout action and redirects
-     */
-    executeLogout: (context) => {
-        const { app } = context;
-
-        try {
-            app.getServices().auth.logout();
-            return {
-                redirect: '/login',
-                handled: true
-            };
-        } catch (error) {
-            console.error('Logout failed:', error);
-            return {
-                redirect: '/dashboard',
-                handled: true
-            };
-        }
-    }
-};
-
-/**
- * Modern router class with async component loading and middleware pipeline
+ * Simple router class with essential functionality
  */
 export class Router {
     #app = null;
@@ -130,9 +51,11 @@ export class Router {
     }
 
     /**
-     * Navigate to a specific route with optional state
+     * Navigate to a specific route
      */
-    async navigate(path, { replace = false, state = null } = {}) {
+    async navigate(path, options = {}) {
+        const { replace = false, state = null } = options;
+
         try {
             const normalizedPath = this.#normalizePath(path);
 
@@ -152,7 +75,7 @@ export class Router {
     }
 
     /**
-     * Handle route resolution with middleware pipeline
+     * Handle route resolution
      */
     async #handleRoute(path, state = null) {
         const route = routes.get(path);
@@ -162,60 +85,25 @@ export class Router {
         }
 
         // Update page title
-        this.#updatePageTitle(route.meta?.title);
+        if (route.meta?.title) {
+            document.title = route.meta.title;
+        }
 
-        // Create middleware context
-        const context = {
-            app: this.#app,
-            route,
-            path,
-            state,
-            currentPage: this.#currentPage
-        };
+        // Check authentication if required
+        if (route.meta?.requiresAuth && !this.#checkAuth()) {
+            return this.navigate('/login', { replace: true });
+        }
 
-        // Execute middleware pipeline
-        const middlewareResult = await this.#executeMiddleware(route.middleware, context);
-
-        if (middlewareResult.handled) {
-            if (middlewareResult.redirect) {
-                return this.navigate(middlewareResult.redirect, { replace: true });
-            }
-            return; // Middleware handled the route completely
+        // Redirect authenticated users away from login
+        if (path === '/login' && this.#checkAuth()) {
+            return this.navigate('/dashboard', { replace: true });
         }
 
         // Execute route handler
-        await this.#executeRouteHandler(route, context);
+        await this.#executeRouteHandler(route, { path, state });
 
         this.#currentRoute = path;
         this.#app.emit('route:changed', { path, route, state });
-    }
-
-    /**
-     * Execute middleware pipeline with short-circuit logic
-     */
-    async #executeMiddleware(middlewareList = [], context) {
-        for (const middlewareName of middlewareList) {
-            const middlewareFunc = middleware[middlewareName];
-
-            if (!middlewareFunc) {
-                console.warn(`Unknown middleware: ${middlewareName}`);
-                continue;
-            }
-
-            try {
-                const result = await middlewareFunc(context);
-
-                if (result.handled) {
-                    return result; // Short-circuit on first handler
-                }
-
-            } catch (error) {
-                console.error(`Middleware ${middlewareName} failed:`, error);
-                continue; // Continue pipeline on middleware errors
-            }
-        }
-
-        return { handled: false };
     }
 
     /**
@@ -228,11 +116,11 @@ export class Router {
                 break;
 
             case 'redirect':
-                // Handled by middleware
+                await this.#handleRedirect(context);
                 break;
 
             case 'action':
-                // Handled by middleware
+                await this.#handleAction(context);
                 break;
 
             default:
@@ -241,20 +129,26 @@ export class Router {
     }
 
     /**
-     * Load page component with caching and error handling
+     * Load page component with error handling
      */
     async #loadPageComponent(route, context) {
         try {
             // Cleanup current page
             await this.#cleanupCurrentPage();
 
-            // Load component with caching
+            // Load component
             const ComponentModule = await this.#loadComponentWithCache(route.component);
             const ComponentClass = this.#extractComponentClass(ComponentModule);
 
             // Initialize new page
             this.#currentPage = new ComponentClass(this.#app);
-            await this.#currentPage.initialize();
+
+            // Set the current page in the app
+            this.#app.setCurrentPage(this.#currentPage);
+
+            if (this.#currentPage.initialize) {
+                await this.#currentPage.initialize();
+            }
 
         } catch (error) {
             console.error('Page component loading failed:', error);
@@ -263,7 +157,29 @@ export class Router {
     }
 
     /**
-     * Load component with intelligent caching
+     * Handle redirect logic
+     */
+    async #handleRedirect(context) {
+        const isAuthenticated = this.#checkAuth();
+        const destination = isAuthenticated ? '/dashboard' : '/login';
+        return this.navigate(destination, { replace: true });
+    }
+
+    /**
+     * Handle action routes (like logout)
+     */
+    async #handleAction(context) {
+        if (context.path === '/logout') {
+            const authService = this.#app.getService('auth');
+            if (authService) {
+                authService.logout();
+            }
+            return this.navigate('/login', { replace: true });
+        }
+    }
+
+    /**
+     * Load component with caching
      */
     async #loadComponentWithCache(componentLoader) {
         const cacheKey = componentLoader.toString();
@@ -272,29 +188,29 @@ export class Router {
             return this.#loadingCache.get(cacheKey);
         }
 
-        const modulePromise = componentLoader();
-        this.#loadingCache.set(cacheKey, modulePromise);
-
         try {
+            const modulePromise = componentLoader();
+            this.#loadingCache.set(cacheKey, modulePromise);
             return await modulePromise;
         } catch (error) {
-            // Remove failed loads from cache
             this.#loadingCache.delete(cacheKey);
             throw error;
         }
     }
 
     /**
-     * Extract component class from module with fallback strategies
+     * Extract component class from module
      */
     #extractComponentClass(module) {
         // Try common export patterns
         const candidates = [
             module.default,
             module.DashboardPage,
+            module.DashboardController,
             module.LoginPage,
-            module.DashboardController, // Legacy support
-            Object.values(module).find(exp => typeof exp === 'function' && exp.prototype)
+            Object.values(module).find(exp =>
+                typeof exp === 'function' && exp.prototype && exp.prototype.constructor === exp
+            )
         ];
 
         const ComponentClass = candidates.find(candidate =>
@@ -309,7 +225,7 @@ export class Router {
     }
 
     /**
-     * Cleanup current page with proper error handling
+     * Cleanup current page
      */
     async #cleanupCurrentPage() {
         if (!this.#currentPage) return;
@@ -335,39 +251,37 @@ export class Router {
         window.addEventListener('popstate', (event) => {
             this.#handleRoute(window.location.pathname, event.state);
         });
-
-        // Handle initial page load
-        document.addEventListener('DOMContentLoaded', () => {
-            this.#handleRoute(window.location.pathname);
-        });
     }
 
     /**
-     * Handle 404 errors with fallback routing
+     * Handle 404 errors
      */
     async #handleNotFound(path) {
         console.warn(`Route not found: ${path}`);
 
-        // Fallback to root route
-        await this.navigate('/', { replace: true });
+        // Fallback to appropriate route based on auth status
+        const fallbackRoute = this.#checkAuth() ? '/dashboard' : '/login';
+        await this.navigate(fallbackRoute, { replace: true });
 
         this.#app.emit('route:notfound', { path });
     }
 
     /**
-     * Handle navigation errors with recovery
+     * Handle navigation errors
      */
     async #handleNavigationError(error, path) {
         console.error(`Navigation error for ${path}:`, error);
 
-        // Show user-friendly error
-        this.#app.getServices().notifications?.showError?.(
-            'Navigation failed. Returning to home page.'
-        );
+        // Show user-friendly error if notification service is available
+        const notifications = this.#app.getService('notifications');
+        if (notifications && notifications.showError) {
+            notifications.showError('Navigation failed. Returning to home page.');
+        }
 
         // Fallback navigation
         try {
-            await this.navigate('/', { replace: true });
+            const fallbackRoute = this.#checkAuth() ? '/dashboard' : '/login';
+            await this.navigate(fallbackRoute, { replace: true });
         } catch (fallbackError) {
             console.error('Fallback navigation failed:', fallbackError);
             // Last resort: reload page
@@ -378,16 +292,19 @@ export class Router {
     }
 
     /**
+     * Check authentication status
+     */
+    #checkAuth() {
+        const authService = this.#app.getService('auth');
+        return authService ? authService.isAuthenticated() : false;
+    }
+
+    /**
      * Utility methods
      */
     #normalizePath(path) {
+        // Ensure path starts with /
         return path.startsWith('/') ? path : `/${path}`;
-    }
-
-    #updatePageTitle(title) {
-        if (title) {
-            document.title = title;
-        }
     }
 
     /**
@@ -406,7 +323,7 @@ export class Router {
     }
 
     /**
-     * Programmatic route checking
+     * Check if navigation to path is allowed
      */
     canNavigateTo(path) {
         const route = routes.get(this.#normalizePath(path));
@@ -415,7 +332,7 @@ export class Router {
 
         // Check authentication requirements
         if (route.meta?.requiresAuth) {
-            return this.#app.getServices().auth.isAuthenticated();
+            return this.#checkAuth();
         }
 
         return true;
@@ -432,7 +349,7 @@ export class Router {
 }
 
 /**
- * Route utilities for external use
+ * Route utilities
  */
 export const RouteUtils = {
     /**
@@ -480,7 +397,6 @@ export const createRouter = (app) => new Router(app);
 
 export default {
     routes,
-    middleware,
     Router,
     RouteUtils,
     createRouter

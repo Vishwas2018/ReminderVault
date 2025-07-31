@@ -1,7 +1,3 @@
-/**
- * DashboardController - Fixed with proper private field declarations
- * Modern implementation with comprehensive cleanup and error handling
- */
 import { NotificationService } from './NotificationService.js';
 import { StorageFactory } from './StorageFactory.js';
 

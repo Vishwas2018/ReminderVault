@@ -1,7 +1,7 @@
 /* ===== MODERN LOGIN PAGE STYLES - 2025 EDITION ===== */
 
 /* Import the modern base styles */
-@import url('./styles.css');
+@import url('styles.css');
 
 /* ===== LOGIN LAYOUT ===== */
 body {

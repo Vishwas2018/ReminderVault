@@ -386,22 +386,22 @@ export class NotificationService {
                     <h2 class="alert-title">${alertInfo.title}</h2>
                     <div class="alert-timing">${alertInfo.subtitle}</div>
                 </div>
-                
+
                 <div class="alert-content">
                     <div class="alert-reminder-title">
                         ${priorityIcon} ${this.#escapeHtml(reminder.title)}
                     </div>
-                    
+
                     <div class="alert-reminder-time ${isOverdue ? 'overdue' : ''}">
                         ⏰ <strong>${isOverdue ? 'Was due' : 'Due'}:</strong> ${formattedTime}
                     </div>
-                    
+
                     ${reminder.description ? '
                         <div class="alert-reminder-description">
                             📝 ${this.#escapeHtml(reminder.description)}
                         </div>
                     ' : ''}
-                    
+
                     <div class="alert-reminder-meta">
                         <span class="meta-item">
                             📂 Category: <strong>${reminder.category}</strong>
@@ -410,7 +410,7 @@ export class NotificationService {
                             ⭐ Priority: <strong>${this.#getPriorityName(reminder.priority)}</strong>
                         </span>
                     </div>
-                    
+
                     <div class="alert-actions enhanced">
                         ${!isOverdue ? '
                             <button class="alert-btn alert-btn-complete" data-action="complete">
@@ -431,7 +431,7 @@ export class NotificationService {
                             ❌ Dismiss
                         </button>
                     </div>
-                    
+
                     <div class="alert-auto-dismiss">
                         Auto-dismiss in <span class="countdown">${isOverdue ? 60 : (minutesBefore <= 15 ? 45 : 30)}</span> seconds
                     </div>
@@ -498,7 +498,7 @@ export class NotificationService {
                 <div class="snooze-title">⏰ Snooze Reminder</div>
                 <div class="snooze-subtitle">How much more time do you need?</div>
             </div>
-            
+
             <div class="snooze-categories">
                 <div class="snooze-category">
                     <h4>Quick Snooze</h4>
@@ -517,7 +517,7 @@ export class NotificationService {
                         </button>
                     </div>
                 </div>
-                
+
                 <div class="snooze-category">
                     <h4>Extended Snooze</h4>
                     <div class="snooze-buttons">
@@ -536,7 +536,7 @@ export class NotificationService {
                     </div>
                 </div>
             </div>
-            
+
             <button class="alert-btn alert-btn-dismiss" data-action="cancel" style="width: 100%; margin-top: 1rem;">
                 ← Back to Alert
             </button>
@@ -563,7 +563,7 @@ export class NotificationService {
                 <div class="reschedule-title">📅 Reschedule Reminder</div>
                 <div class="reschedule-subtitle">When would you like to be reminded instead?</div>
             </div>
-            
+
             <div class="reschedule-options">
                 <div class="quick-reschedule">
                     <h4>Quick Options</h4>
@@ -587,7 +587,7 @@ export class NotificationService {
                     </div>
                 </div>
             </div>
-            
+
             <button class="alert-btn alert-btn-dismiss" data-action="cancel" style="width: 100%; margin-top: 1rem;">
                 ← Back to Alert
             </button>
@@ -965,15 +965,15 @@ export class NotificationService {
                     min-width: 90%;
                     margin: 1rem;
                 }
-                
+
                 .alert-actions.enhanced {
                     grid-template-columns: 1fr;
                 }
-                
+
                 .snooze-buttons {
                     grid-template-columns: 1fr 1fr;
                 }
-                
+
                 .alert-reminder-meta {
                     flex-direction: column;
                     gap: 0.5rem;

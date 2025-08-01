@@ -503,9 +503,10 @@
 
 <!-- Enhanced Smart Storage Dashboard Script -->
 <script type="module">
-    import { DashboardController } from '../js/DashboardController.js';
-    import { NotificationService } from '../js/NotificationService.js';
-    import { StorageFactory } from '../js/StorageFactory.js';
+    // FIXED: Correct import paths matching project structure
+    import { DashboardController } from '../pages/DashboardPage.js';
+    import { NotificationService } from '../core/services/NotificationService.js';
+    import { StorageFactory } from '../core/storage/StorageFactory.js';
 
     // Initialize smart storage dashboard
     const dashboard = new DashboardController();
@@ -538,7 +539,7 @@
         const stepsElement = document.getElementById('storageSteps');
         if (stepsElement && Array.isArray(steps)) {
             stepsElement.innerHTML = steps.map(step =>
-                '<div>${step.icon || '•'} ${step.message}</div>'
+                `<div>${step.icon || '•'} ${step.message}</div>`
             ).join('');
         }
     }
@@ -605,12 +606,12 @@
             const alertOptions = NotificationService.getAlertTimingOptions();
             freshPreview.innerHTML = selectedAlerts.map(value => {
                 const option = alertOptions.find(opt => opt.value === value);
-                return '
+                return `
                     <div class="alert-preview-item">
                         <span class="preview-icon">${option?.icon || '⏰'}</span>
-                        <span class="preview-text">${option?.label || '${value} minutes before'}</span>
+                        <span class="preview-text">${option?.label || `${value} minutes before`}</span>
                     </div>
-                ';
+                `;
             }).join('');
         };
 
@@ -682,10 +683,8 @@
         document.getElementById('headerDbInfoBtn')?.addEventListener('click', async () => {
             try {
                 showLoading('Getting storage information...', 'Analyzing storage health');
-                await dashboard.getDatabaseInfo().then(info => {
-                    hideLoading();
-                    dashboard._showDatabaseInfo();
-                });
+                await dashboard.showDatabaseInfo();
+                hideLoading();
             } catch (error) {
                 hideLoading();
                 console.error('Failed to get storage info:', error);
@@ -696,10 +695,8 @@
         document.getElementById('dbInfoBtn')?.addEventListener('click', async () => {
             try {
                 showLoading('Getting storage information...', 'Analyzing storage health');
-                await dashboard.getDatabaseInfo().then(info => {
-                    hideLoading();
-                    dashboard._showDatabaseInfo();
-                });
+                await dashboard.showDatabaseInfo();
+                hideLoading();
             } catch (error) {
                 hideLoading();
                 console.error('Failed to get storage info:', error);
@@ -734,7 +731,7 @@
         document.getElementById('clearDataBtn')?.addEventListener('click', async () => {
             const storageType = dashboard.getStorageType?.() || 'storage';
 
-            if (!confirm('⚠️ This will permanently delete ALL your reminders from ${storageType}. This cannot be undone!\n\nAre you absolutely sure?')) {
+            if (!confirm(`⚠️ This will permanently delete ALL your reminders from ${storageType}. This cannot be undone!\n\nAre you absolutely sure?`)) {
                 return;
             }
 
@@ -761,6 +758,25 @@
                 hideLoading();
                 console.error('Refresh failed:', error);
             }
+        });
+
+        // Add additional handlers
+        document.getElementById('addReminderBtn')?.addEventListener('click', () => {
+            document.getElementById('addReminderModal').style.display = 'flex';
+        });
+
+        document.getElementById('logoutBtn')?.addEventListener('click', () => {
+            dashboard.logout();
+        });
+
+        // Stat card click handlers
+        document.querySelectorAll('.clickable-stat').forEach(card => {
+            card.addEventListener('click', () => {
+                const filter = card.dataset.filter;
+                if (filter && dashboard.setFilter) {
+                    dashboard.setFilter(filter);
+                }
+            });
         });
     }
 
@@ -802,10 +818,10 @@
 
             // Enhanced error message with storage context
             const errorMsg = error.message.includes('Storage')
-                ? 'Storage system failed: ${error.message}\n\nThis may be due to browser restrictions or storage quota limits.'
-                : 'Failed to initialize dashboard: ${error.message}';
+                ? `Storage system failed: ${error.message}\n\nThis may be due to browser restrictions or storage quota limits.`
+                : `Failed to initialize dashboard: ${error.message}`;
 
-            alert('${errorMsg}\n\nPlease refresh the page to try again.');
+            alert(`${errorMsg}\n\nPlease refresh the page to try again.`);
         }
     }
 
@@ -815,7 +831,7 @@
             const report = await StorageFactory.getCapabilitiesReport();
 
             if (!report.capabilities.indexedDB?.available && !report.capabilities.localStorage?.available) {
-                document.body.innerHTML = '
+                document.body.innerHTML = `
                     <div style="
                         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
                         background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
@@ -836,7 +852,7 @@
                             </button>
                         </div>
                     </div>
-                ';
+                `;
                 return false;
             }
 
@@ -864,70 +880,3 @@
 
     console.log('📱 Smart storage dashboard script loaded');
 </script>
-
-<!-- Enhanced Fallback and Error Handling -->
-<script nomodule>
-    document.body.innerHTML = '
-        <div style="
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex; align-items: center; justify-content: center;
-            color: white; font-family: system-ui, sans-serif; text-align: center;
-        ">
-            <div>
-                <h1>🔄 Browser Update Required</h1>
-                <p>This smart storage application requires ES6 module support.</p>
-                <p>Please update your browser to continue.</p>
-                <div style="margin-top: 2rem;">
-                    <p><strong>Recommended browsers:</strong></p>
-                    <p>Chrome 61+, Firefox 60+, Safari 11+, Edge 16+</p>
-                </div>
-            </div>
-        </div>
-    ';
-</script>
-
-<!-- Enhanced Error Boundary -->
-<script>
-    window.addEventListener('error', (event) => {
-        console.error('Smart storage dashboard error:', event.error);
-
-        const errorDiv = document.createElement('div');
-        errorDiv.style.cssText = '
-            position: fixed; top: 20px; right: 20px; left: 20px;
-            background: #fee; border: 1px solid #fcc; color: #c66;
-            padding: 15px; border-radius: 5px; z-index: 10001;
-            font-family: system-ui, sans-serif; text-align: center;
-        ';
-
-        const isStorageError = event.error?.message?.includes('storage') ||
-            event.error?.message?.includes('IndexedDB') ||
-            event.error?.message?.includes('localStorage');
-
-        const errorType = isStorageError ? 'Smart Storage' : 'Dashboard';
-
-        errorDiv.innerHTML = '
-            <strong>⚠️ ${errorType} Error</strong><br>
-            ${event.error?.message || 'Something went wrong with the storage system'}<br>
-            <button onclick="window.location.reload()" style="margin-top: 10px; padding: 5px 10px;">
-                🔄 Refresh Page
-            </button>
-        ';
-        document.body.appendChild(errorDiv);
-    });
-
-    // Enhanced storage quota error handling
-    window.addEventListener('unhandledrejection', (event) => {
-        if (event.reason?.name === 'QuotaExceededError') {
-            alert('Storage quota exceeded! The system will attempt to clean up old data automatically.');
-            event.preventDefault();
-        }
-
-        if (event.reason?.message?.includes('storage') || event.reason?.message?.includes('IndexedDB')) {
-            console.error('Storage system error:', event.reason);
-            event.preventDefault();
-        }
-    });
-</script>
-</body>
-</html>

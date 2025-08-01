@@ -1,9 +1,10 @@
 /**
  * Enhanced NotificationService - Advanced notification system with configurable alert timing
  * Supports multiple alert schedules per reminder (5min, 15min, 30min, 1hr, 2hr, 1day, 2days before due)
+ * Fixed imports and added missing utility methods
  */
 
-import { EventEmitter } from '../utils/helpers.js';
+import { EventEmitter } from '../../utils/helpers.js';
 
 export class NotificationService extends EventEmitter {
     #scheduledNotifications = new Map(); // reminderId -> Set of timeoutIds

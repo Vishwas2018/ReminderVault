@@ -402,11 +402,11 @@
             if (!messageContainer) return;
 
             const messageElement = document.createElement('div');
-            messageElement.className = 'message ${type}';
-            messageElement.innerHTML = '
+            messageElement.className = `message ${type}`;
+            messageElement.innerHTML = `
             <span class="message-icon">${this.getMessageIcon(type)}</span>
             <span class="message-text">${this.escapeHtml(message)}</span>
-        ';
+        `;
 
             messageContainer.innerHTML = '';
             messageContainer.appendChild(messageElement);
@@ -437,12 +437,12 @@
             const errorElement = document.createElement('div');
             errorElement.className = 'field-error';
             errorElement.textContent = message;
-            errorElement.style.cssText = '
+            errorElement.style.cssText = `
             color: #EF4444;
             font-size: 0.875rem;
             margin-top: 0.25rem;
             font-weight: 500;
-        ';
+        `;
 
             field.parentNode.appendChild(errorElement);
         }
@@ -673,19 +673,19 @@
 
         // Show user-friendly error
         const errorDiv = document.createElement('div');
-        errorDiv.style.cssText = '
+        errorDiv.style.cssText = `
         position: fixed; top: 20px; left: 20px; right: 20px;
         background: #fee; border: 1px solid #fcc; color: #c66;
         padding: 15px; border-radius: 5px; z-index: 10001;
         font-family: system-ui, sans-serif;
-    ';
-        errorDiv.innerHTML = '
+    `;
+        errorDiv.innerHTML = `
         <strong>⚠️ Login Error</strong><br>
         Something went wrong. Please refresh the page.<br>
         <button onclick="window.location.reload()" style="margin-top: 10px; padding: 5px 10px;">
             🔄 Refresh Page
         </button>
-    ';
+    `;
         document.body.appendChild(errorDiv);
     });
 </script>

@@ -3,7 +3,7 @@
  * Provides consistent API across different storage implementations
  */
 
-import { StorageError, ERROR_CODES } from '../../types/interfaces.js';
+import { StorageError, ERROR_CODES } from '../../config/constants.js';
 
 export class StorageInterface {
   constructor() {

@@ -559,6 +559,47 @@ export class NotificationService extends EventEmitter {
         });
     }
 
+    #showRescheduleOptions(reminderId, popupId) {
+        const popup = document.querySelector(`[data-popup-id="${popupId}"] .alert-content`);
+        if (!popup) return;
+
+        popup.innerHTML = `
+            <div class="reschedule-header">
+                <div class="reschedule-title">📅 Reschedule Reminder</div>
+                <div class="reschedule-subtitle">Choose a new date and time</div>
+            </div>
+
+            <div class="reschedule-options">
+                <button class="reschedule-btn" data-hours="1">
+                    <span class="reschedule-icon">🕐</span>
+                    <span class="reschedule-time">1 hour later</span>
+                </button>
+                <button class="reschedule-btn" data-hours="24">
+                    <span class="reschedule-icon">📅</span>
+                    <span class="reschedule-time">Tomorrow</span>
+                </button>
+                <button class="reschedule-btn" data-hours="168">
+                    <span class="reschedule-icon">📅</span>
+                    <span class="reschedule-time">Next week</span>
+                </button>
+            </div>
+
+            <button class="alert-btn alert-btn-dismiss" data-action="cancel" style="width: 100%; margin-top: 1rem;">
+                ← Back to Alert
+            </button>
+        `;
+
+        popup.addEventListener('click', (e) => {
+            const hours = parseInt(e.target.closest('[data-hours]')?.dataset.hours);
+            if (hours) {
+                this.#emitEvent('reminder-reschedule', { reminderId, hours });
+                this.#closePopup(popupId);
+            } else if (e.target.dataset.action === 'cancel') {
+                this.#closePopup(popupId);
+            }
+        });
+    }
+
     #startCountdown(popupId, seconds) {
         const countdownElement = document.querySelector(`[data-popup-id="${popupId}"] .countdown`);
         if (!countdownElement) return;
@@ -899,14 +940,14 @@ export class NotificationService extends EventEmitter {
                 margin-bottom: 1.5rem;
             }
 
-            .snooze-title {
+            .snooze-title, .reschedule-title {
                 font-size: 1.2rem;
                 font-weight: 600;
                 color: #2c3e50;
                 margin-bottom: 0.5rem;
             }
 
-            .snooze-subtitle {
+            .snooze-subtitle, .reschedule-subtitle {
                 font-size: 0.9rem;
                 color: #666;
             }
@@ -925,13 +966,13 @@ export class NotificationService extends EventEmitter {
                 text-align: center;
             }
 
-            .snooze-buttons {
+            .snooze-buttons, .reschedule-options {
                 display: grid;
                 grid-template-columns: repeat(3, 1fr);
                 gap: 0.5rem;
             }
 
-            .snooze-btn {
+            .snooze-btn, .reschedule-btn {
                 display: flex;
                 flex-direction: column;
                 align-items: center;
@@ -945,18 +986,18 @@ export class NotificationService extends EventEmitter {
                 font-size: 0.85rem;
             }
 
-            .snooze-btn:hover {
+            .snooze-btn:hover, .reschedule-btn:hover {
                 border-color: #667eea;
                 background: #f8faff;
                 transform: translateY(-2px);
                 box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
             }
 
-            .snooze-icon {
+            .snooze-icon, .reschedule-icon {
                 font-size: 1.2rem;
             }
 
-            .snooze-time {
+            .snooze-time, .reschedule-time {
                 font-weight: 600;
                 color: #374151;
             }
@@ -997,7 +1038,7 @@ export class NotificationService extends EventEmitter {
                     grid-template-columns: 1fr;
                 }
 
-                .snooze-buttons {
+                .snooze-buttons, .reschedule-options {
                     grid-template-columns: 1fr 1fr;
                 }
             }

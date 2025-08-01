@@ -4,7 +4,7 @@
  */
 
 import { StorageInterface } from './StorageInterface.js';
-import { StorageError, ERROR_CODES } from '../../types/interfaces.js';
+import { StorageError, ERROR_CODES } from '../../config/constants.js';
 import { APP_CONFIG } from '../../config/constants.js';
 
 export class IndexedDBStorage extends StorageInterface {
@@ -51,7 +51,7 @@ export class IndexedDBStorage extends StorageInterface {
       request.onerror = () => {
         clearTimeout(timeoutId);
         reject(new StorageError(
-          'IndexedDB error: ${request.error?.message || 'Unknown error'}',
+          'IndexedDB error: ${request.error?.message || "Unknown error"}',
           ERROR_CODES.STORAGE_UNAVAILABLE
         ));
       };
@@ -152,7 +152,7 @@ export class IndexedDBStorage extends StorageInterface {
         if (!hasResolved) {
           hasResolved = true;
           reject(new StorageError(
-            'Transaction failed: ${transaction.error?.message || 'Unknown error'}',
+            'Transaction failed: ${transaction.error?.message || "Unknown error"}',
             ERROR_CODES.STORAGE_UNAVAILABLE
           ));
         }

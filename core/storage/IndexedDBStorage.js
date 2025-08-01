@@ -4,8 +4,8 @@
  */
 
 import { StorageInterface } from './StorageInterface.js';
-import { StorageError, ERROR_CODES } from '../../config/constants.js';
-import { APP_CONFIG } from '../../config/constants.js';
+import { StorageError } from '../types/interfaces.js';
+import { APP_CONFIG, ERROR_CODES } from '../../config/constants.js';
 
 export class IndexedDBStorage extends StorageInterface {
   constructor() {
@@ -25,8 +25,8 @@ export class IndexedDBStorage extends StorageInterface {
 
   static isSupported() {
     return 'indexedDB' in window &&
-           'IDBTransaction' in window &&
-           'IDBKeyRange' in window;
+        'IDBTransaction' in window &&
+        'IDBKeyRange' in window;
   }
 
   async initialize() {
@@ -51,8 +51,8 @@ export class IndexedDBStorage extends StorageInterface {
       request.onerror = () => {
         clearTimeout(timeoutId);
         reject(new StorageError(
-          'IndexedDB error: ${request.error?.message || "Unknown error"}',
-          ERROR_CODES.STORAGE_UNAVAILABLE
+            `IndexedDB error: ${request.error?.message || "Unknown error"}`,
+            ERROR_CODES.STORAGE_UNAVAILABLE
         ));
       };
 
@@ -69,7 +69,7 @@ export class IndexedDBStorage extends StorageInterface {
           this._createObjectStores(event.target.result);
         } catch (error) {
           clearTimeout(timeoutId);
-          reject(new StorageError('Database upgrade failed: ${error.message}', ERROR_CODES.STORAGE_UNAVAILABLE));
+          reject(new StorageError(`Database upgrade failed: ${error.message}`, ERROR_CODES.STORAGE_UNAVAILABLE));
         }
       };
     });
@@ -130,13 +130,13 @@ export class IndexedDBStorage extends StorageInterface {
       try {
         transaction = this.db.transaction(storeNames, mode);
       } catch (error) {
-        reject(new StorageError('Transaction creation failed: ${error.message}', ERROR_CODES.STORAGE_UNAVAILABLE));
+        reject(new StorageError(`Transaction creation failed: ${error.message}`, ERROR_CODES.STORAGE_UNAVAILABLE));
         return;
       }
 
       const stores = Array.isArray(storeNames)
-        ? storeNames.map(name => transaction.objectStore(name))
-        : transaction.objectStore(storeNames);
+          ? storeNames.map(name => transaction.objectStore(name))
+          : transaction.objectStore(storeNames);
 
       let operationResult;
       let hasResolved = false;
@@ -152,8 +152,8 @@ export class IndexedDBStorage extends StorageInterface {
         if (!hasResolved) {
           hasResolved = true;
           reject(new StorageError(
-            'Transaction failed: ${transaction.error?.message || "Unknown error"}',
-            ERROR_CODES.STORAGE_UNAVAILABLE
+              `Transaction failed: ${transaction.error?.message || "Unknown error"}`,
+              ERROR_CODES.STORAGE_UNAVAILABLE
           ));
         }
       };
@@ -175,7 +175,7 @@ export class IndexedDBStorage extends StorageInterface {
       } catch (error) {
         if (!hasResolved) {
           hasResolved = true;
-          reject(new StorageError('Operation failed: ${error.message}', ERROR_CODES.STORAGE_UNAVAILABLE));
+          reject(new StorageError(`Operation failed: ${error.message}`, ERROR_CODES.STORAGE_UNAVAILABLE));
         }
       }
     });
@@ -259,7 +259,7 @@ export class IndexedDBStorage extends StorageInterface {
 
     const existing = await this.getReminderById(id);
     if (!existing) {
-      throw new StorageError('Reminder with id ${id} not found', ERROR_CODES.NOT_FOUND);
+      throw new StorageError(`Reminder with id ${id} not found`, ERROR_CODES.NOT_FOUND);
     }
 
     const updatedReminder = {
@@ -394,9 +394,9 @@ export class IndexedDBStorage extends StorageInterface {
 
     // Import reminders in batches for better performance
     const results = await this.batchOperation(
-      reminders,
-      (reminder) => this.saveReminder({ ...reminder, userId, id: undefined }),
-      50
+        reminders,
+        (reminder) => this.saveReminder({ ...reminder, userId, id: undefined }),
+        50
     );
 
     // Import preferences if provided
@@ -477,7 +477,7 @@ export class IndexedDBStorage extends StorageInterface {
     const units = ['B', 'KB', 'MB', 'GB'];
     const index = Math.floor(Math.log(bytes) / Math.log(1024));
     const size = (bytes / Math.pow(1024, index)).toFixed(1);
-    return '${size} ${units[index]}';
+    return `${size} ${units[index]}`;
   }
 
   _gracefulClose() {

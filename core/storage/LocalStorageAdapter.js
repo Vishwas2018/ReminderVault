@@ -4,8 +4,8 @@
  */
 
 import { StorageInterface } from './StorageInterface.js';
-import { StorageError, ERROR_CODES } from '../../types/interfaces.js';
-import { APP_CONFIG } from '../../config/constants.js';
+import { StorageError } from '../../types/interfaces.js';
+import { APP_CONFIG, ERROR_CODES } from '../../config/constants.js';
 
 export class LocalStorageAdapter extends StorageInterface {
   constructor() {
@@ -105,7 +105,7 @@ export class LocalStorageAdapter extends StorageInterface {
       });
 
       this._setRawData(data);
-      console.log('Cleaned ${originalCount - data.reminders.length} old reminders to free space');
+      console.log(`Cleaned ${originalCount - data.reminders.length} old reminders to free space`);
     } catch (error) {
       console.error('Failed to clean storage:', error);
       throw new StorageError('Storage quota exceeded and cleanup failed', ERROR_CODES.QUOTA_EXCEEDED);
@@ -164,7 +164,7 @@ export class LocalStorageAdapter extends StorageInterface {
   async updateReminder(id, updates) {
     const existing = await this.getReminderById(id);
     if (!existing) {
-      throw new StorageError('Reminder with id ${id} not found', ERROR_CODES.NOT_FOUND);
+      throw new StorageError(`Reminder with id ${id} not found`, ERROR_CODES.NOT_FOUND);
     }
 
     const updatedReminder = {
@@ -272,7 +272,7 @@ export class LocalStorageAdapter extends StorageInterface {
       const data = localStorage.getItem(this.storageKey);
       const sizeBytes = new Blob([data || '']).size;
       const sizeKB = Math.round(sizeBytes / 1024);
-      return '${sizeKB} KB';
+      return `${sizeKB} KB`;
     } catch {
       return 'Unknown';
     }
@@ -300,9 +300,9 @@ export class LocalStorageAdapter extends StorageInterface {
 
     // Import reminders
     const results = await this.batchOperation(
-      reminders,
-      (reminder) => this.saveReminder({ ...reminder, userId, id: undefined }),
-      25 // Smaller batches for localStorage
+        reminders,
+        (reminder) => this.saveReminder({ ...reminder, userId, id: undefined }),
+        25 // Smaller batches for localStorage
     );
 
     // Import preferences
@@ -348,7 +348,7 @@ export class LocalStorageAdapter extends StorageInterface {
       size: storageSize,
       available: this.isAvailable,
       created: data?.created || 'Unknown',
-      maxSize: '${Math.round(this.maxStorageSize / 1024)} KB'
+      maxSize: `${Math.round(this.maxStorageSize / 1024)} KB`
     };
   }
 

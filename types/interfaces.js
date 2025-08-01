@@ -1,352 +1,356 @@
 /**
- * Type definitions and interfaces for Reminders Vault
- * Provides runtime type validation and interface definitions
+ * Storage Interface - Unified storage abstraction layer
+ * Provides consistent API across different storage implementations
  */
 
-import { REMINDER_CONFIG, ERROR_CODES } from '../config/constants.js';
+import { ERROR_CODES } from '../../config/constants.js';
+import { StorageError } from '../../types/interfaces.js';
 
-/**
- * Custom error classes for better error handling
- */
-export class ValidationError extends Error {
-    constructor(field, message, code = ERROR_CODES.VALIDATION_ERROR) {
-        super(message);
-        this.name = 'ValidationError';
-        this.field = field;
-        this.code = code;
-    }
-}
-
-export class StorageError extends Error {
-    constructor(message, code = ERROR_CODES.STORAGE_UNAVAILABLE, details = {}) {
-        super(message);
-        this.name = 'StorageError';
-        this.code = code;
-        this.details = details;
-    }
-}
-
-export class NetworkError extends Error {
-    constructor(message, code = ERROR_CODES.NETWORK_ERROR, status = null) {
-        super(message);
-        this.name = 'NetworkError';
-        this.code = code;
-        this.status = status;
-    }
-}
-
-/**
- * Type validation utilities
- */
-export const TypeValidators = {
-    isString: (value) => typeof value === 'string',
-    isNumber: (value) => typeof value === 'number' && !isNaN(value),
-    isBoolean: (value) => typeof value === 'boolean',
-    isObject: (value) => value !== null && typeof value === 'object' && !Array.isArray(value),
-    isArray: (value) => Array.isArray(value),
-    isDate: (value) => value instanceof Date && !isNaN(value.getTime()),
-    isValidDateString: (value) => typeof value === 'string' && !isNaN(Date.parse(value)),
-    isNonEmptyString: (value) => typeof value === 'string' && value.trim().length > 0,
-    isValidEmail: (value) => typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value),
-    isValidId: (value) => (typeof value === 'string' || typeof value === 'number') && value !== null && value !== undefined
-};
-
-/**
- * Reminder data structure validator
- */
-export const validateReminder = (reminder) => {
-    const errors = [];
-
-    // Required fields validation
-    if (!TypeValidators.isNonEmptyString(reminder?.title)) {
-        errors.push(new ValidationError('title', 'Title is required and must be a non-empty string'));
-    }
-
-    if (reminder?.title && reminder.title.length > 100) {
-        errors.push(new ValidationError('title', 'Title must be 100 characters or less'));
-    }
-
-    if (!TypeValidators.isValidDateString(reminder?.datetime)) {
-        errors.push(new ValidationError('datetime', 'Valid datetime is required'));
-    }
-
-    if (reminder?.datetime && new Date(reminder.datetime) <= new Date()) {
-        errors.push(new ValidationError('datetime', 'Datetime must be in the future'));
-    }
-
-    // Optional fields validation
-    if (reminder?.description && typeof reminder.description !== 'string') {
-        errors.push(new ValidationError('description', 'Description must be a string'));
-    }
-
-    if (reminder?.description && reminder.description.length > 500) {
-        errors.push(new ValidationError('description', 'Description must be 500 characters or less'));
-    }
-
-    if (reminder?.priority && !Object.values(REMINDER_CONFIG.priority).some(p => p.value === reminder.priority)) {
-        errors.push(new ValidationError('priority', 'Invalid priority value'));
-    }
-
-    if (reminder?.category && !Object.values(REMINDER_CONFIG.categories).includes(reminder.category)) {
-        errors.push(new ValidationError('category', 'Invalid category value'));
-    }
-
-    if (reminder?.alertTimings && !TypeValidators.isArray(reminder.alertTimings)) {
-        errors.push(new ValidationError('alertTimings', 'Alert timings must be an array'));
-    }
-
-    if (reminder?.alertTimings && reminder.alertTimings.some(timing => !TypeValidators.isNumber(timing) || timing <= 0)) {
-        errors.push(new ValidationError('alertTimings', 'All alert timings must be positive numbers'));
-    }
-
-    return {
-        isValid: errors.length === 0,
-        errors
-    };
-};
-
-/**
- * User data structure validator
- */
-export const validateUser = (user) => {
-    const errors = [];
-
-    if (!TypeValidators.isNonEmptyString(user?.username)) {
-        errors.push(new ValidationError('username', 'Username is required'));
-    }
-
-    if (user?.username && (user.username.length < 3 || user.username.length > 20)) {
-        errors.push(new ValidationError('username', 'Username must be between 3 and 20 characters'));
-    }
-
-    if (user?.username && !/^[a-zA-Z0-9_-]+$/.test(user.username)) {
-        errors.push(new ValidationError('username', 'Username can only contain letters, numbers, underscores, and hyphens'));
-    }
-
-    if (!TypeValidators.isNonEmptyString(user?.password)) {
-        errors.push(new ValidationError('password', 'Password is required'));
-    }
-
-    if (user?.password && user.password.length < 6) {
-        errors.push(new ValidationError('password', 'Password must be at least 6 characters'));
-    }
-
-    return {
-        isValid: errors.length === 0,
-        errors
-    };
-};
-
-/**
- * Storage service interface definition
- */
-export const StorageServiceInterface = {
-    // Core CRUD operations
-    saveReminder: 'function',
-    getReminders: 'function',
-    getReminderById: 'function',
-    updateReminder: 'function',
-    deleteReminder: 'function',
-    deleteRemindersByStatus: 'function',
-
-    // User preferences
-    saveUserPreferences: 'function',
-    getUserPreferences: 'function',
-
-    // Metadata operations
-    saveMetadata: 'function',
-    getMetadata: 'function',
-
-    // Analytics
-    getStatistics: 'function',
-
-    // Data export/import
-    exportAllData: 'function',
-    importData: 'function',
-
-    // Maintenance
-    clearUserData: 'function',
-    getDatabaseInfo: 'function',
-    close: 'function'
-};
-
-/**
- * Validate storage service implementation
- */
-export const validateStorageService = (service) => {
-    const missingMethods = [];
-
-    Object.entries(StorageServiceInterface).forEach(([method, expectedType]) => {
-        if (typeof service[method] !== expectedType) {
-            missingMethods.push(method);
+export class StorageInterface {
+    constructor() {
+        if (this.constructor === StorageInterface) {
+            throw new Error('StorageInterface is abstract and cannot be instantiated directly');
         }
-    });
-
-    if (missingMethods.length > 0) {
-        throw new Error('Storage service missing required methods: ${missingMethods.join(', ')}');
     }
 
-    return true;
-};
-
-/**
- * Reminder factory with validation
- */
-export const createReminder = (data, userId) => {
-    const validation = validateReminder(data);
-    if (!validation.isValid) {
-        throw validation.errors[0];
+    // Abstract methods that must be implemented by concrete classes
+    async saveReminder(reminderData) {
+        throw new Error('saveReminder method must be implemented');
     }
 
-    const timestamp = new Date().toISOString();
-
-    return {
-        id: data.id || null, // Will be assigned by storage
-        title: data.title.trim(),
-        description: data.description?.trim() || '',
-        datetime: data.datetime,
-        category: data.category || REMINDER_CONFIG.categories.PERSONAL,
-        priority: data.priority || REMINDER_CONFIG.priority.MEDIUM.value,
-        status: data.status || REMINDER_CONFIG.status.ACTIVE,
-        notification: data.notification !== false,
-        alertTimings: data.alertTimings || [5, 15],
-        userId,
-        createdAt: data.createdAt || timestamp,
-        updatedAt: timestamp
-    };
-};
-
-/**
- * User session factory with validation
- */
-export const createUserSession = (user, rememberMe = false) => {
-    const validation = validateUser(user);
-    if (!validation.isValid) {
-        throw validation.errors[0];
+    async getReminders(userId, filters = {}) {
+        throw new Error('getReminders method must be implemented');
     }
 
-    const now = new Date();
-    const sessionDuration = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+    async getReminderById(id) {
+        throw new Error('getReminderById method must be implemented');
+    }
 
-    return {
-        id: crypto.randomUUID ? crypto.randomUUID() : generateId(),
-        username: user.username,
-        role: user.role || 'user',
-        profile: { ...user.profile },
-        loginTime: now.toISOString(),
-        expiresAt: now.getTime() + sessionDuration,
-        rememberMe
-    };
-};
+    async updateReminder(id, updates) {
+        throw new Error('updateReminder method must be implemented');
+    }
 
-/**
- * Generate unique ID fallback
- */
-const generateId = () => {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
-};
+    async deleteReminder(id) {
+        throw new Error('deleteReminder method must be implemented');
+    }
 
-/**
- * API response structure
- */
-export const createApiResponse = (success, data = null, error = null, metadata = {}) => {
-    const response = {
-        success,
-        timestamp: new Date().toISOString(),
-        ...metadata
-    };
+    async deleteRemindersByStatus(userId, status) {
+        throw new Error('deleteRemindersByStatus method must be implemented');
+    }
 
-    if (success) {
-        response.data = data;
-    } else {
-        response.error = {
-            message: error?.message || 'Unknown error',
-            code: error?.code || ERROR_CODES.UNKNOWN_ERROR,
-            details: error?.details || {}
+    async saveUserPreferences(userId, preferences) {
+        throw new Error('saveUserPreferences method must be implemented');
+    }
+
+    async getUserPreferences(userId) {
+        throw new Error('getUserPreferences method must be implemented');
+    }
+
+    async saveMetadata(key, value) {
+        throw new Error('saveMetadata method must be implemented');
+    }
+
+    async getMetadata(key) {
+        throw new Error('getMetadata method must be implemented');
+    }
+
+    async getStatistics(userId) {
+        throw new Error('getStatistics method must be implemented');
+    }
+
+    async exportAllData(userId) {
+        throw new Error('exportAllData method must be implemented');
+    }
+
+    async importData(importData, userId) {
+        throw new Error('importData method must be implemented');
+    }
+
+    async clearUserData(userId) {
+        throw new Error('clearUserData method must be implemented');
+    }
+
+    async getDatabaseInfo() {
+        throw new Error('getDatabaseInfo method must be implemented');
+    }
+
+    async close() {
+        throw new Error('close method must be implemented');
+    }
+
+    // Common utility methods available to all implementations
+    generateId() {
+        return crypto.randomUUID ? crypto.randomUUID() : this._fallbackId();
+    }
+
+    _fallbackId() {
+        return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+    }
+
+    validateReminderId(id) {
+        if (!id || (typeof id !== 'string' && typeof id !== 'number')) {
+            throw new StorageError('Invalid reminder ID', ERROR_CODES.VALIDATION_ERROR);
+        }
+        return true;
+    }
+
+    validateUserId(userId) {
+        if (!userId || typeof userId !== 'string') {
+            throw new StorageError('Invalid user ID', ERROR_CODES.VALIDATION_ERROR);
+        }
+        return true;
+    }
+
+    calculateStatus(datetime) {
+        const now = new Date();
+        const reminderTime = new Date(datetime);
+
+        if (reminderTime <= now) {
+            return 'overdue';
+        }
+        return 'active';
+    }
+
+    processFilters(reminders, filters) {
+        let filtered = [...reminders];
+
+        // Status filter
+        if (filters.status) {
+            filtered = filtered.filter(r => r.status === filters.status);
+        }
+
+        // Category filter
+        if (filters.category) {
+            filtered = filtered.filter(r => r.category === filters.category);
+        }
+
+        // Priority filter
+        if (filters.priority) {
+            filtered = filtered.filter(r => r.priority === filters.priority);
+        }
+
+        // Date range filter
+        if (filters.dateFrom) {
+            const fromDate = new Date(filters.dateFrom);
+            filtered = filtered.filter(r => new Date(r.datetime) >= fromDate);
+        }
+
+        if (filters.dateTo) {
+            const toDate = new Date(filters.dateTo);
+            filtered = filtered.filter(r => new Date(r.datetime) <= toDate);
+        }
+
+        // Text search filter
+        if (filters.search) {
+            const searchTerm = filters.search.toLowerCase();
+            filtered = filtered.filter(r =>
+                r.title.toLowerCase().includes(searchTerm) ||
+                (r.description && r.description.toLowerCase().includes(searchTerm))
+            );
+        }
+
+        // Sort results
+        if (filters.sortBy) {
+            filtered = this.sortReminders(filtered, filters.sortBy, filters.sortDirection);
+        }
+
+        return filtered;
+    }
+
+    sortReminders(reminders, sortBy, direction = 'asc') {
+        const sortFunctions = {
+            datetime: (a, b) => new Date(a.datetime) - new Date(b.datetime),
+            priority: (a, b) => (b.priority || 2) - (a.priority || 2),
+            title: (a, b) => (a.title || '').localeCompare(b.title || ''),
+            created: (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+            updated: (a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0),
+            category: (a, b) => (a.category || '').localeCompare(b.category || ''),
+            status: (a, b) => (a.status || '').localeCompare(b.status || ''),
+            alerts: (a, b) => (b.alertTimings?.length || 0) - (a.alertTimings?.length || 0)
         };
+
+        const sortFn = sortFunctions[sortBy] || sortFunctions.datetime;
+        const sorted = [...reminders].sort(sortFn);
+
+        return direction === 'desc' ? sorted.reverse() : sorted;
     }
 
-    return response;
-};
+    async withTimeout(operation, timeoutMs = 15000) {
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new StorageError('Operation timed out', ERROR_CODES.TIMEOUT)), timeoutMs)
+        );
 
-/**
- * Type guards for runtime type checking
- */
-export const TypeGuards = {
-    isReminder: (obj) => {
-        return TypeValidators.isObject(obj) &&
-            TypeValidators.isNonEmptyString(obj.title) &&
-            TypeValidators.isValidDateString(obj.datetime) &&
-            Object.values(REMINDER_CONFIG.status).includes(obj.status);
-    },
+        return Promise.race([operation, timeoutPromise]);
+    }
 
-    isUser: (obj) => {
-        return TypeValidators.isObject(obj) &&
-            TypeValidators.isNonEmptyString(obj.username) &&
-            TypeValidators.isValidId(obj.id);
-    },
+    async withRetry(operation, maxAttempts = 3, delay = 1000) {
+        let lastError;
 
-    isUserSession: (obj) => {
-        return TypeValidators.isObject(obj) &&
-            TypeValidators.isNonEmptyString(obj.username) &&
-            TypeValidators.isValidId(obj.id) &&
-            TypeValidators.isValidDateString(obj.loginTime);
-    },
-
-    isStorageService: (obj) => {
-        try {
-            validateStorageService(obj);
-            return true;
-        } catch {
-            return false;
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                return await operation();
+            } catch (error) {
+                lastError = error;
+                if (attempt < maxAttempts) {
+                    await new Promise(resolve => setTimeout(resolve, delay * attempt));
+                }
+            }
         }
+
+        throw lastError;
     }
-};
 
-/**
- * Data sanitization utilities
- */
-export const DataSanitizers = {
-    sanitizeString: (str, maxLength = 1000) => {
-        if (!TypeValidators.isString(str)) return '';
-        return str.trim().substring(0, maxLength);
-    },
+    // Batch operations helper
+    async batchOperation(items, operation, batchSize = 50) {
+        const results = [];
 
-    sanitizeHtml: (str) => {
-        if (!TypeValidators.isString(str)) return '';
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
-    },
+        for (let i = 0; i < items.length; i += batchSize) {
+            const batch = items.slice(i, i + batchSize);
+            const batchPromises = batch.map(item => operation(item));
+            const batchResults = await Promise.allSettled(batchPromises);
+            results.push(...batchResults);
+        }
 
-    sanitizeReminder: (reminder) => {
-        if (!TypeValidators.isObject(reminder)) return null;
+        return results;
+    }
+
+    // Data validation helpers
+    validateReminderData(data) {
+        const errors = [];
+
+        if (!data.title || typeof data.title !== 'string' || data.title.trim().length === 0) {
+            errors.push('Title is required');
+        }
+
+        if (!data.datetime || isNaN(Date.parse(data.datetime))) {
+            errors.push('Valid datetime is required');
+        }
+
+        if (data.priority !== undefined && (typeof data.priority !== 'number' || data.priority < 1 || data.priority > 4)) {
+            errors.push('Priority must be between 1 and 4');
+        }
+
+        if (errors.length > 0) {
+            throw new StorageError(`Validation failed: ${errors.join(', ')}`, ERROR_CODES.VALIDATION_ERROR);
+        }
+
+        return true;
+    }
+
+    // Common statistics calculation
+    calculateStatistics(reminders) {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
 
         return {
-            ...reminder,
-            title: DataSanitizers.sanitizeString(reminder.title, 100),
-            description: DataSanitizers.sanitizeString(reminder.description, 500),
-            category: Object.values(REMINDER_CONFIG.categories).includes(reminder.category)
-                ? reminder.category
-                : REMINDER_CONFIG.categories.PERSONAL,
-            priority: Object.values(REMINDER_CONFIG.priority).some(p => p.value === reminder.priority)
-                ? reminder.priority
-                : REMINDER_CONFIG.priority.MEDIUM.value
+            total: reminders.length,
+            active: reminders.filter(r => r.status === 'active').length,
+            completed: reminders.filter(r => r.status === 'completed').length,
+            overdue: reminders.filter(r => r.status === 'overdue').length,
+            cancelled: reminders.filter(r => r.status === 'cancelled').length,
+            completedToday: reminders.filter(r =>
+                r.status === 'completed' &&
+                r.updatedAt &&
+                new Date(r.updatedAt) >= today &&
+                new Date(r.updatedAt) < tomorrow
+            ).length,
+            totalConfiguredAlerts: reminders.reduce((sum, r) => sum + (r.alertTimings?.length || 0), 0),
+            averageAlertsPerReminder: reminders.length > 0
+                ? Math.round((reminders.reduce((sum, r) => sum + (r.alertTimings?.length || 0), 0) / reminders.length) * 10) / 10
+                : 0,
+            categoryCounts: this._getCategoryCounts(reminders),
+            priorityCounts: this._getPriorityCounts(reminders)
         };
     }
-};
 
-export default {
-    ValidationError,
-    StorageError,
-    NetworkError,
-    TypeValidators,
-    TypeGuards,
-    DataSanitizers,
-    validateReminder,
-    validateUser,
-    validateStorageService,
-    createReminder,
-    createUserSession,
-    createApiResponse
-};
+    _getCategoryCounts(reminders) {
+        const counts = {};
+        reminders.forEach(reminder => {
+            const category = reminder.category || 'other';
+            counts[category] = (counts[category] || 0) + 1;
+        });
+        return counts;
+    }
+
+    _getPriorityCounts(reminders) {
+        const counts = { 1: 0, 2: 0, 3: 0, 4: 0 };
+        reminders.forEach(reminder => {
+            const priority = reminder.priority || 2;
+            counts[priority] = (counts[priority] || 0) + 1;
+        });
+        return counts;
+    }
+
+    // Export/Import helpers
+    prepareExportData(reminders, preferences, metadata = {}) {
+        return {
+            version: '2.0',
+            timestamp: new Date().toISOString(),
+            storageType: this.constructor.name,
+            data: {
+                reminders: reminders.map(r => ({
+                    ...r,
+                    exportedAt: new Date().toISOString()
+                })),
+                preferences,
+                metadata
+            },
+            statistics: this.calculateStatistics(reminders)
+        };
+    }
+
+    validateImportData(importData) {
+        if (!importData || typeof importData !== 'object') {
+            throw new StorageError('Invalid import data format', ERROR_CODES.VALIDATION_ERROR);
+        }
+
+        if (!importData.data || !Array.isArray(importData.data.reminders)) {
+            throw new StorageError('Import data must contain reminders array', ERROR_CODES.VALIDATION_ERROR);
+        }
+
+        // Validate each reminder
+        importData.data.reminders.forEach((reminder, index) => {
+            try {
+                this.validateReminderData(reminder);
+            } catch (error) {
+                throw new StorageError(
+                    `Invalid reminder at index ${index}: ${error.message}`,
+                    ERROR_CODES.VALIDATION_ERROR
+                );
+            }
+        });
+
+        return true;
+    }
+
+    // Connection health check
+    async healthCheck() {
+        try {
+            // Basic operation test
+            const testData = {
+                title: 'Health Check Test',
+                datetime: new Date().toISOString(),
+                userId: 'health_check'
+            };
+
+            const saved = await this.saveReminder(testData);
+            await this.getReminderById(saved.id);
+            await this.deleteReminder(saved.id);
+
+            return {
+                healthy: true,
+                timestamp: new Date().toISOString(),
+                storageType: this.constructor.name
+            };
+        } catch (error) {
+            return {
+                healthy: false,
+                error: error.message,
+                timestamp: new Date().toISOString(),
+                storageType: this.constructor.name
+            };
+        }
+    }
+}

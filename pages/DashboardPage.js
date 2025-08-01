@@ -5,6 +5,7 @@
 
 import { NotificationService } from '../core/services/NotificationService.js';
 import { StorageFactory } from '../core/storage/StorageFactory.js';
+import { DateUtils, StringUtils, AsyncUtils, BrowserUtils } from '../utils/helpers.js';
 
 export class DashboardController {
     // Core data state
@@ -594,10 +595,10 @@ export class DashboardController {
                 <div class="reminder-status ${reminder.status}"></div>
                 <div class="reminder-content">
                     <div class="reminder-title">
-                        ${priorityIcon} ${this.#escapeHtml(reminder.title)}
+                        ${priorityIcon} ${StringUtils.escapeHtml(reminder.title)}
                     </div>
                     <div class="reminder-time">${formattedTime}</div>
-                    ${reminder.description ? `<div class="reminder-description">${this.#escapeHtml(reminder.description)}</div>` : ''}
+                    ${reminder.description ? `<div class="reminder-description">${StringUtils.escapeHtml(reminder.description)}</div>` : ''}
                 </div>
                 <div class="reminder-actions">
                     ${reminder.status === DashboardController.CONFIG.REMINDER_STATUS.ACTIVE ? `
@@ -636,8 +637,8 @@ export class DashboardController {
             <div class="schedule-item">
                 <div class="schedule-time">${item.time}</div>
                 <div class="schedule-content">
-                    <div class="schedule-title">${this.#escapeHtml(item.title)}</div>
-                    <div class="schedule-description">${this.#escapeHtml(item.description)}</div>
+                    <div class="schedule-title">${StringUtils.escapeHtml(item.title)}</div>
+                    <div class="schedule-description">${StringUtils.escapeHtml(item.description)}</div>
                 </div>
             </div>
         `).join('');
@@ -822,7 +823,10 @@ export class DashboardController {
 
     #setLoadingState(isLoading) {
         this.#state.isLoading = isLoading;
-        // Additional loading state UI updates can be added here
+        const overlay = document.getElementById('loadingOverlay');
+        if (overlay) {
+            overlay.style.display = isLoading ? 'flex' : 'none';
+        }
     }
 
     #showStorageError(error) {
@@ -878,4 +882,328 @@ export class DashboardController {
             throw new Error('Date and time is required');
         }
         if (new Date(data.datetime) <= new Date()) {
-            throw new Error('
+            throw new Error('Date and time must be in the future');
+        }
+    }
+
+    #generateId() {
+        return StringUtils.generateUUID();
+    }
+
+    #showNotification(message, type = 'info') {
+        // Use the notification system from components
+        if (window.showNotification) {
+            window.showNotification(message, type);
+        } else {
+            // Fallback to alert
+            alert(`${type.toUpperCase()}: ${message}`);
+        }
+    }
+
+    #updateStorageIndicator() {
+        const indicator = document.getElementById('storageIndicator');
+        if (!indicator) return;
+
+        indicator.textContent = `💾 ${this.#state.storageType}`;
+        indicator.className = `storage-indicator ${this.#state.storageType.toLowerCase()}`;
+
+        // Update storage info section
+        const storageTitle = document.getElementById('storageTitle');
+        const storageDescription = document.getElementById('storageDescription');
+
+        if (storageTitle) {
+            storageTitle.textContent = `${this.#state.storageType} Storage Active`;
+        }
+
+        if (storageDescription) {
+            const descriptions = {
+                'IndexedDB': 'Using browser IndexedDB for optimal performance and large storage capacity.',
+                'localStorage': 'Using localStorage fallback for compatibility. Limited storage capacity.',
+                'Memory': 'Using memory storage. Data will be lost when you close this tab.',
+                'Unknown': 'Storage type could not be determined.'
+            };
+            storageDescription.textContent = descriptions[this.#state.storageType] || descriptions['Unknown'];
+        }
+
+        // Show warning for memory storage
+        const storageWarning = document.getElementById('storageWarning');
+        if (storageWarning) {
+            if (this.#state.storageType === 'Memory') {
+                storageWarning.classList.add('show');
+            } else {
+                storageWarning.classList.remove('show');
+            }
+        }
+    }
+
+    async #getNotificationStats() {
+        try {
+            return this.#notificationService?.getNotificationStats() || {
+                totalScheduled: 0,
+                activeReminders: 0,
+                alertHistory: 0,
+                permissionState: 'unknown'
+            };
+        } catch (error) {
+            console.warn('Failed to get notification stats:', error);
+            return { error: error.message };
+        }
+    }
+
+    #formatDatabaseInfoMessage(dbInfo, notificationStats) {
+        let message = `📊 Storage Information\n\n`;
+
+        message += `Type: ${dbInfo.type || 'Unknown'}\n`;
+        message += `Name: ${dbInfo.name || 'Unknown'}\n`;
+
+        if (dbInfo.version) {
+            message += `Version: ${dbInfo.version}\n`;
+        }
+
+        if (dbInfo.size) {
+            message += `Size: ${dbInfo.size}\n`;
+        }
+
+        if (dbInfo.storageEstimate) {
+            message += `\nStorage Usage:\n`;
+            message += `• Used: ${dbInfo.storageEstimate.usage}\n`;
+            message += `• Available: ${dbInfo.storageEstimate.available}\n`;
+            message += `• Usage: ${dbInfo.storageEstimate.usagePercentage}%\n`;
+        }
+
+        message += `\n🔔 Notification System:\n`;
+        message += `• Scheduled Alerts: ${notificationStats.totalScheduled || 0}\n`;
+        message += `• Active Reminders: ${notificationStats.activeReminders || 0}\n`;
+        message += `• Permission: ${notificationStats.permissionState || 'unknown'}\n`;
+
+        message += `\n📈 Current Session:\n`;
+        message += `• Total Reminders: ${this.#reminders.length}\n`;
+        message += `• Last Sync: ${this.#state.lastSync ? DateUtils.formatDate(this.#state.lastSync) : 'Never'}\n`;
+
+        return message;
+    }
+
+    #enhanceExportData(exportData) {
+        exportData.metadata = {
+            ...exportData.metadata,
+            exportedBy: this.#getCurrentUserId(),
+            storageType: this.#state.storageType,
+            browserInfo: {
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language
+            },
+            totalReminders: this.#reminders.length,
+            activeReminders: this.#reminders.filter(r => r.status === 'active').length
+        };
+    }
+
+    #downloadAsFile(data, format = 'json') {
+        const timestamp = new Date().toISOString().split('T')[0];
+        const filename = `reminders-vault-backup-${timestamp}.${format}`;
+
+        let content, mimeType;
+
+        if (format === 'json') {
+            content = JSON.stringify(data, null, 2);
+            mimeType = 'application/json';
+        } else if (format === 'csv') {
+            content = this.#convertToCSV(data.data.reminders);
+            mimeType = 'text/csv';
+        }
+
+        BrowserUtils.downloadFile(content, filename, mimeType);
+    }
+
+    #convertToCSV(reminders) {
+        if (!reminders || reminders.length === 0) return '';
+
+        const headers = ['Title', 'Description', 'DateTime', 'Category', 'Priority', 'Status', 'Created'];
+        const rows = reminders.map(r => [
+            r.title || '',
+            r.description || '',
+            r.datetime || '',
+            r.category || '',
+            r.priority || '',
+            r.status || '',
+            r.createdAt || ''
+        ]);
+
+        return [headers, ...rows].map(row =>
+            row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')
+        ).join('\n');
+    }
+
+    async #selectImportFile() {
+        return new Promise((resolve) => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json,.csv';
+
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                resolve(file);
+            };
+
+            input.oncancel = () => resolve(null);
+            input.click();
+        });
+    }
+
+    async #parseImportFile(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                try {
+                    const content = e.target.result;
+                    const data = JSON.parse(content);
+                    resolve(data);
+                } catch (error) {
+                    reject(new Error(`Failed to parse import file: ${error.message}`));
+                }
+            };
+
+            reader.onerror = () => reject(new Error('Failed to read file'));
+            reader.readAsText(file);
+        });
+    }
+
+    #validateImportData(data) {
+        if (!data || typeof data !== 'object') {
+            throw new Error('Invalid import file format');
+        }
+
+        if (!data.data || !Array.isArray(data.data.reminders)) {
+            throw new Error('Import file must contain reminders array');
+        }
+
+        // Basic validation of reminder structure
+        data.data.reminders.forEach((reminder, index) => {
+            if (!reminder.title) {
+                throw new Error(`Reminder at index ${index} is missing title`);
+            }
+            if (!reminder.datetime) {
+                throw new Error(`Reminder at index ${index} is missing datetime`);
+            }
+        });
+    }
+
+    #createTestReminder() {
+        return {
+            id: this.#generateId(),
+            title: 'Test Notification System',
+            description: 'This is a test reminder to verify the notification system is working correctly.',
+            datetime: new Date(Date.now() + 5 * 60 * 1000).toISOString(), // 5 minutes from now
+            category: 'personal',
+            priority: 3,
+            status: 'active',
+            notification: true,
+            alertTimings: [1, 2, 5], // 1, 2, and 5 minutes before
+            userId: this.#getCurrentUserId(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+    }
+
+    #formatDuration(minutes) {
+        if (minutes < 60) {
+            return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+        }
+
+        const hours = Math.floor(minutes / 60);
+        const remainingMinutes = minutes % 60;
+
+        if (remainingMinutes === 0) {
+            return `${hours} hour${hours !== 1 ? 's' : ''}`;
+        }
+
+        return `${hours}h ${remainingMinutes}m`;
+    }
+
+    #getPriorityIcon(priority) {
+        const icons = {
+            1: '🔵', // Low
+            2: '🟡', // Medium
+            3: '🟠', // High
+            4: '🔴'  // Urgent
+        };
+        return icons[priority] || '⚪';
+    }
+
+    #getStatusClass(status) {
+        return `status-${status}`;
+    }
+
+    #formatDateTime(datetime) {
+        return DateUtils.formatDate(datetime);
+    }
+
+    #updateElementText(elementId, text) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.textContent = text;
+        }
+    }
+
+    #capitalizeFirst(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    #updateDateTime() {
+        this.#updateCurrentDateTime();
+    }
+
+    #showAddReminderModal() {
+        const modal = document.getElementById('addReminderModal');
+        if (modal) {
+            modal.style.display = 'flex';
+        }
+    }
+
+    // Public method for debugging and testing
+    debug() {
+        return {
+            reminders: this.#reminders.length,
+            filteredReminders: this.#state.filteredReminders.length,
+            currentFilter: this.#state.currentFilter,
+            sortBy: this.#state.sortBy,
+            storageType: this.#state.storageType,
+            currentUser: this.#currentUser,
+            lastSync: this.#state.lastSync,
+            notificationService: !!this.#notificationService,
+            storageService: !!this.#storageService
+        };
+    }
+
+    // Health check method
+    async healthCheck() {
+        const health = {
+            timestamp: new Date().toISOString(),
+            dashboard: true,
+            storage: false,
+            notifications: false,
+            errors: []
+        };
+
+        try {
+            if (this.#storageService) {
+                const storageHealth = await this.#storageService.getDatabaseInfo();
+                health.storage = !!storageHealth;
+            }
+        } catch (error) {
+            health.errors.push(`Storage: ${error.message}`);
+        }
+
+        try {
+            if (this.#notificationService) {
+                const notifStats = await this.#getNotificationStats();
+                health.notifications = !notifStats.error;
+            }
+        } catch (error) {
+            health.errors.push(`Notifications: ${error.message}`);
+        }
+
+        return health;
+    }
+}

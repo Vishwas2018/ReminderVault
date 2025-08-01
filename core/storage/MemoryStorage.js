@@ -4,7 +4,8 @@
  */
 
 import { StorageInterface } from './StorageInterface.js';
-import { StorageError, ERROR_CODES } from '../../types/interfaces.js';
+import { StorageError } from '../../types/interfaces.js';
+import { ERROR_CODES } from '../../config/constants.js';
 
 export class MemoryStorage extends StorageInterface {
   constructor() {
@@ -64,7 +65,7 @@ export class MemoryStorage extends StorageInterface {
   async updateReminder(id, updates) {
     const existing = await this.getReminderById(id);
     if (!existing) {
-      throw new StorageError('Reminder ${id} not found', ERROR_CODES.NOT_FOUND);
+      throw new StorageError(`Reminder ${id} not found`, ERROR_CODES.NOT_FOUND);
     }
 
     return this.saveReminder({ ...existing, ...updates, id });
@@ -150,9 +151,9 @@ export class MemoryStorage extends StorageInterface {
     const { reminders = [], preferences = null } = importData.data;
 
     const results = await Promise.allSettled(
-      reminders.map(reminder =>
-        this.saveReminder({ ...reminder, userId, id: undefined })
-      )
+        reminders.map(reminder =>
+            this.saveReminder({ ...reminder, userId, id: undefined })
+        )
     );
 
     if (preferences) {
@@ -180,7 +181,7 @@ export class MemoryStorage extends StorageInterface {
       name: 'Memory Storage',
       type: 'Emergency Fallback',
       persistent: false,
-      size: '${dataSize} bytes',
+      size: `${dataSize} bytes`,
       itemCount: this.data.reminders.length,
       warning: 'Data will be lost on page refresh'
     };

@@ -3,7 +3,7 @@
  * Provides consistent API across different storage implementations
  */
 
-import { StorageError, ERROR_CODES } from '../../config/constants.js';
+import { StorageError, ERROR_CODES } from '../../types/interfaces.js';
 
 export class StorageInterface {
   constructor() {
@@ -143,8 +143,8 @@ export class StorageInterface {
     if (filters.search) {
       const searchTerm = filters.search.toLowerCase();
       filtered = filtered.filter(r =>
-        r.title.toLowerCase().includes(searchTerm) ||
-        (r.description && r.description.toLowerCase().includes(searchTerm))
+          r.title.toLowerCase().includes(searchTerm) ||
+          (r.description && r.description.toLowerCase().includes(searchTerm))
       );
     }
 
@@ -176,7 +176,7 @@ export class StorageInterface {
 
   async withTimeout(operation, timeoutMs = 15000) {
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new StorageError('Operation timed out', ERROR_CODES.TIMEOUT)), timeoutMs)
+        setTimeout(() => reject(new StorageError('Operation timed out', ERROR_CODES.TIMEOUT)), timeoutMs)
     );
 
     return Promise.race([operation, timeoutPromise]);
@@ -230,7 +230,7 @@ export class StorageInterface {
     }
 
     if (errors.length > 0) {
-      throw new StorageError('Validation failed: ${errors.join(', ')}', ERROR_CODES.VALIDATION_ERROR);
+      throw new StorageError(`Validation failed: ${errors.join(', ')}`, ERROR_CODES.VALIDATION_ERROR);
     }
 
     return true;
@@ -250,15 +250,15 @@ export class StorageInterface {
       overdue: reminders.filter(r => r.status === 'overdue').length,
       cancelled: reminders.filter(r => r.status === 'cancelled').length,
       completedToday: reminders.filter(r =>
-        r.status === 'completed' &&
-        r.updatedAt &&
-        new Date(r.updatedAt) >= today &&
-        new Date(r.updatedAt) < tomorrow
+          r.status === 'completed' &&
+          r.updatedAt &&
+          new Date(r.updatedAt) >= today &&
+          new Date(r.updatedAt) < tomorrow
       ).length,
       totalConfiguredAlerts: reminders.reduce((sum, r) => sum + (r.alertTimings?.length || 0), 0),
       averageAlertsPerReminder: reminders.length > 0
-        ? Math.round((reminders.reduce((sum, r) => sum + (r.alertTimings?.length || 0), 0) / reminders.length) * 10) / 10
-        : 0,
+          ? Math.round((reminders.reduce((sum, r) => sum + (r.alertTimings?.length || 0), 0) / reminders.length) * 10) / 10
+          : 0,
       categoryCounts: this._getCategoryCounts(reminders),
       priorityCounts: this._getPriorityCounts(reminders)
     };
@@ -315,8 +315,8 @@ export class StorageInterface {
         this.validateReminderData(reminder);
       } catch (error) {
         throw new StorageError(
-          'Invalid reminder at index ${index}: ${error.message}',
-          ERROR_CODES.VALIDATION_ERROR
+            `Invalid reminder at index ${index}: ${error.message}`,
+            ERROR_CODES.VALIDATION_ERROR
         );
       }
     });

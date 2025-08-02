@@ -1,18 +1,22 @@
 /**
- * LocalStorage Adapter - Fallback storage for when IndexedDB is unavailable
- * Provides the same interface as IndexedDB but uses localStorage
+ * LocalStorage Adapter - Fallback storage implementation
+ * Provides IndexedDB-compatible interface using localStorage
  */
 
 import { StorageInterface } from './StorageInterface.js';
-import { StorageError } from '../../types/interfaces.js';
-import { APP_CONFIG, ERROR_CODES } from '../../config/constants.js';
+import { StorageError, ERROR_CODES } from '../../types/interfaces.js';
+import { APP_CONFIG } from '../../config/constants.js';
 
 export class LocalStorageAdapter extends StorageInterface {
+  #storageKey = null;
+  #maxStorageSize = null;
+  #isAvailable = false;
+
   constructor() {
     super();
-    this.storageKey = 'reminders_vault_data';
-    this.maxStorageSize = APP_CONFIG.storage.maxStorageSize;
-    this.isAvailable = this._checkAvailability();
+    this.#storageKey = 'reminders_vault_data';
+    this.#maxStorageSize = APP_CONFIG.storage.maxStorageSize || 5 * 1024 * 1024; // 5MB default
+    this.#isAvailable = this.#checkAvailability();
   }
 
   static isSupported() {
@@ -26,39 +30,70 @@ export class LocalStorageAdapter extends StorageInterface {
     }
   }
 
-  _checkAvailability() {
-    return LocalStorageAdapter.isSupported();
+  #checkAvailability() {
+    if (!LocalStorageAdapter.isSupported()) {
+      return false;
+    }
+
+    try {
+      // Test actual write capability
+      const testKey = '__availability_test__';
+      const testData = { test: true, timestamp: Date.now() };
+      localStorage.setItem(testKey, JSON.stringify(testData));
+
+      const retrieved = JSON.parse(localStorage.getItem(testKey) || '{}');
+      localStorage.removeItem(testKey);
+
+      return retrieved.test === true;
+    } catch {
+      return false;
+    }
   }
 
   async initialize() {
-    if (!this.isAvailable) {
-      throw new StorageError('localStorage not available', ERROR_CODES.STORAGE_UNAVAILABLE);
+    if (!this.#isAvailable) {
+      throw new StorageError(
+          'localStorage not available or accessible',
+          ERROR_CODES.STORAGE_UNAVAILABLE
+      );
     }
 
-    // Ensure data structure exists
-    const existingData = this._getRawData();
-    if (!existingData) {
-      await this._createInitialStructure();
+    // Ensure data structure exists and is valid
+    const existingData = this.#getRawData();
+    if (!existingData || !this.#validateDataStructure(existingData)) {
+      await this.#createInitialStructure();
     }
 
+    console.log('📦 localStorage adapter initialized');
     return true;
   }
 
-  async _createInitialStructure() {
-    const initialData = {
-      version: 1,
-      created: new Date().toISOString(),
-      reminders: [],
-      userPreferences: {},
-      metadata: {}
-    };
-
-    this._setRawData(initialData);
+  #validateDataStructure(data) {
+    return data &&
+        typeof data === 'object' &&
+        Array.isArray(data.reminders) &&
+        typeof data.userPreferences === 'object' &&
+        typeof data.metadata === 'object';
   }
 
-  _getRawData() {
+  async #createInitialStructure() {
+    const initialData = {
+      version: 2,
+      created: new Date().toISOString(),
+      lastModified: new Date().toISOString(),
+      reminders: [],
+      userPreferences: {},
+      metadata: {},
+      schemaVersion: '2.0'
+    };
+
+    this.#setRawData(initialData);
+    console.log('🏗️ localStorage structure initialized');
+  }
+
+  #getRawData() {
     try {
-      const data = localStorage.getItem(this.storageKey);
+      const data = localStorage.getItem(this.#storageKey);
       return data ? JSON.parse(data) : null;
     } catch (error) {
       console.error('Failed to parse localStorage data:', error);
@@ -66,33 +101,40 @@ export class LocalStorageAdapter extends StorageInterface {
     }
   }
 
-  _setRawData(data) {
+  #setRawData(data) {
     try {
       const serialized = JSON.stringify(data);
 
-      if (serialized.length > this.maxStorageSize) {
-        throw new StorageError('Data exceeds localStorage size limit', ERROR_CODES.QUOTA_EXCEEDED);
+      // Check size before saving
+      if (serialized.length > this.#maxStorageSize) {
+        throw new StorageError(
+            'Data exceeds localStorage size limit',
+            ERROR_CODES.QUOTA_EXCEEDED
+        );
       }
 
-      localStorage.setItem(this.storageKey, serialized);
+      localStorage.setItem(this.#storageKey, serialized);
       return true;
     } catch (error) {
       if (error.name === 'QuotaExceededError' || error.code === ERROR_CODES.QUOTA_EXCEEDED) {
-        this._handleQuotaExceeded();
-        // Try again after cleanup
-        localStorage.setItem(this.storageKey, JSON.stringify(data));
+        this.#handleQuotaExceeded(data);
         return true;
       }
-      throw error;
+      throw new StorageError(
+          `Failed to save to localStorage: ${error.message}`,
+          ERROR_CODES.STORAGE_UNAVAILABLE
+      );
     }
   }
 
-  _handleQuotaExceeded() {
+  #handleQuotaExceeded(newData) {
     try {
-      const data = this._getRawData();
-      if (!data?.reminders) return;
+      const data = this.#getRawData();
+      if (!data?.reminders) {
+        throw new StorageError('Cannot free space: invalid data structure');
+      }
 
-      // Remove completed reminders older than 30 days
+      // Clean up old completed reminders (older than 30 days)
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - 30);
 
@@ -104,11 +146,22 @@ export class LocalStorageAdapter extends StorageInterface {
         return true;
       });
 
-      this._setRawData(data);
-      console.log(`Cleaned ${originalCount - data.reminders.length} old reminders to free space`);
+      const cleanedCount = originalCount - data.reminders.length;
+
+      if (cleanedCount > 0) {
+        console.log(`🧹 Cleaned ${cleanedCount} old completed reminders to free space`);
+        this.#setRawData(newData);
+      } else {
+        throw new StorageError(
+            'Storage quota exceeded and no old data to clean',
+            ERROR_CODES.QUOTA_EXCEEDED
+        );
+      }
     } catch (error) {
-      console.error('Failed to clean storage:', error);
-      throw new StorageError('Storage quota exceeded and cleanup failed', ERROR_CODES.QUOTA_EXCEEDED);
+      throw new StorageError(
+          'Storage quota exceeded and cleanup failed',
+          ERROR_CODES.QUOTA_EXCEEDED
+      );
     }
   }
 
@@ -117,8 +170,10 @@ export class LocalStorageAdapter extends StorageInterface {
     await this.initialize();
     this.validateReminderData(reminderData);
 
-    const data = this._getRawData();
-    if (!data) throw new StorageError('Storage data corrupted', ERROR_CODES.STORAGE_UNAVAILABLE);
+    const data = this.#getRawData();
+    if (!data) {
+      throw new StorageError('Storage data corrupted', ERROR_CODES.STORAGE_UNAVAILABLE);
+    }
 
     const timestamp = new Date().toISOString();
     const reminder = {
@@ -136,7 +191,8 @@ export class LocalStorageAdapter extends StorageInterface {
       data.reminders.push(reminder);
     }
 
-    this._setRawData(data);
+    data.lastModified = timestamp;
+    this.#setRawData(data);
     return reminder;
   }
 
@@ -144,7 +200,7 @@ export class LocalStorageAdapter extends StorageInterface {
     await this.initialize();
     this.validateUserId(userId);
 
-    const data = this._getRawData();
+    const data = this.#getRawData();
     if (!data?.reminders) return [];
 
     let reminders = data.reminders.filter(reminder => reminder.userId === userId);
@@ -155,7 +211,7 @@ export class LocalStorageAdapter extends StorageInterface {
     await this.initialize();
     this.validateReminderId(id);
 
-    const data = this._getRawData();
+    const data = this.#getRawData();
     if (!data?.reminders) return null;
 
     return data.reminders.find(reminder => reminder.id === id) || null;
@@ -181,14 +237,15 @@ export class LocalStorageAdapter extends StorageInterface {
     await this.initialize();
     this.validateReminderId(id);
 
-    const data = this._getRawData();
+    const data = this.#getRawData();
     if (!data?.reminders) return false;
 
     const initialLength = data.reminders.length;
     data.reminders = data.reminders.filter(reminder => reminder.id !== id);
 
     if (data.reminders.length < initialLength) {
-      this._setRawData(data);
+      data.lastModified = new Date().toISOString();
+      this.#setRawData(data);
       return true;
     }
 
@@ -199,8 +256,8 @@ export class LocalStorageAdapter extends StorageInterface {
     const reminders = await this.getReminders(userId, { status });
     const deletePromises = reminders.map(r => this.deleteReminder(r.id));
 
-    await Promise.all(deletePromises);
-    return reminders.length;
+    const results = await Promise.allSettled(deletePromises);
+    return results.filter(r => r.status === 'fulfilled').length;
   }
 
   // User preferences
@@ -208,8 +265,10 @@ export class LocalStorageAdapter extends StorageInterface {
     await this.initialize();
     this.validateUserId(userId);
 
-    const data = this._getRawData();
-    if (!data) throw new StorageError('Storage data corrupted', ERROR_CODES.STORAGE_UNAVAILABLE);
+    const data = this.#getRawData();
+    if (!data) {
+      throw new StorageError('Storage data corrupted', ERROR_CODES.STORAGE_UNAVAILABLE);
+    }
 
     data.userPreferences[userId] = {
       ...preferences,
@@ -217,7 +276,8 @@ export class LocalStorageAdapter extends StorageInterface {
       updatedAt: new Date().toISOString()
     };
 
-    this._setRawData(data);
+    data.lastModified = new Date().toISOString();
+    this.#setRawData(data);
     return data.userPreferences[userId];
   }
 
@@ -225,7 +285,7 @@ export class LocalStorageAdapter extends StorageInterface {
     await this.initialize();
     this.validateUserId(userId);
 
-    const data = this._getRawData();
+    const data = this.#getRawData();
     return data?.userPreferences?.[userId] || null;
   }
 
@@ -233,8 +293,10 @@ export class LocalStorageAdapter extends StorageInterface {
   async saveMetadata(key, value) {
     await this.initialize();
 
-    const data = this._getRawData();
-    if (!data) throw new StorageError('Storage data corrupted', ERROR_CODES.STORAGE_UNAVAILABLE);
+    const data = this.#getRawData();
+    if (!data) {
+      throw new StorageError('Storage data corrupted', ERROR_CODES.STORAGE_UNAVAILABLE);
+    }
 
     data.metadata[key] = {
       key,
@@ -242,14 +304,15 @@ export class LocalStorageAdapter extends StorageInterface {
       timestamp: new Date().toISOString()
     };
 
-    this._setRawData(data);
+    data.lastModified = new Date().toISOString();
+    this.#setRawData(data);
     return data.metadata[key];
   }
 
   async getMetadata(key) {
     await this.initialize();
 
-    const data = this._getRawData();
+    const data = this.#getRawData();
     const metadata = data?.metadata?.[key];
     return metadata ? metadata.value : null;
   }
@@ -259,22 +322,31 @@ export class LocalStorageAdapter extends StorageInterface {
     const reminders = await this.getReminders(userId);
     const baseStats = this.calculateStatistics(reminders);
 
+    const storageInfo = this.#getStorageInfo();
+
     return {
       ...baseStats,
       storageType: 'localStorage',
-      storageSize: this._getStorageSize(),
+      storageInfo,
       databaseInfo: await this.getDatabaseInfo()
     };
   }
 
-  _getStorageSize() {
+  #getStorageInfo() {
     try {
-      const data = localStorage.getItem(this.storageKey);
+      const data = localStorage.getItem(this.#storageKey);
       const sizeBytes = new Blob([data || '']).size;
       const sizeKB = Math.round(sizeBytes / 1024);
-      return `${sizeKB} KB`;
+      const maxSizeKB = Math.round(this.#maxStorageSize / 1024);
+
+      return {
+        size: `${sizeKB} KB`,
+        maxSize: `${maxSizeKB} KB`,
+        usage: `${sizeKB}/${maxSizeKB} KB`,
+        percentage: Math.round((sizeBytes / this.#maxStorageSize) * 100)
+      };
     } catch {
-      return 'Unknown';
+      return { size: 'Unknown', usage: 'Unknown' };
     }
   }
 
@@ -285,10 +357,16 @@ export class LocalStorageAdapter extends StorageInterface {
       this.getUserPreferences(userId)
     ]);
 
-    const data = this._getRawData();
+    const data = this.#getRawData();
     return this.prepareExportData(reminders, preferences, {
       exportedFrom: 'localStorage',
-      metadata: data?.metadata || {}
+      storageVersion: data?.version || 1,
+      metadata: data?.metadata || {},
+      limitations: {
+        maxSize: this.#maxStorageSize,
+        persistent: true,
+        crossOrigin: false
+      }
     });
   }
 
@@ -298,11 +376,15 @@ export class LocalStorageAdapter extends StorageInterface {
 
     const { reminders = [], preferences = null } = importData.data;
 
-    // Import reminders
+    // Import reminders in smaller batches for localStorage
     const results = await this.batchOperation(
         reminders,
-        (reminder) => this.saveReminder({ ...reminder, userId, id: undefined }),
-        25 // Smaller batches for localStorage
+        (reminder) => this.saveReminder({
+          ...reminder,
+          userId,
+          id: this.generateId() // Generate new IDs for imports
+        }),
+        25 // Smaller batches for localStorage performance
     );
 
     // Import preferences
@@ -311,6 +393,8 @@ export class LocalStorageAdapter extends StorageInterface {
     }
 
     const successfulImports = results.filter(r => r.status === 'fulfilled').length;
+    console.log(`📥 Imported ${successfulImports}/${reminders.length} reminders to localStorage`);
+
     return successfulImports;
   }
 
@@ -319,41 +403,211 @@ export class LocalStorageAdapter extends StorageInterface {
     this.validateUserId(userId);
 
     const reminders = await this.getReminders(userId);
-    const deletePromises = reminders.map(r => this.deleteReminder(r.id));
+    const data = this.#getRawData();
 
-    await Promise.all([
-      ...deletePromises,
-      this._deleteUserPreferences(userId)
-    ]);
+    if (data) {
+      // Remove user's reminders
+      data.reminders = data.reminders.filter(r => r.userId !== userId);
 
+      // Remove user preferences
+      delete data.userPreferences[userId];
+
+      data.lastModified = new Date().toISOString();
+      this.#setRawData(data);
+    }
+
+    console.log(`🗑️ Cleared ${reminders.length} reminders for user ${userId} from localStorage`);
     return reminders.length;
   }
 
-  async _deleteUserPreferences(userId) {
-    const data = this._getRawData();
-    if (data?.userPreferences?.[userId]) {
-      delete data.userPreferences[userId];
-      this._setRawData(data);
-    }
-  }
-
   async getDatabaseInfo() {
-    const data = this._getRawData();
-    const storageSize = this._getStorageSize();
+    const data = this.#getRawData();
+    const storageInfo = this.#getStorageInfo();
 
     return {
       name: 'localStorage',
       version: data?.version || 1,
       type: 'Fallback Storage',
-      size: storageSize,
-      available: this.isAvailable,
+      size: storageInfo.size,
+      maxSize: storageInfo.maxSize,
+      available: this.#isAvailable,
       created: data?.created || 'Unknown',
-      maxSize: `${Math.round(this.maxStorageSize / 1024)} KB`
+      lastModified: data?.lastModified || 'Unknown',
+      features: {
+        persistent: true,
+        synchronous: true,
+        crossTab: true,
+        largeObjects: false
+      },
+      limitations: {
+        maxSize: this.#maxStorageSize,
+        stringOnly: true,
+        noTransactions: true,
+        quotaLimited: true
+      }
     };
   }
 
+  // Health check
+  async healthCheck() {
+    try {
+      await this.initialize();
+
+      // Test basic operations
+      const testData = {
+        id: `health_check_${Date.now()}`,
+        title: 'Health Check Test',
+        datetime: new Date().toISOString(),
+        userId: 'health_check',
+        category: 'other',
+        priority: 1,
+        status: 'active'
+      };
+
+      // Test save, retrieve, update, and delete
+      const saved = await this.saveReminder(testData);
+      const retrieved = await this.getReminderById(saved.id);
+      const updated = await this.updateReminder(saved.id, { title: 'Updated Test' });
+      await this.deleteReminder(saved.id);
+
+      return {
+        healthy: true,
+        timestamp: new Date().toISOString(),
+        storageType: 'localStorage',
+        operations: {
+          save: !!saved,
+          retrieve: !!retrieved,
+          update: !!updated,
+          delete: true
+        },
+        storageInfo: this.#getStorageInfo()
+      };
+    } catch (error) {
+      return {
+        healthy: false,
+        error: error.message,
+        timestamp: new Date().toISOString(),
+        storageType: 'localStorage',
+        errorCode: error.code || ERROR_CODES.STORAGE_UNAVAILABLE
+      };
+    }
+  }
+
   async close() {
-    // localStorage doesn't need explicit closing
+    // localStorage doesn't need explicit closing, but we can clean up
+    console.log('📦 localStorage adapter closed');
     return Promise.resolve();
+  }
+
+  // Performance utilities
+  async optimizeStorage() {
+    const data = this.#getRawData();
+    if (!data) return { optimized: false, reason: 'No data found' };
+
+    let optimized = false;
+    const before = JSON.stringify(data).length;
+
+    // Remove expired temporary data
+    if (data.metadata) {
+      const now = Date.now();
+      Object.keys(data.metadata).forEach(key => {
+        const meta = data.metadata[key];
+        if (meta.expires && now > meta.expires) {
+          delete data.metadata[key];
+          optimized = true;
+        }
+      });
+    }
+
+    // Compact reminders array (remove null entries)
+    if (data.reminders) {
+      const originalLength = data.reminders.length;
+      data.reminders = data.reminders.filter(r => r && typeof r === 'object');
+      if (data.reminders.length < originalLength) {
+        optimized = true;
+      }
+    }
+
+    if (optimized) {
+      data.lastModified = new Date().toISOString();
+      this.#setRawData(data);
+
+      const after = JSON.stringify(data).length;
+      const savedBytes = before - after;
+
+      return {
+        optimized: true,
+        savedBytes,
+        savedPercentage: Math.round((savedBytes / before) * 100)
+      };
+    }
+
+    return { optimized: false, reason: 'No optimization needed' };
+  }
+
+  // Backup and restore utilities
+  async createBackup() {
+    const data = this.#getRawData();
+    if (!data) return null;
+
+    return {
+      timestamp: new Date().toISOString(),
+      version: data.version,
+      storageType: 'localStorage',
+      data: data,
+      checksum: this.#calculateChecksum(data)
+    };
+  }
+
+  async restoreFromBackup(backup, options = { merge: false }) {
+    if (!backup || !backup.data) {
+      throw new StorageError('Invalid backup data', ERROR_CODES.VALIDATION_ERROR);
+    }
+
+    // Verify checksum if present
+    if (backup.checksum) {
+      const currentChecksum = this.#calculateChecksum(backup.data);
+      if (currentChecksum !== backup.checksum) {
+        throw new StorageError('Backup data integrity check failed', ERROR_CODES.VALIDATION_ERROR);
+      }
+    }
+
+    if (options.merge) {
+      const currentData = this.#getRawData();
+      if (currentData) {
+        // Merge reminders
+        const existingIds = new Set(currentData.reminders.map(r => r.id));
+        const newReminders = backup.data.reminders.filter(r => !existingIds.has(r.id));
+        currentData.reminders.push(...newReminders);
+
+        // Merge preferences
+        Object.assign(currentData.userPreferences, backup.data.userPreferences);
+
+        // Merge metadata
+        Object.assign(currentData.metadata, backup.data.metadata);
+
+        currentData.lastModified = new Date().toISOString();
+        this.#setRawData(currentData);
+      } else {
+        this.#setRawData(backup.data);
+      }
+    } else {
+      // Full restore
+      this.#setRawData(backup.data);
+    }
+
+    return true;
+  }
+
+  #calculateChecksum(data) {
+    // Simple checksum for data integrity
+    const str = JSON.stringify(data);
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return hash.toString(36);
   }
 }

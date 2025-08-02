@@ -1,26 +1,30 @@
 /**
  * IndexedDB Storage Implementation
- * High-performance, reliable storage for modern browsers
+ * High-performance, reliable storage for modern browsers with proper error handling
  */
 
 import { StorageInterface } from './StorageInterface.js';
-import { StorageError } from '../types/interfaces.js';
-import { APP_CONFIG, ERROR_CODES } from '../../config/constants.js';
+import { StorageError, ERROR_CODES } from '../../types/interfaces.js';
+import { APP_CONFIG } from '../../config/constants.js';
 
 export class IndexedDBStorage extends StorageInterface {
+  #db = null;
+  #dbName = null;
+  #dbVersion = null;
+  #isInitialized = false;
+  #initPromise = null;
+  #stores = null;
+
   constructor() {
     super();
-    this.dbName = APP_CONFIG.storage.dbName;
-    this.dbVersion = APP_CONFIG.storage.dbVersion;
-    this.db = null;
-    this.isInitialized = false;
-    this.initPromise = null;
+    this.#dbName = APP_CONFIG.storage.dbName;
+    this.#dbVersion = APP_CONFIG.storage.dbVersion;
 
-    this.stores = {
+    this.#stores = Object.freeze({
       REMINDERS: 'reminders',
       USER_PREFERENCES: 'userPreferences',
       METADATA: 'metadata'
-    };
+    });
   }
 
   static isSupported() {
@@ -30,57 +34,65 @@ export class IndexedDBStorage extends StorageInterface {
   }
 
   async initialize() {
-    if (this.isInitialized) return this.db;
-    if (this.initPromise) return this.initPromise;
+    if (this.#isInitialized) return this.#db;
+    if (this.#initPromise) return this.#initPromise;
 
-    this.initPromise = this._performInitialization();
-    return this.initPromise;
+    this.#initPromise = this.#performInitialization();
+    return this.#initPromise;
   }
 
-  async _performInitialization() {
+  async #performInitialization() {
     if (!IndexedDBStorage.isSupported()) {
-      throw new StorageError('IndexedDB not supported', ERROR_CODES.STORAGE_UNAVAILABLE);
+      throw new StorageError(
+          'IndexedDB not supported in this browser',
+          ERROR_CODES.STORAGE_UNAVAILABLE
+      );
     }
 
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.dbName, this.dbVersion);
+      const request = indexedDB.open(this.#dbName, this.#dbVersion);
       const timeoutId = setTimeout(() => {
         reject(new StorageError('IndexedDB connection timeout', ERROR_CODES.TIMEOUT));
       }, 15000);
 
       request.onerror = () => {
         clearTimeout(timeoutId);
+        const errorMessage = request.error?.message || 'Unknown IndexedDB error';
         reject(new StorageError(
-            `IndexedDB error: ${request.error?.message || "Unknown error"}`,
+            `IndexedDB initialization failed: ${errorMessage}`,
             ERROR_CODES.STORAGE_UNAVAILABLE
         ));
       };
 
       request.onsuccess = () => {
         clearTimeout(timeoutId);
-        this.db = request.result;
-        this._setupEventHandlers();
-        this.isInitialized = true;
-        resolve(this.db);
+        this.#db = request.result;
+        this.#setupEventHandlers();
+        this.#isInitialized = true;
+        console.log('✅ IndexedDB initialized successfully');
+        resolve(this.#db);
       };
 
       request.onupgradeneeded = (event) => {
         try {
-          this._createObjectStores(event.target.result);
+          this.#createObjectStores(event.target.result);
         } catch (error) {
           clearTimeout(timeoutId);
-          reject(new StorageError(`Database upgrade failed: ${error.message}`, ERROR_CODES.STORAGE_UNAVAILABLE));
+          reject(new StorageError(
+              `Database schema creation failed: ${error.message}`,
+              ERROR_CODES.STORAGE_UNAVAILABLE
+          ));
         }
       };
     });
   }
 
-  _createObjectStores(db) {
-    // Create reminders store
-    if (!db.objectStoreNames.contains(this.stores.REMINDERS)) {
-      const reminderStore = db.createObjectStore(this.stores.REMINDERS, {
+  #createObjectStores(db) {
+    // Create reminders store with comprehensive indexing
+    if (!db.objectStoreNames.contains(this.#stores.REMINDERS)) {
+      const reminderStore = db.createObjectStore(this.#stores.REMINDERS, {
         keyPath: 'id',
-        autoIncrement: true
+        autoIncrement: false
       });
 
       // Create indexes for efficient querying
@@ -91,46 +103,52 @@ export class IndexedDBStorage extends StorageInterface {
       reminderStore.createIndex('category', 'category', { unique: false });
       reminderStore.createIndex('userStatus', ['userId', 'status'], { unique: false });
       reminderStore.createIndex('userCategory', ['userId', 'category'], { unique: false });
+      reminderStore.createIndex('userDatetime', ['userId', 'datetime'], { unique: false });
     }
 
     // Create user preferences store
-    if (!db.objectStoreNames.contains(this.stores.USER_PREFERENCES)) {
-      db.createObjectStore(this.stores.USER_PREFERENCES, { keyPath: 'userId' });
+    if (!db.objectStoreNames.contains(this.#stores.USER_PREFERENCES)) {
+      db.createObjectStore(this.#stores.USER_PREFERENCES, { keyPath: 'userId' });
     }
 
     // Create metadata store
-    if (!db.objectStoreNames.contains(this.stores.METADATA)) {
-      db.createObjectStore(this.stores.METADATA, { keyPath: 'key' });
+    if (!db.objectStoreNames.contains(this.#stores.METADATA)) {
+      db.createObjectStore(this.#stores.METADATA, { keyPath: 'key' });
     }
+
+    console.log('📦 IndexedDB object stores created');
   }
 
-  _setupEventHandlers() {
-    this.db.onerror = (event) => {
+  #setupEventHandlers() {
+    this.#db.onerror = (event) => {
       console.error('IndexedDB runtime error:', event.target.error);
     };
 
-    this.db.onversionchange = () => {
+    this.#db.onversionchange = () => {
       console.warn('IndexedDB version changed by another connection');
-      this._gracefulClose();
+      this.#gracefulClose();
     };
 
-    this.db.onclose = () => {
+    this.#db.onclose = () => {
       console.warn('IndexedDB connection closed unexpectedly');
-      this.isInitialized = false;
-      this.db = null;
+      this.#isInitialized = false;
+      this.#db = null;
     };
   }
 
-  async _executeTransaction(storeNames, mode, operation) {
+  async #executeTransaction(storeNames, mode, operation) {
     await this.initialize();
 
     return new Promise((resolve, reject) => {
       let transaction;
 
       try {
-        transaction = this.db.transaction(storeNames, mode);
+        transaction = this.#db.transaction(storeNames, mode);
       } catch (error) {
-        reject(new StorageError(`Transaction creation failed: ${error.message}`, ERROR_CODES.STORAGE_UNAVAILABLE));
+        reject(new StorageError(
+            `Transaction creation failed: ${error.message}`,
+            ERROR_CODES.STORAGE_UNAVAILABLE
+        ));
         return;
       }
 
@@ -151,8 +169,9 @@ export class IndexedDBStorage extends StorageInterface {
       transaction.onerror = () => {
         if (!hasResolved) {
           hasResolved = true;
+          const errorMessage = transaction.error?.message || 'Unknown transaction error';
           reject(new StorageError(
-              `Transaction failed: ${transaction.error?.message || "Unknown error"}`,
+              `Transaction failed: ${errorMessage}`,
               ERROR_CODES.STORAGE_UNAVAILABLE
           ));
         }
@@ -175,7 +194,10 @@ export class IndexedDBStorage extends StorageInterface {
       } catch (error) {
         if (!hasResolved) {
           hasResolved = true;
-          reject(new StorageError(`Operation failed: ${error.message}`, ERROR_CODES.STORAGE_UNAVAILABLE));
+          reject(new StorageError(
+              `Operation execution failed: ${error.message}`,
+              ERROR_CODES.STORAGE_UNAVAILABLE
+          ));
         }
       }
     });
@@ -188,20 +210,25 @@ export class IndexedDBStorage extends StorageInterface {
     const timestamp = new Date().toISOString();
     const reminder = {
       ...reminderData,
+      id: reminderData.id || this.generateId(),
       updatedAt: timestamp,
       createdAt: reminderData.createdAt || timestamp
     };
 
-    return this._executeTransaction(this.stores.REMINDERS, 'readwrite', (store) => {
+    return this.#executeTransaction(this.#stores.REMINDERS, 'readwrite', (store) => {
       return new Promise((resolve, reject) => {
         const request = store.put(reminder);
 
         request.onsuccess = () => {
-          const savedReminder = { ...reminder, id: request.result };
-          resolve(savedReminder);
+          resolve(reminder);
         };
 
-        request.onerror = () => reject(request.error);
+        request.onerror = () => {
+          reject(new StorageError(
+              `Failed to save reminder: ${request.error?.message}`,
+              ERROR_CODES.STORAGE_UNAVAILABLE
+          ));
+        };
       });
     });
   }
@@ -209,7 +236,7 @@ export class IndexedDBStorage extends StorageInterface {
   async getReminders(userId, filters = {}) {
     this.validateUserId(userId);
 
-    return this._executeTransaction(this.stores.REMINDERS, 'readonly', (store) => {
+    return this.#executeTransaction(this.#stores.REMINDERS, 'readonly', (store) => {
       return new Promise((resolve, reject) => {
         const reminders = [];
         let request;
@@ -232,11 +259,17 @@ export class IndexedDBStorage extends StorageInterface {
             reminders.push(cursor.value);
             cursor.continue();
           } else {
-            resolve(this.processFilters(reminders, filters));
+            const processedReminders = this.processFilters(reminders, filters);
+            resolve(processedReminders);
           }
         };
 
-        request.onerror = () => reject(request.error);
+        request.onerror = () => {
+          reject(new StorageError(
+              `Failed to retrieve reminders: ${request.error?.message}`,
+              ERROR_CODES.STORAGE_UNAVAILABLE
+          ));
+        };
       });
     });
   }
@@ -244,12 +277,20 @@ export class IndexedDBStorage extends StorageInterface {
   async getReminderById(id) {
     this.validateReminderId(id);
 
-    return this._executeTransaction(this.stores.REMINDERS, 'readonly', (store) => {
+    return this.#executeTransaction(this.#stores.REMINDERS, 'readonly', (store) => {
       return new Promise((resolve, reject) => {
         const request = store.get(id);
 
-        request.onsuccess = () => resolve(request.result || null);
-        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          resolve(request.result || null);
+        };
+
+        request.onerror = () => {
+          reject(new StorageError(
+              `Failed to retrieve reminder: ${request.error?.message}`,
+              ERROR_CODES.STORAGE_UNAVAILABLE
+          ));
+        };
       });
     });
   }
@@ -276,12 +317,20 @@ export class IndexedDBStorage extends StorageInterface {
   async deleteReminder(id) {
     this.validateReminderId(id);
 
-    return this._executeTransaction(this.stores.REMINDERS, 'readwrite', (store) => {
+    return this.#executeTransaction(this.#stores.REMINDERS, 'readwrite', (store) => {
       return new Promise((resolve, reject) => {
         const request = store.delete(id);
 
-        request.onsuccess = () => resolve(true);
-        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          resolve(true);
+        };
+
+        request.onerror = () => {
+          reject(new StorageError(
+              `Failed to delete reminder: ${request.error?.message}`,
+              ERROR_CODES.STORAGE_UNAVAILABLE
+          ));
+        };
       });
     });
   }
@@ -292,11 +341,13 @@ export class IndexedDBStorage extends StorageInterface {
     const reminders = await this.getReminders(userId, { status });
     const deletePromises = reminders.map(r => this.deleteReminder(r.id));
 
-    await Promise.all(deletePromises);
-    return reminders.length;
+    const results = await Promise.allSettled(deletePromises);
+    const successful = results.filter(r => r.status === 'fulfilled').length;
+
+    return successful;
   }
 
-  // User preferences
+  // User preferences operations
   async saveUserPreferences(userId, preferences) {
     this.validateUserId(userId);
 
@@ -306,12 +357,20 @@ export class IndexedDBStorage extends StorageInterface {
       updatedAt: new Date().toISOString()
     };
 
-    return this._executeTransaction(this.stores.USER_PREFERENCES, 'readwrite', (store) => {
+    return this.#executeTransaction(this.#stores.USER_PREFERENCES, 'readwrite', (store) => {
       return new Promise((resolve, reject) => {
         const request = store.put(userPrefs);
 
-        request.onsuccess = () => resolve(userPrefs);
-        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          resolve(userPrefs);
+        };
+
+        request.onerror = () => {
+          reject(new StorageError(
+              `Failed to save user preferences: ${request.error?.message}`,
+              ERROR_CODES.STORAGE_UNAVAILABLE
+          ));
+        };
       });
     });
   }
@@ -319,12 +378,20 @@ export class IndexedDBStorage extends StorageInterface {
   async getUserPreferences(userId) {
     this.validateUserId(userId);
 
-    return this._executeTransaction(this.stores.USER_PREFERENCES, 'readonly', (store) => {
+    return this.#executeTransaction(this.#stores.USER_PREFERENCES, 'readonly', (store) => {
       return new Promise((resolve, reject) => {
         const request = store.get(userId);
 
-        request.onsuccess = () => resolve(request.result || null);
-        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          resolve(request.result || null);
+        };
+
+        request.onerror = () => {
+          reject(new StorageError(
+              `Failed to retrieve user preferences: ${request.error?.message}`,
+              ERROR_CODES.STORAGE_UNAVAILABLE
+          ));
+        };
       });
     });
   }
@@ -337,18 +404,26 @@ export class IndexedDBStorage extends StorageInterface {
       timestamp: new Date().toISOString()
     };
 
-    return this._executeTransaction(this.stores.METADATA, 'readwrite', (store) => {
+    return this.#executeTransaction(this.#stores.METADATA, 'readwrite', (store) => {
       return new Promise((resolve, reject) => {
         const request = store.put(metadata);
 
-        request.onsuccess = () => resolve(metadata);
-        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          resolve(metadata);
+        };
+
+        request.onerror = () => {
+          reject(new StorageError(
+              `Failed to save metadata: ${request.error?.message}`,
+              ERROR_CODES.STORAGE_UNAVAILABLE
+          ));
+        };
       });
     });
   }
 
   async getMetadata(key) {
-    return this._executeTransaction(this.stores.METADATA, 'readonly', (store) => {
+    return this.#executeTransaction(this.#stores.METADATA, 'readonly', (store) => {
       return new Promise((resolve, reject) => {
         const request = store.get(key);
 
@@ -356,7 +431,13 @@ export class IndexedDBStorage extends StorageInterface {
           const result = request.result;
           resolve(result ? result.value : null);
         };
-        request.onerror = () => reject(request.error);
+
+        request.onerror = () => {
+          reject(new StorageError(
+              `Failed to retrieve metadata: ${request.error?.message}`,
+              ERROR_CODES.STORAGE_UNAVAILABLE
+          ));
+        };
       });
     });
   }
@@ -366,15 +447,23 @@ export class IndexedDBStorage extends StorageInterface {
     const reminders = await this.getReminders(userId);
     const baseStats = this.calculateStatistics(reminders);
 
+    const databaseInfo = await this.getDatabaseInfo();
+
     return {
       ...baseStats,
       storageType: 'IndexedDB',
-      databaseInfo: await this.getDatabaseInfo()
+      databaseInfo,
+      performance: {
+        queryOptimization: 'Indexed queries enabled',
+        transactionSupport: 'Full ACID compliance'
+      }
     };
   }
 
-  // Data export/import
+  // Data export/import with batch processing
   async exportAllData(userId) {
+    this.validateUserId(userId);
+
     const [reminders, preferences] = await Promise.all([
       this.getReminders(userId),
       this.getUserPreferences(userId)
@@ -382,7 +471,13 @@ export class IndexedDBStorage extends StorageInterface {
 
     return this.prepareExportData(reminders, preferences, {
       exportedFrom: 'IndexedDB',
-      databaseVersion: this.dbVersion
+      databaseVersion: this.#dbVersion,
+      storageType: 'IndexedDB',
+      capabilities: {
+        transactional: true,
+        indexed: true,
+        concurrent: true
+      }
     });
   }
 
@@ -392,12 +487,8 @@ export class IndexedDBStorage extends StorageInterface {
 
     const { reminders = [], preferences = null } = importData.data;
 
-    // Import reminders in batches for better performance
-    const results = await this.batchOperation(
-        reminders,
-        (reminder) => this.saveReminder({ ...reminder, userId, id: undefined }),
-        50
-    );
+    // Import reminders in optimized batches
+    const results = await this.#batchImportReminders(reminders, userId);
 
     // Import preferences if provided
     if (preferences) {
@@ -405,7 +496,36 @@ export class IndexedDBStorage extends StorageInterface {
     }
 
     const successfulImports = results.filter(r => r.status === 'fulfilled').length;
+    console.log(`📥 Imported ${successfulImports}/${reminders.length} reminders to IndexedDB`);
+
     return successfulImports;
+  }
+
+  async #batchImportReminders(reminders, userId, batchSize = 50) {
+    const results = [];
+
+    for (let i = 0; i < reminders.length; i += batchSize) {
+      const batch = reminders.slice(i, i + batchSize);
+
+      const batchResults = await Promise.allSettled(
+          batch.map(reminder =>
+              this.saveReminder({
+                ...reminder,
+                userId,
+                id: this.generateId() // Generate new IDs for imports
+              })
+          )
+      );
+
+      results.push(...batchResults);
+
+      // Small delay between batches to prevent blocking
+      if (i + batchSize < reminders.length) {
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+    }
+
+    return results;
   }
 
   // Maintenance operations
@@ -413,18 +533,38 @@ export class IndexedDBStorage extends StorageInterface {
     this.validateUserId(userId);
 
     const reminders = await this.getReminders(userId);
-    const deletePromises = reminders.map(r => this.deleteReminder(r.id));
 
-    await Promise.all([
-      ...deletePromises,
-      this._deleteUserPreferences(userId)
-    ]);
+    // Delete in batches for better performance
+    const batchSize = 100;
+    let deletedCount = 0;
 
-    return reminders.length;
+    for (let i = 0; i < reminders.length; i += batchSize) {
+      const batch = reminders.slice(i, i + batchSize);
+
+      await this.#executeTransaction(this.#stores.REMINDERS, 'readwrite', (store) => {
+        return Promise.all(
+            batch.map(reminder =>
+                new Promise((resolve, reject) => {
+                  const request = store.delete(reminder.id);
+                  request.onsuccess = () => resolve();
+                  request.onerror = () => reject(request.error);
+                })
+            )
+        );
+      });
+
+      deletedCount += batch.length;
+    }
+
+    // Also delete user preferences
+    await this.#deleteUserPreferences(userId);
+
+    console.log(`🗑️ Cleared ${deletedCount} reminders for user ${userId}`);
+    return deletedCount;
   }
 
-  async _deleteUserPreferences(userId) {
-    return this._executeTransaction(this.stores.USER_PREFERENCES, 'readwrite', (store) => {
+  async #deleteUserPreferences(userId) {
+    return this.#executeTransaction(this.#stores.USER_PREFERENCES, 'readwrite', (store) => {
       return new Promise((resolve, reject) => {
         const request = store.delete(userId);
 
@@ -439,12 +579,18 @@ export class IndexedDBStorage extends StorageInterface {
 
     try {
       const info = {
-        name: this.db.name,
-        version: this.db.version,
+        name: this.#db.name,
+        version: this.#db.version,
         type: 'IndexedDB',
-        objectStoreNames: Array.from(this.db.objectStoreNames),
-        isHealthy: this.isInitialized && this.db,
-        connectionState: this.db ? 'connected' : 'disconnected'
+        objectStoreNames: Array.from(this.#db.objectStoreNames),
+        isHealthy: this.#isInitialized && this.#db,
+        connectionState: this.#db ? 'connected' : 'disconnected',
+        features: {
+          transactions: true,
+          indexing: true,
+          largeObjects: true,
+          concurrency: true
+        }
       };
 
       // Add storage estimate if available
@@ -452,14 +598,32 @@ export class IndexedDBStorage extends StorageInterface {
         try {
           const estimate = await navigator.storage.estimate();
           info.storageEstimate = {
-            quota: this._formatBytes(estimate.quota),
-            usage: this._formatBytes(estimate.usage),
-            available: this._formatBytes(estimate.quota - estimate.usage),
-            usagePercentage: Math.round((estimate.usage / estimate.quota) * 100)
+            quota: this.#formatBytes(estimate.quota || 0),
+            usage: this.#formatBytes(estimate.usage || 0),
+            available: this.#formatBytes((estimate.quota || 0) - (estimate.usage || 0)),
+            usagePercentage: estimate.quota ?
+                Math.round((estimate.usage / estimate.quota) * 100) : 0
           };
-        } catch {
-          info.storageEstimate = { error: 'Unavailable' };
+        } catch (estimateError) {
+          info.storageEstimate = {
+            error: 'Storage estimation unavailable',
+            reason: estimateError.message
+          };
         }
+      }
+
+      // Add record counts
+      try {
+        const reminderCount = await this.#getRecordCount(this.#stores.REMINDERS);
+        const userPrefsCount = await this.#getRecordCount(this.#stores.USER_PREFERENCES);
+
+        info.recordCounts = {
+          reminders: reminderCount,
+          userPreferences: userPrefsCount,
+          total: reminderCount + userPrefsCount
+        };
+      } catch (countError) {
+        info.recordCounts = { error: 'Could not retrieve record counts' };
       }
 
       return info;
@@ -467,32 +631,116 @@ export class IndexedDBStorage extends StorageInterface {
       return {
         error: error.message,
         isHealthy: false,
-        connectionState: 'error'
+        connectionState: 'error',
+        type: 'IndexedDB'
       };
     }
   }
 
-  _formatBytes(bytes) {
-    if (!bytes) return '0 B';
-    const units = ['B', 'KB', 'MB', 'GB'];
-    const index = Math.floor(Math.log(bytes) / Math.log(1024));
-    const size = (bytes / Math.pow(1024, index)).toFixed(1);
-    return `${size} ${units[index]}`;
+  async #getRecordCount(storeName) {
+    return this.#executeTransaction(storeName, 'readonly', (store) => {
+      return new Promise((resolve, reject) => {
+        const request = store.count();
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    });
   }
 
-  _gracefulClose() {
-    if (this.db) {
-      this.db.close();
-      this.db = null;
-      this.isInitialized = false;
+  #formatBytes(bytes) {
+    if (!bytes || bytes === 0) return '0 B';
+
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const index = Math.floor(Math.log(bytes) / Math.log(1024));
+    const size = (bytes / Math.pow(1024, index)).toFixed(1);
+
+    return `${size} ${units[index] || 'B'}`;
+  }
+
+  // Health check with comprehensive testing
+  async healthCheck() {
+    try {
+      await this.initialize();
+
+      // Test basic operations
+      const testData = {
+        id: `health_check_${Date.now()}`,
+        title: 'Health Check Test',
+        datetime: new Date().toISOString(),
+        userId: 'health_check',
+        category: 'other',
+        priority: 1,
+        status: 'active'
+      };
+
+      // Test save, retrieve, update, and delete
+      const saved = await this.saveReminder(testData);
+      const retrieved = await this.getReminderById(saved.id);
+      const updated = await this.updateReminder(saved.id, { title: 'Updated Test' });
+      await this.deleteReminder(saved.id);
+
+      return {
+        healthy: true,
+        timestamp: new Date().toISOString(),
+        storageType: 'IndexedDB',
+        operations: {
+          save: !!saved,
+          retrieve: !!retrieved,
+          update: !!updated,
+          delete: true
+        },
+        performance: {
+          connected: this.#isInitialized,
+          database: this.#db?.name || 'N/A'
+        }
+      };
+    } catch (error) {
+      return {
+        healthy: false,
+        error: error.message,
+        timestamp: new Date().toISOString(),
+        storageType: 'IndexedDB',
+        errorCode: error.code || ERROR_CODES.STORAGE_UNAVAILABLE
+      };
+    }
+  }
+
+  #gracefulClose() {
+    if (this.#db) {
+      console.log('🔄 Gracefully closing IndexedDB connection');
+      this.#db.close();
+      this.#db = null;
+      this.#isInitialized = false;
     }
   }
 
   async close() {
-    if (this.db) {
-      // Wait a moment for any pending transactions
+    if (this.#db) {
+      // Wait for any pending transactions to complete
       await new Promise(resolve => setTimeout(resolve, 100));
-      this._gracefulClose();
+      this.#gracefulClose();
     }
+  }
+
+  // Performance monitoring
+  async getPerformanceMetrics() {
+    return {
+      storageType: 'IndexedDB',
+      isInitialized: this.#isInitialized,
+      connectionState: this.#db ? 'active' : 'inactive',
+      features: {
+        asyncOperations: true,
+        transactions: true,
+        indexedQueries: true,
+        largeDataSupport: true,
+        offlineCapable: true
+      },
+      limitations: {
+        crossOrigin: false,
+        serverSideAccess: false,
+        automaticBackup: false
+      }
+    };
   }
 }

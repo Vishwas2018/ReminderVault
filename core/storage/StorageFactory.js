@@ -1,5 +1,5 @@
 /**
- * Storage Factory - Intelligent storage service selection
+ * Fixed Storage Factory - Intelligent storage service selection
  * Automatically chooses the best available storage mechanism
  */
 
@@ -14,7 +14,7 @@ export class StorageFactory {
   static capabilities = null;
 
   static async getInstance(userId = 'default') {
-    const cacheKey = 'storage_${userId}';
+    const cacheKey = `storage_${userId}`;
 
     if (this.storageCache.has(cacheKey)) {
       return this.storageCache.get(cacheKey);
@@ -40,7 +40,7 @@ export class StorageFactory {
         const service = await strategy();
         const storageType = service.constructor.name;
 
-        console.log('✅ Storage initialized: ${storageType} for user: ${userId}');
+        console.log(`✅ Storage initialized: ${storageType} for user: ${userId}`);
         return this._wrapWithMetrics(service, storageType);
 
       } catch (error) {
@@ -82,7 +82,7 @@ export class StorageFactory {
 
         request.onerror = () => {
           clearTimeout(timeout);
-          reject(new Error('IndexedDB error: ${request.error?.message}'));
+          reject(new Error(`IndexedDB error: ${request.error?.message}`));
         };
 
         request.onsuccess = () => {
@@ -193,7 +193,7 @@ export class StorageFactory {
 
   static async _tryIndexedDB() {
     if (!this.capabilities.indexedDB?.available) {
-      throw new StorageError('IndexedDB unavailable: ${this.capabilities.indexedDB?.reason}');
+      throw new StorageError(`IndexedDB unavailable: ${this.capabilities.indexedDB?.reason}`);
     }
 
     const service = new IndexedDBStorage();
@@ -203,7 +203,7 @@ export class StorageFactory {
 
   static async _tryLocalStorage() {
     if (!this.capabilities.localStorage?.available) {
-      throw new StorageError('localStorage unavailable: ${this.capabilities.localStorage?.reason}');
+      throw new StorageError(`localStorage unavailable: ${this.capabilities.localStorage?.reason}`);
     }
 
     const service = new LocalStorageAdapter();
@@ -217,10 +217,11 @@ export class StorageFactory {
     return service;
   }
 
+  // Fixed wrapper that properly handles method calls
   static _wrapWithMetrics(service, storageType) {
     const monitoredMethods = [
       'saveReminder', 'getReminders', 'updateReminder', 'deleteReminder',
-      'saveUserPreferences', 'getUserPreferences', 'exportAllData'
+      'saveUserPreferences', 'getUserPreferences', 'exportAllData', 'clearUserData'
     ];
 
     return new Proxy(service, {
@@ -230,9 +231,10 @@ export class StorageFactory {
         if (typeof originalMethod === 'function' && monitoredMethods.includes(prop)) {
           return async function(...args) {
             const startTime = performance.now();
-            const operationId = '${storageType}.${prop}';
+            const operationId = `${storageType}.${prop}`;
 
             try {
+              // Ensure 'this' context is preserved
               const result = await originalMethod.apply(target, args);
               const duration = performance.now() - startTime;
 
@@ -245,6 +247,11 @@ export class StorageFactory {
               throw error;
             }
           };
+        }
+
+        // Bind other methods to maintain context
+        if (typeof originalMethod === 'function') {
+          return originalMethod.bind(target);
         }
 
         return originalMethod;
@@ -345,13 +352,13 @@ export class StorageFactory {
 
     const factory = factories[type.toLowerCase()];
     if (!factory) {
-      throw new StorageError('Unknown storage type: ${type}', ERROR_CODES.VALIDATION_ERROR);
+      throw new StorageError(`Unknown storage type: ${type}`, ERROR_CODES.VALIDATION_ERROR);
     }
 
     const service = factory();
     await service.initialize();
 
-    console.log('🔧 Force-created ${type} storage for testing');
+    console.log(`🔧 Force-created ${type} storage for testing`);
     return service;
   }
 

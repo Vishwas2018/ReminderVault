@@ -71,6 +71,338 @@
         .compatibility-info.show {
             display: block;
         }
+
+        /* Fixed Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            padding: 1rem;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.4);
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow: hidden;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f8fafc;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            max-height: calc(90vh - 200px);
+        }
+
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            background: #f8fafc;
+        }
+
+        /* Form improvements */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            background: white;
+        }
+
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Alert timing styles */
+        .alert-timing-section {
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .timing-categories {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .timing-category {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .category-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .category-subtitle {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 1rem;
+        }
+
+        .timing-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .timing-option {
+            cursor: pointer;
+        }
+
+        .timing-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .timing-option input[type="checkbox"] {
+            display: none;
+        }
+
+        .timing-option input[type="checkbox"]:checked + .timing-card {
+            background: #eff6ff;
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .timing-card:hover {
+            border-color: #9ca3af;
+            transform: translateY(-1px);
+        }
+
+        .timing-icon {
+            font-size: 1.5rem;
+        }
+
+        .timing-label {
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.875rem;
+        }
+
+        .timing-value {
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+
+        /* Alert preview */
+        .alert-preview {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+
+        .alert-preview h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 1rem;
+        }
+
+        .selected-alerts {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            min-height: 40px;
+            align-items: flex-start;
+        }
+
+        .alert-preview-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: #eff6ff;
+            border: 1px solid #3b82f6;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            color: #1d4ed8;
+            font-weight: 500;
+        }
+
+        .no-alerts {
+            color: #6b7280;
+            font-style: italic;
+            text-align: center;
+            padding: 1rem;
+            margin: 0;
+        }
+
+        /* Button styles */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.875rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+            border-color: #9ca3af;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Loading state */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #3b82f6;
+        }
     </style>
 </head>
 <body>
@@ -277,49 +609,67 @@
     </main>
 </div>
 
-<!-- Enhanced Add Reminder Modal -->
-<div id="addReminderModal" class="modal" style="display: none;">
-    <div class="modal-content enhanced">
+<!-- Fixed Add Reminder Modal -->
+<div id="addReminderModal" class="modal">
+    <div class="modal-content">
         <div class="modal-header">
-            <h2><span class="label-icon">➕</span> Add New Reminder (Smart Storage)</h2>
-            <button class="close" aria-label="Close modal">&times;</button>
+            <h2 class="modal-title">
+                <span>➕</span>
+                Add New Reminder
+            </h2>
+            <button class="modal-close" type="button" aria-label="Close modal">&times;</button>
         </div>
         <div class="modal-body">
             <form id="addReminderForm">
                 <!-- Basic Form Fields -->
                 <div class="form-group">
                     <label for="reminderTitle">
-                        <span class="label-icon">📝</span>
-                        Title <span class="required">*</span>
+                        📝 Title <span style="color: #ef4444;">*</span>
                     </label>
-                    <input type="text" id="reminderTitle" name="title" required maxlength="100"
-                           placeholder="Enter reminder title">
+                    <input
+                            type="text"
+                            id="reminderTitle"
+                            name="title"
+                            required
+                            maxlength="100"
+                            placeholder="Enter reminder title"
+                            class="form-input"
+                    >
                 </div>
 
                 <div class="form-group">
                     <label for="reminderDescription">
-                        <span class="label-icon">📄</span>
-                        Description
+                        📄 Description
                     </label>
-                    <textarea id="reminderDescription" name="description" rows="3" maxlength="500"
-                              placeholder="Optional details about this reminder"></textarea>
+                    <textarea
+                            id="reminderDescription"
+                            name="description"
+                            rows="3"
+                            maxlength="500"
+                            placeholder="Optional details about this reminder"
+                            class="form-textarea"
+                    ></textarea>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label for="reminderDate">
-                            <span class="label-icon">📅</span>
-                            Date & Time <span class="required">*</span>
+                            📅 Date & Time <span style="color: #ef4444;">*</span>
                         </label>
-                        <input type="datetime-local" id="reminderDate" name="datetime" required>
+                        <input
+                                type="datetime-local"
+                                id="reminderDate"
+                                name="datetime"
+                                required
+                                class="form-input"
+                        >
                     </div>
 
                     <div class="form-group">
                         <label for="reminderPriority">
-                            <span class="label-icon">⭐</span>
-                            Priority
+                            ⭐ Priority
                         </label>
-                        <select id="reminderPriority" name="priority">
+                        <select id="reminderPriority" name="priority" class="form-select">
                             <option value="1">Low 🔵</option>
                             <option value="2" selected>Medium 🟡</option>
                             <option value="3">High 🟠</option>
@@ -330,10 +680,9 @@
 
                 <div class="form-group">
                     <label for="reminderCategory">
-                        <span class="label-icon">📂</span>
-                        Category
+                        📂 Category
                     </label>
-                    <select id="reminderCategory" name="category">
+                    <select id="reminderCategory" name="category" class="form-select">
                         <option value="personal" selected>Personal</option>
                         <option value="work">Work</option>
                         <option value="health">Health</option>
@@ -347,22 +696,21 @@
                 <div class="form-group">
                     <label class="checkbox-label">
                         <input type="checkbox" id="reminderNotification" name="notification" checked>
-                        <span class="label-icon">🔔</span>
-                        Enable notifications for this reminder
+                        🔔 Enable notifications for this reminder
                     </label>
                 </div>
 
-                <!-- Fixed Alert Timing Selection -->
+                <!-- Alert Timing Selection -->
                 <div class="alert-timing-section">
-                    <h4><span class="label-icon">⏰</span> Alert Timing (Smart Storage)</h4>
-                    <p class="section-description">Choose when you want to be alerted before this reminder is due:</p>
+                    <h4>⏰ Alert Timing</h4>
+                    <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 1rem;">
+                        Choose when you want to be alerted before this reminder is due:
+                    </p>
 
                     <div class="timing-categories">
                         <div class="timing-category">
-                            <div class="category-title">
-                                Minutes Before
-                                <span class="category-subtitle">(immediate alerts)</span>
-                            </div>
+                            <div class="category-title">Minutes Before</div>
+                            <div class="category-subtitle">Immediate alerts</div>
                             <div class="timing-options">
                                 <label class="timing-option">
                                     <input type="checkbox" name="alertTiming" value="5" checked>
@@ -400,10 +748,8 @@
                         </div>
 
                         <div class="timing-category">
-                            <div class="category-title">
-                                Hours Before
-                                <span class="category-subtitle">(advance planning)</span>
-                            </div>
+                            <div class="category-title">Hours Before</div>
+                            <div class="category-subtitle">Advance planning</div>
                             <div class="timing-options">
                                 <label class="timing-option">
                                     <input type="checkbox" name="alertTiming" value="60">
@@ -430,10 +776,8 @@
                         </div>
 
                         <div class="timing-category">
-                            <div class="category-title">
-                                Days Before
-                                <span class="category-subtitle">(long-term planning)</span>
-                            </div>
+                            <div class="category-title">Days Before</div>
+                            <div class="category-subtitle">Long-term planning</div>
                             <div class="timing-options">
                                 <label class="timing-option">
                                     <input type="checkbox" name="alertTiming" value="1440">
@@ -474,302 +818,372 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Quick Time Buttons -->
-                <div class="quick-time-buttons">
-                    <h4><span class="label-icon">⚡</span> Quick Times</h4>
-                    <div class="time-buttons">
-                        <button type="button" class="time-btn" data-minutes="15">15m</button>
-                        <button type="button" class="time-btn" data-minutes="30">30m</button>
-                        <button type="button" class="time-btn" data-hours="1">1h</button>
-                        <button type="button" class="time-btn" data-hours="2">2h</button>
-                        <button type="button" class="time-btn" data-hours="24">Tomorrow</button>
-                        <button type="button" class="time-btn" data-hours="168">Next Week</button>
-                    </div>
-                </div>
             </form>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn-cancel" onclick="closeModal('addReminderModal')">
+            <button type="button" class="btn btn-secondary" id="cancelModalBtn">
                 Cancel
             </button>
-            <button type="submit" form="addReminderForm" class="btn-submit">
-                <span class="btn-icon">💾</span>
-                Save with Smart Storage
+            <button type="submit" form="addReminderForm" class="btn btn-primary" id="submitReminderBtn">
+                <span>💾</span>
+                Save Reminder
             </button>
         </div>
     </div>
 </div>
 
-<!-- Enhanced Smart Storage Dashboard Script -->
+<!-- Fixed Smart Storage Dashboard Script -->
 <script type="module">
-    // FIXED: Correct import paths matching project structure
+    // Import the dashboard controller
     import { DashboardController } from '../pages/DashboardPage.js';
-    import { NotificationService } from '../core/services/NotificationService.js';
-    import { StorageFactory } from '../core/storage/StorageFactory.js';
 
-    // Initialize smart storage dashboard
+    // Initialize dashboard
     const dashboard = new DashboardController();
 
     // Make globally accessible
     window.dashboard = dashboard;
-    window.closeModal = (modalId) => {
-        const modal = document.getElementById(modalId);
-        if (modal) modal.style.display = 'none';
-    };
 
-    // Enhanced loading state management with storage detection
-    function showLoading(message = 'Loading...', submessage = '') {
+    // Initialize when DOM is ready
+    let dashboardInitialized = false;
+
+    async function initializeDashboard() {
+        if (dashboardInitialized) return;
+        dashboardInitialized = true;
+
+        try {
+            console.log('🚀 Initializing enhanced dashboard...');
+
+            // Show loading
+            showLoading('Initializing Smart Storage System...', 'Detecting browser capabilities');
+
+            // Initialize dashboard
+            await dashboard.initialize();
+
+            // Setup all event handlers
+            setupEventHandlers();
+
+            hideLoading();
+            console.log('✅ Dashboard initialized successfully');
+
+        } catch (error) {
+            hideLoading();
+            console.error('❌ Dashboard initialization failed:', error);
+            showError("Failed to initialize dashboard:alert(`Dashboard Error: ${error.message}\n\nPlease refresh the page to try again.");
+        }
+    }
+
+    // Enhanced loading functions
+    function showLoading(title = 'Loading...', message = '') {
         const overlay = document.getElementById('loadingOverlay');
-        const titleElement = overlay.querySelector('#loadingTitle');
-        const messageElement = overlay.querySelector('#loadingMessage');
+        const titleElement = document.getElementById('loadingTitle');
+        const messageElement = document.getElementById('loadingMessage');
 
-        if (titleElement) titleElement.textContent = message;
-        if (messageElement) messageElement.textContent = submessage;
-
-        overlay.style.display = 'flex';
+        if (titleElement) titleElement.textContent = title;
+        if (messageElement) messageElement.textContent = message;
+        if (overlay) overlay.style.display = 'flex';
     }
 
     function hideLoading() {
         const overlay = document.getElementById('loadingOverlay');
-        overlay.style.display = 'none';
+        if (overlay) overlay.style.display = 'none';
     }
 
-    function updateLoadingSteps(steps) {
-        const stepsElement = document.getElementById('storageSteps');
-        if (stepsElement && Array.isArray(steps)) {
-            stepsElement.innerHTML = steps.map(step =>
-                `<div>${step.icon || '•'} ${step.message}</div>`
-            ).join('');
+    function showError(message) {
+        alert(message);
+    }
+
+    // Modal management functions
+    function openModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.add('active');
+            modal.style.display = 'flex';
+
+            // Focus management
+            const firstInput = modal.querySelector('input, textarea, select');
+            if (firstInput) {
+                setTimeout(() => firstInput.focus(), 100);
+            }
         }
     }
 
-    // Storage detection and compatibility display
-    async function displayStorageCompatibility() {
-        try {
-            const report = await StorageFactory.getCapabilitiesReport();
-            const { capabilities, recommendations } = report;
+    function closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+        }
+    }
 
-            // Update compatibility info
-            const compatibilityInfo = document.getElementById('compatibilityInfo');
-            const compatibilityMessage = document.getElementById('compatibilityMessage');
+    // Setup all event handlers
+    function setupEventHandlers() {
+        // Add Reminder Button
+        const addReminderBtn = document.getElementById('addReminderBtn');
+        if (addReminderBtn) {
+            addReminderBtn.addEventListener('click', () => {
+                openModal('addReminderModal');
+                setDefaultDateTime();
+            });
+        }
 
-            if (capabilities.indexedDB?.available && capabilities.localStorage?.available) {
-                compatibilityMessage.textContent = 'Your browser supports both IndexedDB and localStorage for optimal performance and reliability.';
-                compatibilityInfo.classList.add('show');
-            } else if (capabilities.localStorage?.available) {
-                compatibilityMessage.textContent = 'Using localStorage fallback. Consider updating your browser for enhanced performance.';
-                compatibilityInfo.classList.add('show');
-            }
+        // Modal close handlers
+        const modalClose = document.querySelector('.modal-close');
+        const cancelModalBtn = document.getElementById('cancelModalBtn');
 
-            // Show warnings if needed
-            if (recommendations?.length > 0) {
-                const warningElement = document.getElementById('storageWarning');
-                const hasMemoryWarning = recommendations.some(r => r.message.includes('memory'));
+        if (modalClose) {
+            modalClose.addEventListener('click', () => closeModal('addReminderModal'));
+        }
 
-                if (hasMemoryWarning) {
-                    warningElement.classList.add('show');
+        if (cancelModalBtn) {
+            cancelModalBtn.addEventListener('click', () => closeModal('addReminderModal'));
+        }
+
+        // Close modal on backdrop click
+        const modal = document.getElementById('addReminderModal');
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeModal('addReminderModal');
                 }
+            });
+        }
+
+        // Form submission handler
+        const addReminderForm = document.getElementById('addReminderForm');
+        if (addReminderForm) {
+            addReminderForm.addEventListener('submit', handleFormSubmission);
+        }
+
+        // Alert timing preview updates
+        setupAlertTimingHandlers();
+
+        // Other dashboard handlers
+        setupDashboardHandlers();
+    }
+
+    // Set default date/time to 1 hour from now
+    function setDefaultDateTime() {
+        const dateInput = document.getElementById('reminderDate');
+        if (dateInput) {
+            const now = new Date();
+            now.setHours(now.getHours() + 1);
+            now.setMinutes(0, 0, 0); // Round to nearest hour
+
+            const isoString = now.toISOString().slice(0, 16);
+            dateInput.value = isoString;
+        }
+    }
+
+    // Handle form submission
+    async function handleFormSubmission(e) {
+        e.preventDefault();
+
+        const submitBtn = document.getElementById('submitReminderBtn');
+        if (!submitBtn || submitBtn.disabled) return;
+
+        try {
+            // Disable submit button
+            submitBtn.disabled = true;
+            submitBtn.classList.add('loading');
+            submitBtn.innerHTML = '<span>⏳</span> Saving...';
+
+            // Get form data
+            const formData = new FormData(e.target);
+            const selectedAlerts = Array.from(
+                document.querySelectorAll('input[name="alertTiming"]:checked')
+            ).map(input => parseInt(input.value));
+
+            // Validate required fields
+            const title = formData.get('title')?.trim();
+            const datetime = formData.get('datetime');
+
+            if (!title) {
+                throw new Error('Title is required');
             }
+
+            if (!datetime) {
+                throw new Error('Date and time is required');
+            }
+
+            const selectedDate = new Date(datetime);
+            if (selectedDate <= new Date()) {
+                throw new Error('Date and time must be in the future');
+            }
+
+            // Create reminder data
+            const reminderData = {
+                title,
+                description: formData.get('description')?.trim() || '',
+                datetime,
+                category: formData.get('category') || 'personal',
+                priority: parseInt(formData.get('priority')) || 2,
+                notification: formData.get('notification') === 'on',
+                alertTimings: selectedAlerts.length > 0 ? selectedAlerts : [5, 15]
+            };
+
+            console.log('💾 Creating reminder:', reminderData);
+
+            // Create reminder using dashboard
+            await dashboard.createReminder(reminderData);
+
+            // Reset form and close modal
+            e.target.reset();
+            setDefaultDateTime();
+            updateAlertPreview();
+            closeModal('addReminderModal');
+
+            console.log('✅ Reminder created successfully');
 
         } catch (error) {
-            console.warn('Failed to display storage compatibility:', error);
+            console.error('❌ Failed to create reminder:', error);
+            alert(`Failed to create reminder: ${error.message}`);
+        } finally {
+            // Re-enable submit button
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('loading');
+            submitBtn.innerHTML = '<span>💾</span> Save Reminder';
         }
     }
 
-    // Enhanced form handling with storage awareness
-    function setupEnhancedFormHandlers() {
-        const form = document.getElementById('addReminderForm');
-        const preview = document.getElementById('selectedAlertsPreview');
+    // Setup alert timing handlers
+    function setupAlertTimingHandlers() {
+        const alertCheckboxes = document.querySelectorAll('input[name="alertTiming"]');
 
-        if (!form || !preview) return;
-
-        // Remove any existing handlers to prevent duplicates
-        const newForm = form.cloneNode(true);
-        form.parentNode.replaceChild(newForm, form);
-
-        // Get fresh references
-        const freshForm = document.getElementById('addReminderForm');
-        const freshPreview = document.getElementById('selectedAlertsPreview');
-
-        // Update alert preview
-        const updateAlertPreview = () => {
-            const selectedAlerts = Array.from(freshForm.querySelectorAll('input[name="alertTiming"]:checked'))
-                .map(input => parseInt(input.value))
-                .sort((a, b) => a - b);
-
-            if (selectedAlerts.length === 0) {
-                freshPreview.innerHTML = '<p class="no-alerts">No alerts selected</p>';
-                return;
-            }
-
-            const alertOptions = NotificationService.getAlertTimingOptions();
-            freshPreview.innerHTML = selectedAlerts.map(value => {
-                const option = alertOptions.find(opt => opt.value === value);
-                return `
-                    <div class="alert-preview-item">
-                        <span class="preview-icon">${option?.icon || '⏰'}</span>
-                        <span class="preview-text">${option?.label || `${value} minutes before`}</span>
-                    </div>
-                `;
-            }).join('');
-        };
-
-        // Single change listener for alert timing updates
-        freshForm.addEventListener('change', (e) => {
-            if (e.target.name === 'alertTiming') {
-                updateAlertPreview();
-            }
+        alertCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateAlertPreview);
         });
 
-        // Single submit handler with duplicate prevention
-        let isSubmitting = false;
-        freshForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            if (isSubmitting) return;
-            isSubmitting = true;
-
-            try {
-                showLoading('Saving to Smart Storage...', 'Optimizing storage mechanism');
-
-                const formData = new FormData(freshForm);
-                const selectedAlerts = Array.from(freshForm.querySelectorAll('input[name="alertTiming"]:checked'))
-                    .map(input => parseInt(input.value));
-
-                const reminderData = {
-                    title: formData.get('title'),
-                    description: formData.get('description'),
-                    datetime: formData.get('datetime'),
-                    category: formData.get('category'),
-                    priority: formData.get('priority'),
-                    notification: formData.get('notification') === 'on',
-                    alertTimings: selectedAlerts
-                };
-
-                await dashboard.createReminder(reminderData);
-                closeModal('addReminderModal');
-
-            } catch (error) {
-                console.error('Failed to create reminder:', error);
-            } finally {
-                hideLoading();
-                isSubmitting = false;
-            }
-        });
-
-        // Initialize preview
+        // Initial preview update
         updateAlertPreview();
     }
 
-    // Enhanced button handlers for smart storage features
-    function setupEnhancedHandlers() {
-        // Alert preferences button
-        document.getElementById('alertPrefsBtn')?.addEventListener('click', () => {
-            dashboard.showAlertPreferencesModal();
-        });
+    // Update alert preview
+    function updateAlertPreview() {
+        const selectedAlerts = Array.from(
+            document.querySelectorAll('input[name="alertTiming"]:checked')
+        ).map(input => parseInt(input.value)).sort((a, b) => a - b);
 
-        // Alert preferences button (in quick actions)
-        document.getElementById('alertPreferencesBtn')?.addEventListener('click', () => {
-            dashboard.showAlertPreferencesModal();
-        });
+        const previewContainer = document.getElementById('selectedAlertsPreview');
+        if (!previewContainer) return;
 
-        // Enhanced test notification
-        document.getElementById('testNotificationBtn')?.addEventListener('click', () => {
-            dashboard.testNotificationSystem();
-        });
+        if (selectedAlerts.length === 0) {
+            previewContainer.innerHTML = '<p class="no-alerts">No alerts selected</p>';
+            return;
+        }
 
-        // Enhanced database info button (header)
-        document.getElementById('headerDbInfoBtn')?.addEventListener('click', async () => {
+        const alertLabels = {
+            5: { icon: '⏰', label: '5 minutes before' },
+            15: { icon: '⏰', label: '15 minutes before' },
+            30: { icon: '⏰', label: '30 minutes before' },
+            60: { icon: '🕐', label: '1 hour before' },
+            120: { icon: '🕐', label: '2 hours before' },
+            1440: { icon: '📅', label: '1 day before' },
+            2880: { icon: '📅', label: '2 days before' }
+        };
+
+        previewContainer.innerHTML = selectedAlerts.map(value => {
+            const alert = alertLabels[value] || { icon: '⏰', label: `${value} minutes before` };
+            return `
+                <div class="alert-preview-item">
+                    <span class="preview-icon">${alert.icon}</span>
+                    <span class="preview-text">${alert.label}</span>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Setup other dashboard handlers
+    function setupDashboardHandlers() {
+        // Export data
+        const exportBtn = document.getElementById('exportBtn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', async () => {
+                try {
+                    showLoading('Exporting data...', 'Preparing export');
+                    await dashboard.exportData();
+                    hideLoading();
+                } catch (error) {
+                    hideLoading();
+                    showError(`Export failed: ${error.message}`);
+                }
+            });
+        }
+
+        // Import data
+        const importBtn = document.getElementById('importBtn');
+        if (importBtn) {
+            importBtn.addEventListener('click', async () => {
+                try {
+                    showLoading('Importing data...', 'Processing import');
+                    await dashboard.importData();
+                    hideLoading();
+                } catch (error) {
+                    hideLoading();
+                    showError(`Import failed: ${error.message}`);
+                }
+            });
+        }
+
+        // Clear all data
+        const clearDataBtn = document.getElementById('clearDataBtn');
+        if (clearDataBtn) {
+            clearDataBtn.addEventListener('click', async () => {
+                try {
+                    showLoading('Clearing data...', 'Removing all reminders');
+                    await dashboard.clearAllData();
+                    hideLoading();
+                } catch (error) {
+                    hideLoading();
+                    showError(`Clear data failed: ${error.message}`);
+                }
+            });
+        }
+
+        // Database info
+        const dbInfoBtn = document.getElementById('dbInfoBtn');
+        const headerDbInfoBtn = document.getElementById('headerDbInfoBtn');
+
+        const showDbInfo = async () => {
             try {
-                showLoading('Getting storage information...', 'Analyzing storage health');
+                showLoading('Getting storage info...', 'Analyzing database');
                 await dashboard.showDatabaseInfo();
                 hideLoading();
             } catch (error) {
                 hideLoading();
-                console.error('Failed to get storage info:', error);
+                showError(`Failed to get storage info: ${error.message}`);
             }
-        });
+        };
 
-        // Enhanced database info button (data management section)
-        document.getElementById('dbInfoBtn')?.addEventListener('click', async () => {
-            try {
-                showLoading('Getting storage information...', 'Analyzing storage health');
-                await dashboard.showDatabaseInfo();
-                hideLoading();
-            } catch (error) {
-                hideLoading();
-                console.error('Failed to get storage info:', error);
-            }
-        });
+        if (dbInfoBtn) dbInfoBtn.addEventListener('click', showDbInfo);
+        if (headerDbInfoBtn) headerDbInfoBtn.addEventListener('click', showDbInfo);
 
-        // Enhanced export data button
-        document.getElementById('exportBtn')?.addEventListener('click', async () => {
-            try {
-                showLoading('Exporting data...', 'Preparing smart storage export');
-                await dashboard.exportData();
-                hideLoading();
-            } catch (error) {
-                hideLoading();
-                console.error('Export failed:', error);
-            }
-        });
+        // Test notification
+        const testNotificationBtn = document.getElementById('testNotificationBtn');
+        if (testNotificationBtn) {
+            testNotificationBtn.addEventListener('click', () => {
+                dashboard.testNotificationSystem();
+            });
+        }
 
-        // Enhanced import data button
-        document.getElementById('importBtn')?.addEventListener('click', async () => {
-            try {
-                showLoading('Importing data...', 'Validating storage compatibility');
-                await dashboard.importData();
-                hideLoading();
-            } catch (error) {
-                hideLoading();
-                console.error('Import failed:', error);
-            }
-        });
+        // Refresh
+        const refreshBtn = document.getElementById('refreshBtn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                dashboard.refresh();
+            });
+        }
 
-        // Enhanced clear all data button
-        document.getElementById('clearDataBtn')?.addEventListener('click', async () => {
-            const storageType = dashboard.getStorageType?.() || 'storage';
+        // Logout
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                dashboard.logout();
+            });
+        }
 
-            if (!confirm(`⚠️ This will permanently delete ALL your reminders from ${storageType}. This cannot be undone!\n\nAre you absolutely sure?`)) {
-                return;
-            }
-
-            try {
-                showLoading('Clearing all data...', 'Removing data from smart storage');
-                await dashboard.clearAllData();
-                hideLoading();
-            } catch (error) {
-                hideLoading();
-                console.error('Clear data failed:', error);
-            }
-        });
-
-        // Enhanced refresh with storage awareness
-        document.getElementById('refreshBtn')?.addEventListener('click', async () => {
-            try {
-                showLoading('Refreshing data...', 'Syncing with smart storage');
-                await new Promise(resolve => {
-                    dashboard.refresh();
-                    setTimeout(resolve, 1000);
-                });
-                hideLoading();
-            } catch (error) {
-                hideLoading();
-                console.error('Refresh failed:', error);
-            }
-        });
-
-        // Add additional handlers
-        document.getElementById('addReminderBtn')?.addEventListener('click', () => {
-            document.getElementById('addReminderModal').style.display = 'flex';
-        });
-
-        document.getElementById('logoutBtn')?.addEventListener('click', () => {
-            dashboard.logout();
-        });
-
-        // Stat card click handlers
+        // Stat card filters
         document.querySelectorAll('.clickable-stat').forEach(card => {
             card.addEventListener('click', () => {
                 const filter = card.dataset.filter;
@@ -778,105 +1192,29 @@
                 }
             });
         });
-    }
 
-    // Enhanced dashboard initialization with comprehensive error handling
-    let dashboardInitialized = false;
-
-    async function initializeDashboard() {
-        if (dashboardInitialized) return;
-        dashboardInitialized = true;
-
-        try {
-            // Show loading with storage detection steps
-            showLoading('Initializing Smart Storage System...', 'Detecting browser capabilities');
-
-            updateLoadingSteps([
-                { icon: '🔍', message: 'Detecting storage capabilities' },
-                { icon: '⚡', message: 'Selecting optimal storage mechanism' },
-                { icon: '🔧', message: 'Initializing storage service' },
-                { icon: '📱', message: 'Setting up dashboard interface' }
-            ]);
-
-            // Initialize dashboard with smart storage
-            await dashboard.initialize();
-
-            // Setup enhanced handlers
-            setupEnhancedFormHandlers();
-            setupEnhancedHandlers();
-
-            // Display storage compatibility info
-            await displayStorageCompatibility();
-
-            hideLoading();
-            console.log('📱 Enhanced dashboard with smart storage initialized successfully');
-
-        } catch (error) {
-            hideLoading();
-            console.error('Dashboard initialization failed:', error);
-            dashboardInitialized = false;
-
-            // Enhanced error message with storage context
-            const errorMsg = error.message.includes('Storage')
-                ? `Storage system failed: ${error.message}\n\nThis may be due to browser restrictions or storage quota limits.`
-                : `Failed to initialize dashboard: ${error.message}`;
-
-            alert(`${errorMsg}\n\nPlease refresh the page to try again.`);
-        }
-    }
-
-    // Enhanced browser compatibility handling
-    async function checkBrowserCompatibility() {
-        try {
-            const report = await StorageFactory.getCapabilitiesReport();
-
-            if (!report.capabilities.indexedDB?.available && !report.capabilities.localStorage?.available) {
-                document.body.innerHTML = `
-                    <div style="
-                        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-                        display: flex; align-items: center; justify-content: center;
-                        color: white; font-family: system-ui, sans-serif; text-align: center;
-                        padding: 2rem;
-                    ">
-                        <div>
-                            <h1>🚫 Storage Not Available</h1>
-                            <p>This application requires either IndexedDB or localStorage support.</p>
-                            <p>Please update your browser or check your privacy settings.</p>
-                            <button onclick="window.location.reload()" style="
-                                margin-top: 2rem; padding: 1rem 2rem;
-                                background: white; color: #dc2626; border: none;
-                                border-radius: 8px; font-weight: bold; cursor: pointer;
-                            ">
-                                🔄 Try Again
-                            </button>
-                        </div>
-                    </div>
-                `;
-                return false;
+        // Escape key handler for modals
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const activeModal = document.querySelector('.modal.active');
+                if (activeModal) {
+                    closeModal(activeModal.id);
+                }
             }
-
-            return true;
-        } catch (error) {
-            console.error('Browser compatibility check failed:', error);
-            return true; // Assume compatible and let the app handle errors
-        }
+        });
     }
 
-    // Initialize when DOM is ready with compatibility check
+    // Make close modal function globally accessible
+    window.closeModal = closeModal;
+
+    // Initialize dashboard when DOM is ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', async () => {
-            if (await checkBrowserCompatibility()) {
-                initializeDashboard();
-            }
-        });
+        document.addEventListener('DOMContentLoaded', initializeDashboard);
     } else {
-        checkBrowserCompatibility().then(isCompatible => {
-            if (isCompatible) {
-                initializeDashboard();
-            }
-        });
+        initializeDashboard();
     }
 
-    console.log('📱 Smart storage dashboard script loaded');
+    console.log('📱 Enhanced dashboard script loaded successfully');
 </script>
+</body>
+</html>

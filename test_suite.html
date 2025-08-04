@@ -1,0 +1,2173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Reminders Vault Test Suite</title>
+
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+            --warning-color: #f59e0b;
+            --info-color: #3b82f6;
+            --background-light: #f8fafc;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .test-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            min-height: 95vh;
+            margin-top: 2.5vh;
+        }
+
+        .test-header {
+            background: linear-gradient(135deg, #1e293b, #334155);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .test-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.03)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.03)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            opacity: 0.5;
+        }
+
+        .test-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
+        }
+
+        .test-header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .test-controls {
+            padding: 1.5rem;
+            background: var(--background-light);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .control-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--error-color);
+            color: white;
+        }
+
+        .btn-info {
+            background: var(--info-color);
+            color: white;
+        }
+
+        .test-filter {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            background: white;
+            font-size: 0.875rem;
+            transition: border-color 0.2s;
+        }
+
+        .test-filter:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .progress-container {
+            padding: 0 1.5rem;
+            background: var(--background-light);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success-color), var(--primary-color));
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 0%;
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .test-summary {
+            padding: 1.5rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            background: var(--background-light);
+        }
+
+        .summary-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .summary-card.total::before { background: var(--info-color); }
+        .summary-card.passed::before { background: var(--success-color); }
+        .summary-card.failed::before { background: var(--error-color); }
+        .summary-card.coverage::before { background: var(--warning-color); }
+
+        .summary-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .summary-number.passed {
+            background: linear-gradient(135deg, var(--success-color), #059669);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .summary-number.failed {
+            background: linear-gradient(135deg, var(--error-color), #dc2626);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .summary-number.total {
+            background: linear-gradient(135deg, var(--info-color), #2563eb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .summary-number.coverage {
+            background: linear-gradient(135deg, var(--warning-color), #d97706);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .summary-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .test-results {
+            padding: 1.5rem;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .test-results::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .test-results::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+
+        .test-results::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        .test-results::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .test-suite {
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            background: white;
+        }
+
+        .suite-header {
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .suite-header:hover {
+            background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+        }
+
+        .suite-title {
+            font-weight: 600;
+            font-size: 1.125rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text-primary);
+        }
+
+        .suite-icon {
+            font-size: 1.25rem;
+        }
+
+        .suite-stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .test-list {
+            padding: 0;
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .test-list.collapsed {
+            max-height: 0;
+        }
+
+        .test-list.expanded {
+            max-height: 2000px;
+        }
+
+        .test-item {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .test-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            transition: background 0.2s;
+        }
+
+        .test-item.passed {
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .test-item.passed::before {
+            background: var(--success-color);
+        }
+
+        .test-item.failed {
+            background: rgba(239, 68, 68, 0.05);
+        }
+
+        .test-item.failed::before {
+            background: var(--error-color);
+        }
+
+        .test-item.running {
+            background: rgba(245, 158, 11, 0.05);
+            animation: pulse 2s infinite;
+        }
+
+        .test-item.running::before {
+            background: var(--warning-color);
+        }
+
+        .test-item.pending {
+            background: rgba(107, 114, 128, 0.05);
+        }
+
+        .test-item.pending::before {
+            background: #6b7280;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .test-name {
+            font-weight: 500;
+            color: var(--text-primary);
+            flex: 1;
+        }
+
+        .test-status {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .status-icon {
+            font-size: 1.25rem;
+        }
+
+        .test-duration {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 500;
+            background: #f8fafc;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .test-error {
+            margin-top: 0.75rem;
+            padding: 1rem;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            font-family: 'SFMono-Regular', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+            font-size: 0.875rem;
+            color: #991b1b;
+            max-height: 150px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .console-output {
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            border-radius: 12px;
+            font-family: 'SFMono-Regular', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+            font-size: 0.875rem;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #334155;
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #475569;
+        }
+
+        .console-title {
+            font-weight: 600;
+            color: #cbd5e1;
+        }
+
+        .console-clear {
+            background: #475569;
+            color: #cbd5e1;
+            border: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+
+        .performance-metrics {
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+            border: 1px solid #bae6fd;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .metric-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--info-color);
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .test-coverage {
+            background: linear-gradient(135deg, #fefce8, #fef3c7);
+            border: 1px solid #fcd34d;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .coverage-bar {
+            width: 100%;
+            height: 8px;
+            background: #fef3c7;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .coverage-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--warning-color), #d97706);
+            transition: width 0.5s ease;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .test-container {
+                margin: 1rem;
+                min-height: calc(100vh - 2rem);
+            }
+
+            .test-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .control-group {
+                justify-content: center;
+            }
+
+            .btn {
+                justify-content: center;
+                flex: 1;
+            }
+
+            .test-summary {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .suite-header {
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: flex-start;
+            }
+
+            .test-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+        }
+
+        /* Dark theme support */
+        @media (prefers-color-scheme: dark) {
+            .test-container {
+                background: #1e293b;
+                color: #f8fafc;
+            }
+
+            .test-controls, .test-summary, .progress-container {
+                background: #334155;
+            }
+
+            .summary-card, .test-suite {
+                background: #475569;
+                border-color: #64748b;
+            }
+
+            .suite-header {
+                background: linear-gradient(135deg, #475569, #64748b);
+            }
+
+            .test-item {
+                border-color: #64748b;
+            }
+
+            .test-filter {
+                background: #475569;
+                border-color: #64748b;
+                color: #f8fafc;
+            }
+        }
+
+        /* Accessibility improvements */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* Print styles */
+        @media print {
+            .test-controls, .console-output {
+                display: none;
+            }
+
+            .test-container {
+                box-shadow: none;
+                background: white;
+            }
+
+            .test-item {
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="test-container">
+    <!-- Enhanced Header -->
+    <header class="test-header" role="banner">
+        <h1>🧪 Enhanced Reminders Vault Test Suite</h1>
+        <p>Comprehensive testing with advanced reporting and analytics</p>
+    </header>
+
+    <!-- Enhanced Controls -->
+    <section class="test-controls" role="toolbar" aria-label="Test controls">
+        <div class="control-group">
+            <button class="btn btn-primary" id="runAllTests" aria-describedby="run-all-desc">
+                <span>🚀</span>
+                Run All Tests
+            </button>
+            <span id="run-all-desc" class="sr-only">Execute all test suites</span>
+
+            <button class="btn btn-secondary" id="runUnitTests">
+                <span>⚡</span>
+                Unit Tests
+            </button>
+
+            <button class="btn btn-secondary" id="runIntegrationTests">
+                <span>🔗</span>
+                Integration
+            </button>
+
+            <button class="btn btn-success" id="runStorageTests">
+                <span>💾</span>
+                Storage
+            </button>
+
+            <button class="btn btn-info" id="runPerformanceTests">
+                <span>⚡</span>
+                Performance
+            </button>
+        </div>
+
+        <div class="control-group">
+            <select class="test-filter" id="testFilter" aria-label="Filter tests">
+                <option value="all">All Tests</option>
+                <option value="passed">Passed Only</option>
+                <option value="failed">Failed Only</option>
+                <option value="running">Running</option>
+            </select>
+
+            <button class="btn btn-secondary" id="exportResults">
+                <span>📊</span>
+                Export
+            </button>
+
+            <button class="btn btn-danger" id="clearResults">
+                <span>🗑️</span>
+                Clear
+            </button>
+        </div>
+    </section>
+
+    <!-- Enhanced Progress Bar -->
+    <section class="progress-container">
+        <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+    </section>
+
+    <!-- Enhanced Summary -->
+    <section class="test-summary" role="region" aria-label="Test results summary">
+        <div class="summary-card total">
+            <div class="summary-number total" id="totalTests">0</div>
+            <div class="summary-label">Total Tests</div>
+        </div>
+        <div class="summary-card passed">
+            <div class="summary-number passed" id="passedTests">0</div>
+            <div class="summary-label">Passed</div>
+        </div>
+        <div class="summary-card failed">
+            <div class="summary-number failed" id="failedTests">0</div>
+            <div class="summary-label">Failed</div>
+        </div>
+        <div class="summary-card coverage">
+            <div class="summary-number coverage" id="coverage">0%</div>
+            <div class="summary-label">Success Rate</div>
+        </div>
+    </section>
+
+    <!-- Performance Metrics -->
+    <section class="performance-metrics hidden" id="performanceMetrics">
+        <h3>🏃‍♂️ Performance Metrics</h3>
+        <div class="metrics-grid">
+            <div class="metric-item">
+                <div class="metric-value" id="avgTestTime">0ms</div>
+                <div class="metric-label">Avg Test Time</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-value" id="totalTestTime">0ms</div>
+                <div class="metric-label">Total Time</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-value" id="testsPerSecond">0</div>
+                <div class="metric-label">Tests/Second</div>
+            </div>
+            <div class="metric-item">
+                <div class="metric-value" id="memoryUsage">0MB</div>
+                <div class="metric-label">Memory Usage</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Test Coverage -->
+    <section class="test-coverage hidden" id="testCoverage">
+        <h3>📊 Test Coverage Analysis</h3>
+        <div class="coverage-bar">
+            <div class="coverage-fill" id="coverageFill" style="width: 0%"></div>
+        </div>
+        <div id="coverageDetails"></div>
+    </section>
+
+    <!-- Enhanced Results -->
+    <main class="test-results" id="testResults" role="main" aria-label="Test results">
+        <!-- Test suites will be populated here -->
+    </main>
+
+    <!-- Enhanced Console Output -->
+    <section class="console-output hidden" id="consoleOutput" role="log" aria-label="Console output">
+        <div class="console-header">
+            <h3 class="console-title">🖥️ Console Output</h3>
+            <button class="console-clear" id="clearConsole">Clear</button>
+        </div>
+        <div id="consoleText"></div>
+    </section>
+</div>
+
+<!-- Enhanced Test Framework -->
+<script type="module">
+    // Enhanced Test Framework with Advanced Features
+    class EnhancedTestFramework {
+        constructor() {
+            this.suites = new Map();
+            this.results = {
+                total: 0,
+                passed: 0,
+                failed: 0,
+                running: false,
+                startTime: null,
+                endTime: null
+            };
+            this.console = [];
+            this.performance = {
+                testTimes: [],
+                memorySnapshots: [],
+                startMemory: 0
+            };
+            this.coverage = new Map();
+            this.hooks = {
+                beforeAll: [],
+                afterAll: [],
+                beforeEach: [],
+                afterEach: []
+            };
+        }
+
+        // Hook registration
+        beforeAll(fn) { this.hooks.beforeAll.push(fn); }
+        afterAll(fn) { this.hooks.afterAll.push(fn); }
+        beforeEach(fn) { this.hooks.beforeEach.push(fn); }
+        afterEach(fn) { this.hooks.afterEach.push(fn); }
+
+        suite(name, setupFn) {
+            if (!this.suites.has(name)) {
+                this.suites.set(name, {
+                    name,
+                    tests: [],
+                    results: { total: 0, passed: 0, failed: 0 },
+                    setup: setupFn || null,
+                    tags: []
+                });
+            }
+        }
+
+        test(suiteName, testName, testFn, options = {}) {
+            if (!this.suites.has(suiteName)) {
+                this.suite(suiteName);
+            }
+
+            const suite = this.suites.get(suiteName);
+            suite.tests.push({
+                name: testName,
+                fn: testFn,
+                status: 'pending',
+                duration: 0,
+                error: null,
+                timeout: options.timeout || 10000,
+                retries: options.retries || 0,
+                tags: options.tags || [],
+                skip: options.skip || false
+            });
+        }
+
+        async runAll(filter = null) {
+            this.results = {
+                total: 0,
+                passed: 0,
+                failed: 0,
+                running: true,
+                startTime: performance.now()
+            };
+            this.console = [];
+            this.performance.testTimes = [];
+            this.performance.memorySnapshots = [];
+
+            // Record initial memory
+            this.performance.startMemory = this.getMemoryUsage();
+
+            this.updateUI();
+            this.showPerformanceMetrics();
+
+            // Run beforeAll hooks
+            await this.runHooks(this.hooks.beforeAll);
+
+            try {
+                for (const [suiteName, suite] of this.suites) {
+                    if (filter && !this.matchesFilter(suiteName, filter)) {
+                        continue;
+                    }
+
+                    await this.runSuite(suite);
+                }
+
+                // Run afterAll hooks
+                await this.runHooks(this.hooks.afterAll);
+
+            } finally {
+                this.results.running = false;
+                this.results.endTime = performance.now();
+                this.updateUI();
+                this.updatePerformanceMetrics();
+                this.showResults();
+                this.generateCoverageReport();
+            }
+        }
+
+        async runSuite(suite) {
+            suite.results = { total: 0, passed: 0, failed: 0 };
+
+            // Run suite setup
+            if (suite.setup) {
+                try {
+                    await suite.setup();
+                } catch (error) {
+                    this.log(`❌ Suite setup failed for "${suite.name}": ${error.message}`);
+                    return;
+                }
+            }
+
+            for (const test of suite.tests) {
+                if (test.skip) {
+                    this.log(`⏭️ Skipping test: ${test.name}`);
+                    continue;
+                }
+
+                await this.runTest(suite, test);
+            }
+        }
+
+        async runTest(suite, test) {
+            test.status = 'running';
+            this.updateTestUI(suite.name, test);
+
+            const startTime = performance.now();
+            let attempt = 0;
+            const maxAttempts = test.retries + 1;
+
+            // Run beforeEach hooks
+            await this.runHooks(this.hooks.beforeEach);
+
+            while (attempt < maxAttempts) {
+                try {
+                    // Run test with timeout
+                    await Promise.race([
+                        test.fn(),
+                        new Promise((_, reject) =>
+                            setTimeout(() => reject(new Error(`Test timeout (${test.timeout}ms)`)), test.timeout)
+                        )
+                    ]);
+
+                    test.status = 'passed';
+                    test.error = null;
+                    suite.results.passed++;
+                    this.results.passed++;
+                    break;
+
+                } catch (error) {
+                    attempt++;
+                    if (attempt >= maxAttempts) {
+                        test.status = 'failed';
+                        test.error = error.message || error.toString();
+                        suite.results.failed++;
+                        this.results.failed++;
+
+                        this.log(`❌ ${suite.name} > ${test.name}: ${test.error}`);
+                    } else {
+                        this.log(`🔄 Retrying test "${test.name}" (attempt ${attempt + 1}/${maxAttempts})`);
+                        await this.delay(500); // Wait before retry
+                    }
+                }
+            }
+
+            const endTime = performance.now();
+            test.duration = endTime - startTime;
+            this.performance.testTimes.push(test.duration);
+
+            // Run afterEach hooks
+            await this.runHooks(this.hooks.afterEach);
+
+            // Record memory snapshot
+            this.performance.memorySnapshots.push(this.getMemoryUsage());
+
+            suite.results.total++;
+            this.results.total++;
+
+            this.updateTestUI(suite.name, test);
+            this.updateProgress();
+        }
+
+        async runHooks(hooks) {
+            for (const hook of hooks) {
+                try {
+                    await hook();
+                } catch (error) {
+                    this.log(`❌ Hook execution failed: ${error.message}`);
+                }
+            }
+        }
+
+        matchesFilter(suiteName, filter) {
+            return suiteName.toLowerCase().includes(filter.toLowerCase());
+        }
+
+        getMemoryUsage() {
+            if ('memory' in performance) {
+                return Math.round(performance.memory.usedJSHeapSize / 1024 / 1024); // MB
+            }
+            return 0;
+        }
+
+        updateProgress() {
+            const totalTests = Array.from(this.suites.values())
+                .reduce((sum, suite) => sum + suite.tests.filter(t => !t.skip).length, 0);
+
+            const progress = totalTests > 0 ? (this.results.total / totalTests) * 100 : 0;
+
+            const progressFill = document.getElementById('progressFill');
+            const progressBar = progressFill?.parentElement;
+
+            if (progressFill) {
+                progressFill.style.width = `${progress}%`;
+            }
+
+            if (progressBar) {
+                progressBar.setAttribute('aria-valuenow', Math.round(progress));
+            }
+        }
+
+        updateUI() {
+            document.getElementById('totalTests').textContent = this.results.total;
+            document.getElementById('passedTests').textContent = this.results.passed;
+            document.getElementById('failedTests').textContent = this.results.failed;
+
+            const successRate = this.results.total > 0
+                ? Math.round((this.results.passed / this.results.total) * 100)
+                : 0;
+            document.getElementById('coverage').textContent = `${successRate}%`;
+        }
+
+        updatePerformanceMetrics() {
+            if (!this.results.endTime || !this.results.startTime) return;
+
+            const totalTime = this.results.endTime - this.results.startTime;
+            const avgTime = this.performance.testTimes.length > 0
+                ? this.performance.testTimes.reduce((a, b) => a + b, 0) / this.performance.testTimes.length
+                : 0;
+            const testsPerSecond = totalTime > 0 ? Math.round((this.results.total / totalTime) * 1000) : 0;
+            const currentMemory = this.getMemoryUsage();
+
+            document.getElementById('avgTestTime').textContent = `${Math.round(avgTime)}ms`;
+            document.getElementById('totalTestTime').textContent = `${Math.round(totalTime)}ms`;
+            document.getElementById('testsPerSecond').textContent = testsPerSecond;
+            document.getElementById('memoryUsage').textContent = `${currentMemory}MB`;
+        }
+
+        showPerformanceMetrics() {
+            const metricsSection = document.getElementById('performanceMetrics');
+            if (metricsSection) {
+                metricsSection.classList.remove('hidden');
+                metricsSection.classList.add('fade-in');
+            }
+        }
+
+        generateCoverageReport() {
+            const coverageSection = document.getElementById('testCoverage');
+            const coverageDetails = document.getElementById('coverageDetails');
+            const coverageFill = document.getElementById('coverageFill');
+
+            if (!coverageSection || !coverageDetails || !coverageFill) return;
+
+            // Calculate coverage by test areas
+            const areas = [
+                'Storage Layer',
+                'Service Layer',
+                'UI Components',
+                'Validation',
+                'Error Handling',
+                'Performance',
+                'Browser Compatibility'
+            ];
+
+            const coverage = areas.map(area => {
+                const totalTests = Array.from(this.suites.values())
+                    .filter(suite => suite.name.toLowerCase().includes(area.toLowerCase()))
+                    .reduce((sum, suite) => sum + suite.tests.length, 0);
+
+                const passedTests = Array.from(this.suites.values())
+                    .filter(suite => suite.name.toLowerCase().includes(area.toLowerCase()))
+                    .reduce((sum, suite) => sum + suite.results.passed, 0);
+
+                return {
+                    area,
+                    coverage: totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0,
+                    tests: totalTests
+                };
+            });
+
+            const overallCoverage = coverage.length > 0
+                ? Math.round(coverage.reduce((sum, area) => sum + area.coverage, 0) / coverage.length)
+                : 0;
+
+            coverageFill.style.width = `${overallCoverage}%`;
+
+            coverageDetails.innerHTML = coverage.map(area => `
+                <div style="display: flex; justify-content: space-between; margin: 0.5rem 0;">
+                    <span>${area.area}</span>
+                    <span><strong>${area.coverage}%</strong> (${area.tests} tests)</span>
+                </div>
+            `).join('');
+
+            coverageSection.classList.remove('hidden');
+            coverageSection.classList.add('fade-in');
+        }
+
+        updateTestUI(suiteName, test) {
+            const suiteElement = document.getElementById(`suite-${this.sanitizeId(suiteName)}`);
+            if (!suiteElement) {
+                this.createSuiteUI(suiteName);
+            }
+
+            const testElement = document.getElementById(`test-${this.sanitizeId(suiteName)}-${this.sanitizeId(test.name)}`);
+            if (testElement) {
+                testElement.className = `test-item ${test.status}`;
+
+                const statusElement = testElement.querySelector('.test-status');
+                const icons = {
+                    passed: '✅',
+                    failed: '❌',
+                    running: '⏳',
+                    pending: '⏸️'
+                };
+
+                statusElement.innerHTML = `
+                    <span class="status-icon">${icons[test.status]}</span>
+                    <span class="test-duration">${Math.round(test.duration)}ms</span>
+                `;
+
+                if (test.error) {
+                    this.addTestError(testElement, test.error);
+                }
+            }
+        }
+
+        addTestError(testElement, error) {
+            let errorElement = testElement.querySelector('.test-error');
+            if (!errorElement) {
+                errorElement = document.createElement('div');
+                errorElement.className = 'test-error';
+                testElement.appendChild(errorElement);
+            }
+            errorElement.textContent = error;
+        }
+
+        createSuiteUI(suiteName) {
+            const resultsContainer = document.getElementById('testResults');
+            const suite = this.suites.get(suiteName);
+
+            const suiteElement = document.createElement('div');
+            suiteElement.className = 'test-suite fade-in';
+            suiteElement.id = `suite-${this.sanitizeId(suiteName)}`;
+
+            const header = document.createElement('div');
+            header.className = 'suite-header';
+            header.onclick = () => this.toggleSuite(suiteName);
+
+            header.innerHTML = `
+                <div class="suite-title">
+                    <span class="suite-icon">📁</span>
+                    ${suiteName}
+                </div>
+                <div class="suite-stats">
+                    <div class="stat-item">
+                        <span>📊</span>
+                        <span>${suite.tests.length} tests</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>✅</span>
+                        <span id="suite-passed-${this.sanitizeId(suiteName)}">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>❌</span>
+                        <span id="suite-failed-${this.sanitizeId(suiteName)}">0</span>
+                    </div>
+                </div>
+            `;
+
+            const testList = document.createElement('div');
+            testList.className = 'test-list expanded';
+            testList.id = `tests-${this.sanitizeId(suiteName)}`;
+
+            suite.tests.forEach(test => {
+                const testElement = document.createElement('div');
+                testElement.className = 'test-item pending';
+                testElement.id = `test-${this.sanitizeId(suiteName)}-${this.sanitizeId(test.name)}`;
+
+                testElement.innerHTML = `
+                    <div class="test-name">${test.name}</div>
+                    <div class="test-status">
+                        <span class="status-icon">⏸️</span>
+                        <span class="test-duration">0ms</span>
+                    </div>
+                `;
+
+                testList.appendChild(testElement);
+            });
+
+            suiteElement.appendChild(header);
+            suiteElement.appendChild(testList);
+            resultsContainer.appendChild(suiteElement);
+        }
+
+        toggleSuite(suiteName) {
+            const testList = document.getElementById(`tests-${this.sanitizeId(suiteName)}`);
+            if (testList) {
+                testList.classList.toggle('expanded');
+                testList.classList.toggle('collapsed');
+            }
+        }
+
+        sanitizeId(str) {
+            return str.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+        }
+
+        log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            this.console.push(`[${timestamp}] ${message}`);
+            this.updateConsole();
+        }
+
+        updateConsole() {
+            const consoleElement = document.getElementById('consoleOutput');
+            const consoleText = document.getElementById('consoleText');
+
+            if (this.console.length > 0) {
+                consoleElement.classList.remove('hidden');
+                consoleText.innerHTML = this.console.map(msg =>
+                    `<div style="margin-bottom: 0.25rem;">${this.escapeHtml(msg)}</div>`
+                ).join('');
+                consoleText.scrollTop = consoleText.scrollHeight;
+            }
+        }
+
+        escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        exportResults() {
+            const results = {
+                timestamp: new Date().toISOString(),
+                summary: this.results,
+                performance: {
+                    totalTime: this.results.endTime - this.results.startTime,
+                    avgTestTime: this.performance.testTimes.length > 0
+                        ? this.performance.testTimes.reduce((a, b) => a + b, 0) / this.performance.testTimes.length
+                        : 0,
+                    memoryUsage: this.getMemoryUsage()
+                },
+                suites: Array.from(this.suites.entries()).map(([name, suite]) => ({
+                    name,
+                    results: suite.results,
+                    tests: suite.tests.map(test => ({
+                        name: test.name,
+                        status: test.status,
+                        duration: test.duration,
+                        error: test.error
+                    }))
+                })),
+                console: this.console
+            };
+
+            const blob = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `test-results-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        showResults() {
+            const passed = this.results.passed;
+            const failed = this.results.failed;
+            const total = this.results.total;
+            const totalTime = Math.round(this.results.endTime - this.results.startTime);
+
+            this.log(`
+🏁 Test Suite Complete
+✅ Passed: ${passed}
+❌ Failed: ${failed}
+📊 Total: ${total}
+⏱️ Time: ${totalTime}ms
+📈 Success Rate: ${total > 0 ? Math.round((passed/total) * 100) : 0}%
+💾 Memory: ${this.getMemoryUsage()}MB
+            `);
+        }
+
+        clear() {
+            document.getElementById('testResults').innerHTML = '';
+            document.getElementById('consoleOutput').classList.add('hidden');
+            document.getElementById('performanceMetrics').classList.add('hidden');
+            document.getElementById('testCoverage').classList.add('hidden');
+            document.getElementById('progressFill').style.width = '0%';
+            this.results = { total: 0, passed: 0, failed: 0, running: false };
+            this.console = [];
+            this.performance.testTimes = [];
+            this.performance.memorySnapshots = [];
+            this.updateUI();
+        }
+
+        delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+    }
+
+    // Test Framework Instance
+    const testFramework = new EnhancedTestFramework();
+
+    // Enhanced Mock Data and Utilities
+    const MockData = {
+        validReminder: {
+            title: 'Enhanced Test Reminder',
+            description: 'Advanced test reminder with comprehensive validation',
+            datetime: new Date(Date.now() + 3600000).toISOString(),
+            category: 'personal',
+            priority: 2,
+            notification: true,
+            alertTimings: [5, 15, 30],
+            tags: ['test', 'automated']
+        },
+
+        invalidReminder: {
+            title: '',
+            datetime: new Date(Date.now() - 3600000).toISOString(),
+            priority: 5,
+            category: 'invalid'
+        },
+
+        validUser: {
+            username: 'testuser',
+            email: 'test@example.com',
+            password: 'password123',
+            role: 'user',
+            preferences: {
+                theme: 'light',
+                notifications: true
+            }
+        },
+
+        largeDataset: Array.from({ length: 1000 }, (_, i) => ({
+            id: i,
+            title: `Test Reminder ${i}`,
+            datetime: new Date(Date.now() + i * 60000).toISOString(),
+            priority: (i % 4) + 1
+        }))
+    };
+
+    // Enhanced Mock Storage with Performance Testing
+    class EnhancedMockStorage {
+        constructor() {
+            this.data = new Map();
+            this.initialized = false;
+            this.operationLog = [];
+            this.performanceMetrics = {
+                reads: [],
+                writes: [],
+                deletes: []
+            };
+        }
+
+        async initialize() {
+            const start = performance.now();
+            await testFramework.delay(Math.random() * 50); // Simulate initialization time
+            this.initialized = true;
+            this.logOperation('initialize', performance.now() - start);
+            return true;
+        }
+
+        async saveReminder(reminder) {
+            const start = performance.now();
+
+            if (!this.initialized) throw new Error('Storage not initialized');
+
+            const id = reminder.id || this.generateId();
+            const savedReminder = {
+                ...reminder,
+                id,
+                updatedAt: new Date().toISOString(),
+                version: 1
+            };
+
+            this.data.set(id, savedReminder);
+            const duration = performance.now() - start;
+            this.performanceMetrics.writes.push(duration);
+            this.logOperation('saveReminder', duration);
+
+            return savedReminder;
+        }
+
+        async getReminders(userId, options = {}) {
+            const start = performance.now();
+
+            if (!this.initialized) throw new Error('Storage not initialized');
+
+            let reminders = Array.from(this.data.values())
+                .filter(r => r.userId === userId);
+
+            // Apply filters
+            if (options.category) {
+                reminders = reminders.filter(r => r.category === options.category);
+            }
+            if (options.priority) {
+                reminders = reminders.filter(r => r.priority === options.priority);
+            }
+
+            // Apply sorting
+            if (options.sortBy) {
+                reminders.sort((a, b) => {
+                    const aVal = a[options.sortBy];
+                    const bVal = b[options.sortBy];
+                    return options.sortDirection === 'desc' ? bVal - aVal : aVal - bVal;
+                });
+            }
+
+            const duration = performance.now() - start;
+            this.performanceMetrics.reads.push(duration);
+            this.logOperation('getReminders', duration);
+
+            return reminders;
+        }
+
+        async getReminderById(id) {
+            const start = performance.now();
+            const result = this.data.get(id) || null;
+            const duration = performance.now() - start;
+            this.performanceMetrics.reads.push(duration);
+            this.logOperation('getReminderById', duration);
+            return result;
+        }
+
+        async updateReminder(id, updates) {
+            const start = performance.now();
+            const existing = this.data.get(id);
+            if (!existing) throw new Error('Reminder not found');
+
+            const updated = {
+                ...existing,
+                ...updates,
+                updatedAt: new Date().toISOString(),
+                version: (existing.version || 0) + 1
+            };
+
+            this.data.set(id, updated);
+            const duration = performance.now() - start;
+            this.performanceMetrics.writes.push(duration);
+            this.logOperation('updateReminder', duration);
+
+            return updated;
+        }
+
+        async deleteReminder(id) {
+            const start = performance.now();
+            const result = this.data.delete(id);
+            const duration = performance.now() - start;
+            this.performanceMetrics.deletes.push(duration);
+            this.logOperation('deleteReminder', duration);
+            return result;
+        }
+
+        // Batch operations for performance testing
+        async bulkInsert(reminders) {
+            const start = performance.now();
+            const results = [];
+
+            for (const reminder of reminders) {
+                results.push(await this.saveReminder(reminder));
+            }
+
+            const duration = performance.now() - start;
+            this.logOperation('bulkInsert', duration, reminders.length);
+            return results;
+        }
+
+        async bulkDelete(ids) {
+            const start = performance.now();
+            let deletedCount = 0;
+
+            for (const id of ids) {
+                if (await this.deleteReminder(id)) {
+                    deletedCount++;
+                }
+            }
+
+            const duration = performance.now() - start;
+            this.logOperation('bulkDelete', duration, ids.length);
+            return deletedCount;
+        }
+
+        generateId() {
+            return 'test-' + Math.random().toString(36).substr(2, 9);
+        }
+
+        logOperation(operation, duration, count = 1) {
+            this.operationLog.push({
+                operation,
+                duration,
+                count,
+                timestamp: Date.now()
+            });
+        }
+
+        getPerformanceStats() {
+            const stats = {};
+
+            ['reads', 'writes', 'deletes'].forEach(type => {
+                const times = this.performanceMetrics[type];
+                if (times.length > 0) {
+                    stats[type] = {
+                        count: times.length,
+                        total: times.reduce((a, b) => a + b, 0),
+                        avg: times.reduce((a, b) => a + b, 0) / times.length,
+                        min: Math.min(...times),
+                        max: Math.max(...times)
+                    };
+                }
+            });
+
+            return stats;
+        }
+
+        async healthCheck() {
+            const start = performance.now();
+            const stats = this.getPerformanceStats();
+            const duration = performance.now() - start;
+
+            return {
+                healthy: this.initialized,
+                timestamp: new Date().toISOString(),
+                type: 'Enhanced Mock Storage',
+                performanceStats: stats,
+                operationCount: this.operationLog.length,
+                healthCheckDuration: duration
+            };
+        }
+    }
+
+    // === ENHANCED TEST SUITES ===
+
+    // Storage Layer Tests with Performance Benchmarks
+    testFramework.suite('Enhanced Storage Layer Tests');
+
+    testFramework.test('Enhanced Storage Layer Tests', 'Storage Initialization Performance', async () => {
+        const storage = new EnhancedMockStorage();
+        const start = performance.now();
+
+        const result = await storage.initialize();
+        const duration = performance.now() - start;
+
+        if (!result) throw new Error('Storage initialization failed');
+        if (!storage.initialized) throw new Error('Storage not marked as initialized');
+        if (duration > 100) throw new Error(`Initialization too slow: ${duration}ms`);
+    });
+
+    testFramework.test('Enhanced Storage Layer Tests', 'Bulk Insert Performance', async () => {
+        const storage = new EnhancedMockStorage();
+        await storage.initialize();
+
+        const testData = Array.from({ length: 100 }, (_, i) => ({
+            ...MockData.validReminder,
+            userId: 'bulk-test',
+            title: `Bulk Test Reminder ${i}`
+        }));
+
+        const start = performance.now();
+        const results = await storage.bulkInsert(testData);
+        const duration = performance.now() - start;
+
+        if (results.length !== 100) throw new Error('Bulk insert count mismatch');
+        if (duration > 1000) throw new Error(`Bulk insert too slow: ${duration}ms`);
+
+        testFramework.log(`📊 Bulk inserted 100 records in ${Math.round(duration)}ms`);
+    });
+
+    testFramework.test('Enhanced Storage Layer Tests', 'Query Performance with Filters', async () => {
+        const storage = new EnhancedMockStorage();
+        await storage.initialize();
+
+        // Insert test data
+        const testData = Array.from({ length: 50 }, (_, i) => ({
+            ...MockData.validReminder,
+            userId: 'query-test',
+            title: `Query Test ${i}`,
+            category: i % 2 === 0 ? 'work' : 'personal',
+            priority: (i % 4) + 1
+        }));
+
+        await storage.bulkInsert(testData);
+
+        // Test filtered queries
+        const start = performance.now();
+        const workReminders = await storage.getReminders('query-test', { category: 'work' });
+        const highPriorityReminders = await storage.getReminders('query-test', { priority: 4 });
+        const sortedReminders = await storage.getReminders('query-test', { sortBy: 'priority' });
+        const duration = performance.now() - start;
+
+        if (workReminders.length !== 25) throw new Error('Work filter failed');
+        if (highPriorityReminders.length < 1) throw new Error('Priority filter failed');
+        if (sortedReminders.length !== 50) throw new Error('Sorting failed');
+        if (duration > 100) throw new Error(`Query performance too slow: ${duration}ms`);
+    });
+
+    // Advanced Validation Tests
+    testFramework.suite('Advanced Validation Tests');
+
+    testFramework.test('Advanced Validation Tests', 'Comprehensive Reminder Validation', async () => {
+        const testCases = [
+            { data: MockData.validReminder, shouldPass: true },
+            { data: { ...MockData.validReminder, title: '' }, shouldPass: false },
+            { data: { ...MockData.validReminder, datetime: 'invalid' }, shouldPass: false },
+            { data: { ...MockData.validReminder, priority: 0 }, shouldPass: false },
+            { data: { ...MockData.validReminder, priority: 5 }, shouldPass: false },
+            { data: { ...MockData.validReminder, alertTimings: ['invalid'] }, shouldPass: false }
+        ];
+
+        for (const testCase of testCases) {
+            try {
+                validateReminderData(testCase.data);
+                if (!testCase.shouldPass) {
+                    throw new Error(`Validation should have failed for: ${JSON.stringify(testCase.data)}`);
+                }
+            } catch (error) {
+                if (testCase.shouldPass) {
+                    throw new Error(`Validation should have passed for: ${JSON.stringify(testCase.data)}`);
+                }
+            }
+        }
+    });
+
+    function validateReminderData(data) {
+        if (!data.title || data.title.trim() === '') {
+            throw new Error('Title is required');
+        }
+        if (!data.datetime || isNaN(Date.parse(data.datetime))) {
+            throw new Error('Valid datetime is required');
+        }
+        if (data.priority < 1 || data.priority > 4) {
+            throw new Error('Priority must be between 1 and 4');
+        }
+        if (data.alertTimings && !Array.isArray(data.alertTimings)) {
+            throw new Error('Alert timings must be an array');
+        }
+    }
+
+    // Stress Testing Suite
+    testFramework.suite('Stress Testing');
+
+    testFramework.test('Stress Testing', 'Large Dataset Handling', async () => {
+        const storage = new EnhancedMockStorage();
+        await storage.initialize();
+
+        const largeDataset = Array.from({ length: 1000 }, (_, i) => ({
+            ...MockData.validReminder,
+            userId: 'stress-test',
+            title: `Stress Test Reminder ${i}`,
+            priority: (i % 4) + 1
+        }));
+
+        const start = performance.now();
+        await storage.bulkInsert(largeDataset);
+
+        const allReminders = await storage.getReminders('stress-test');
+        const filteredReminders = await storage.getReminders('stress-test', { priority: 4 });
+
+        const duration = performance.now() - start;
+
+        if (allReminders.length !== 1000) throw new Error('Large dataset insert failed');
+        if (filteredReminders.length !== 250) throw new Error('Large dataset filtering failed');
+        if (duration > 5000) throw new Error(`Large dataset operations too slow: ${duration}ms`);
+
+        testFramework.log(`📊 Processed 1000 records in ${Math.round(duration)}ms`);
+    });
+
+    testFramework.test('Stress Testing', 'Memory Leak Detection', async () => {
+        const initialMemory = testFramework.getMemoryUsage();
+        const storage = new EnhancedMockStorage();
+        await storage.initialize();
+
+        // Create and destroy many objects
+        for (let i = 0; i < 100; i++) {
+            const reminders = Array.from({ length: 10 }, (_, j) => ({
+                ...MockData.validReminder,
+                userId: `memory-test-${i}`,
+                title: `Memory Test ${i}-${j}`
+            }));
+
+            await storage.bulkInsert(reminders);
+
+            if (i % 10 === 0) {
+                // Periodic cleanup
+                const ids = reminders.map(r => r.id);
+                await storage.bulkDelete(ids);
+            }
+        }
+
+        const finalMemory = testFramework.getMemoryUsage();
+        const memoryIncrease = finalMemory - initialMemory;
+
+        testFramework.log(`📊 Memory: ${initialMemory}MB → ${finalMemory}MB (Δ${memoryIncrease}MB)`);
+
+        if (memoryIncrease > 10) {
+            throw new Error(`Potential memory leak detected: ${memoryIncrease}MB increase`);
+        }
+    });
+
+    // Browser Compatibility and Edge Cases
+    testFramework.suite('Browser Compatibility & Edge Cases');
+
+    testFramework.test('Browser Compatibility & Edge Cases', 'Date Handling Across Timezones', async () => {
+        const timezones = [
+            'UTC',
+            'America/New_York',
+            'Europe/London',
+            'Asia/Tokyo',
+            'Australia/Sydney'
+        ];
+
+        const baseDate = new Date('2024-12-25T12:00:00Z');
+
+        timezones.forEach(tz => {
+            try {
+                const formatter = new Intl.DateTimeFormat('en-US', {
+                    timeZone: tz,
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                const formatted = formatter.format(baseDate);
+                if (!formatted) throw new Error(`Date formatting failed for ${tz}`);
+            } catch (error) {
+                throw new Error(`Timezone ${tz} not supported: ${error.message}`);
+            }
+        });
+    });
+
+    testFramework.test('Browser Compatibility & Edge Cases', 'Unicode and Special Characters', async () => {
+        const specialCases = [
+            '测试提醒 🌟',
+            'Тест напоминание 🚀',
+            'نص تجريبي 📝',
+            'בדיקה 🔔',
+            'テスト リマインダー ⏰',
+            'Emoji heavy 🎉🎊🎈🎂🎁🎀🎯🎲🎸🎺🎻🎤'
+        ];
+
+        const storage = new EnhancedMockStorage();
+        await storage.initialize();
+
+        for (const title of specialCases) {
+            const reminder = {
+                ...MockData.validReminder,
+                title,
+                userId: 'unicode-test'
+            };
+
+            const saved = await storage.saveReminder(reminder);
+            const retrieved = await storage.getReminderById(saved.id);
+
+            if (retrieved.title !== title) {
+                throw new Error(`Unicode handling failed for: ${title}`);
+            }
+        }
+    });
+
+    testFramework.test('Browser Compatibility & Edge Cases', 'Error Boundary Testing', async () => {
+        const storage = new EnhancedMockStorage();
+        await storage.initialize();
+
+        const errorCases = [
+            () => storage.getReminderById(null),
+            () => storage.updateReminder('nonexistent', {}),
+            () => storage.saveReminder(null),
+            () => storage.getReminders(null)
+        ];
+
+        for (const errorCase of errorCases) {
+            let errorCaught = false;
+            try {
+                await errorCase();
+            } catch (error) {
+                errorCaught = true;
+            }
+
+            if (!errorCaught) {
+                throw new Error('Expected error was not caught');
+            }
+        }
+    });
+
+    // Real-world Integration Tests
+    testFramework.suite('Real-world Integration Tests');
+
+    testFramework.test('Real-world Integration Tests', 'Complete User Workflow', async () => {
+        const storage = new EnhancedMockStorage();
+        await storage.initialize();
+
+        const userId = 'workflow-test';
+
+        // Step 1: User creates multiple reminders
+        const reminders = [];
+        for (let i = 0; i < 5; i++) {
+            const reminder = await storage.saveReminder({
+                ...MockData.validReminder,
+                userId,
+                title: `Workflow Reminder ${i}`,
+                priority: (i % 4) + 1
+            });
+            reminders.push(reminder);
+        }
+
+        // Step 2: User filters and searches
+        const highPriorityReminders = await storage.getReminders(userId, { priority: 4 });
+        const allReminders = await storage.getReminders(userId);
+
+        // Step 3: User completes some reminders
+        for (let i = 0; i < 2; i++) {
+            await storage.updateReminder(reminders[i].id, {
+                status: 'completed',
+                completedAt: new Date().toISOString()
+            });
+        }
+
+        // Step 4: User deletes old reminders
+        await storage.deleteReminder(reminders[4].id);
+
+        // Step 5: Verify final state
+        const finalReminders = await storage.getReminders(userId);
+        const completedReminders = finalReminders.filter(r => r.status === 'completed');
+
+        if (finalReminders.length !== 4) throw new Error('Workflow: Wrong final count');
+        if (completedReminders.length !== 2) throw new Error('Workflow: Wrong completed count');
+        if (allReminders.length !== 5) throw new Error('Workflow: Initial count wrong');
+    });
+
+    testFramework.test('Real-world Integration Tests', 'Concurrent User Operations', async () => {
+        const storage = new EnhancedMockStorage();
+        await storage.initialize();
+
+        // Simulate concurrent operations from multiple users
+        const users = ['user1', 'user2', 'user3'];
+        const operations = [];
+
+        users.forEach(userId => {
+            // Each user performs multiple operations concurrently
+            for (let i = 0; i < 10; i++) {
+                operations.push(
+                    storage.saveReminder({
+                        ...MockData.validReminder,
+                        userId,
+                        title: `Concurrent Test ${userId} ${i}`
+                    })
+                );
+            }
+        });
+
+        const results = await Promise.all(operations);
+        if (results.length !== 30) throw new Error('Concurrent operations failed');
+
+        // Verify data isolation
+        for (const userId of users) {
+            const userReminders = await storage.getReminders(userId);
+            if (userReminders.length !== 10) {
+                throw new Error(`User ${userId} data isolation failed`);
+            }
+        }
+    });
+
+    // Performance Benchmarking
+    testFramework.suite('Performance Benchmarking');
+
+    testFramework.test('Performance Benchmarking', 'CRUD Operations Benchmark', async () => {
+        const storage = new EnhancedMockStorage();
+        await storage.initialize();
+
+        const iterations = 100;
+        const benchmarks = {};
+
+        // Benchmark CREATE
+        const createStart = performance.now();
+        const createdIds = [];
+        for (let i = 0; i < iterations; i++) {
+            const reminder = await storage.saveReminder({
+                ...MockData.validReminder,
+                userId: 'benchmark',
+                title: `Benchmark Create ${i}`
+            });
+            createdIds.push(reminder.id);
+        }
+        benchmarks.create = performance.now() - createStart;
+
+        // Benchmark READ
+        const readStart = performance.now();
+        for (let i = 0; i < iterations; i++) {
+            await storage.getReminderById(createdIds[i]);
+        }
+        benchmarks.read = performance.now() - readStart;
+
+        // Benchmark UPDATE
+        const updateStart = performance.now();
+        for (let i = 0; i < iterations; i++) {
+            await storage.updateReminder(createdIds[i], {
+                title: `Updated ${i}`,
+                priority: ((i % 4) + 1)
+            });
+        }
+        benchmarks.update = performance.now() - updateStart;
+
+        // Benchmark DELETE
+        const deleteStart = performance.now();
+        for (let i = 0; i < iterations; i++) {
+            await storage.deleteReminder(createdIds[i]);
+        }
+        benchmarks.delete = performance.now() - deleteStart;
+
+        // Log results
+        Object.entries(benchmarks).forEach(([operation, time]) => {
+            const opsPerSec = Math.round((iterations / time) * 1000);
+            testFramework.log(`📊 ${operation.toUpperCase()}: ${Math.round(time)}ms total, ${opsPerSec} ops/sec`);
+        });
+
+        // Verify performance thresholds
+        if (benchmarks.create > 1000) throw new Error('CREATE operations too slow');
+        if (benchmarks.read > 500) throw new Error('READ operations too slow');
+        if (benchmarks.update > 1000) throw new Error('UPDATE operations too slow');
+        if (benchmarks.delete > 500) throw new Error('DELETE operations too slow');
+    });
+
+    // Advanced Error Handling and Recovery
+    testFramework.suite('Error Handling & Recovery');
+
+    testFramework.test('Error Handling & Recovery', 'Graceful Degradation', async () => {
+        const storage = new EnhancedMockStorage();
+
+        // Test operations without initialization
+        let errorCount = 0;
+        const operations = [
+            () => storage.saveReminder(MockData.validReminder),
+            () => storage.getReminders('test'),
+            () => storage.getReminderById('test'),
+            () => storage.updateReminder('test', {}),
+            () => storage.deleteReminder('test')
+        ];
+
+        for (const operation of operations) {
+            try {
+                await operation();
+            } catch (error) {
+                if (error.message.includes('not initialized')) {
+                    errorCount++;
+                }
+            }
+        }
+
+        if (errorCount !== operations.length) {
+            throw new Error('Graceful degradation failed');
+        }
+
+        // Test recovery after initialization
+        await storage.initialize();
+        const reminder = await storage.saveReminder({
+            ...MockData.validReminder,
+            userId: 'recovery-test'
+        });
+
+        if (!reminder.id) throw new Error('Recovery after initialization failed');
+    });
+
+    testFramework.test('Error Handling & Recovery', 'Data Integrity Under Stress', async () => {
+        const storage = new EnhancedMockStorage();
+        await storage.initialize();
+
+        const userId = 'integrity-test';
+        let successfulOperations = 0;
+        let failedOperations = 0;
+
+        // Mix valid and invalid operations
+        const operations = [];
+        for (let i = 0; i < 50; i++) {
+            if (i % 5 === 0) {
+                // Invalid operation
+                operations.push(
+                    storage.saveReminder({
+                        title: '', // Invalid
+                        userId
+                    }).catch(() => failedOperations++)
+                );
+            } else {
+                // Valid operation
+                operations.push(
+                    storage.saveReminder({
+                        ...MockData.validReminder,
+                        userId,
+                        title: `Integrity Test ${i}`
+                    }).then(() => successfulOperations++)
+                );
+            }
+        }
+
+        await Promise.allSettled(operations);
+
+        const finalReminders = await storage.getReminders(userId);
+
+        if (finalReminders.length !== successfulOperations) {
+            throw new Error('Data integrity compromised under stress');
+        }
+
+        testFramework.log(`📊 Integrity test: ${successfulOperations} successful, ${failedOperations} failed operations`);
+    });
+
+    // === EVENT HANDLERS ===
+
+    // Enhanced Event Handlers
+    document.getElementById('runAllTests').addEventListener('click', async () => {
+        const btn = document.getElementById('runAllTests');
+        btn.classList.add('loading');
+        btn.textContent = '⏳ Running...';
+
+        try {
+            await testFramework.runAll();
+        } finally {
+            btn.classList.remove('loading');
+            btn.innerHTML = '<span>🚀</span> Run All Tests';
+        }
+    });
+
+    document.getElementById('runUnitTests').addEventListener('click', async () => {
+        await testFramework.runAll('validation');
+        await testFramework.runAll('compatibility');
+    });
+
+    document.getElementById('runIntegrationTests').addEventListener('click', async () => {
+        await testFramework.runAll('integration');
+        await testFramework.runAll('real-world');
+    });
+
+    document.getElementById('runStorageTests').addEventListener('click', async () => {
+        await testFramework.runAll('storage');
+        await testFramework.runAll('enhanced storage');
+    });
+
+    document.getElementById('runPerformanceTests').addEventListener('click', async () => {
+        await testFramework.runAll('performance');
+        await testFramework.runAll('stress');
+    });
+
+    document.getElementById('exportResults').addEventListener('click', () => {
+        testFramework.exportResults();
+    });
+
+    document.getElementById('clearResults').addEventListener('click', () => {
+        testFramework.clear();
+    });
+
+    document.getElementById('clearConsole').addEventListener('click', () => {
+        testFramework.console = [];
+        document.getElementById('consoleOutput').classList.add('hidden');
+    });
+
+    // Test filtering
+    document.getElementById('testFilter').addEventListener('change', (e) => {
+        const filter = e.target.value;
+        const testItems = document.querySelectorAll('.test-item');
+
+        testItems.forEach(item => {
+            if (filter === 'all' || item.classList.contains(filter)) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+
+    // Auto-run compatibility tests on load
+    window.addEventListener('load', async () => {
+        console.log('🧪 Enhanced Test Suite Loaded - Running initial compatibility check...');
+
+        testFramework.updateUI();
+
+        // Log enhanced browser info
+        testFramework.log(`🌐 Browser: ${navigator.userAgent}`);
+        testFramework.log(`💾 Memory API: ${('memory' in performance) ? 'Available' : 'Not available'}`);
+        testFramework.log(`🎯 Performance API: ${('performance' in window) ? 'Available' : 'Not available'}`);
+        testFramework.log(`🔧 Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`);
+
+        setTimeout(async () => {
+            testFramework.log('🔍 Running initial compatibility and performance baseline...');
+            await testFramework.runAll('compatibility');
+        }, 1000);
+    });
+
+    // Global error handlers for test debugging
+    window.addEventListener('error', (event) => {
+        testFramework.log(`💥 Global Error: ${event.error?.message || event.message}`);
+        console.error('Test suite error:', event.error);
+    });
+
+    window.addEventListener('unhandledrejection', (event) => {
+        testFramework.log(`🚫 Unhandled Promise Rejection: ${event.reason?.message || event.reason}`);
+        console.error('Unhandled promise rejection in tests:', event.reason);
+    });
+
+    // Performance monitoring
+    if ('memory' in performance) {
+        setInterval(() => {
+            const memory = Math.round(performance.memory.usedJSHeapSize / 1024 / 1024);
+            document.getElementById('memoryUsage').textContent = `${memory}MB`;
+        }, 5000);
+    }
+
+    // Make test framework globally accessible for debugging
+    window.testFramework = testFramework;
+
+    console.log('🎯 Enhanced Test Suite initialized with advanced features:');
+    console.log('  • Performance benchmarking');
+    console.log('  • Memory leak detection');
+    console.log('  • Stress testing capabilities');
+    console.log('  • Advanced error handling');
+    console.log('  • Real-world integration scenarios');
+    console.log('  • Unicode and timezone testing');
+    console.log('  • Comprehensive reporting');
+
+</script>
+</body>
+</html>
